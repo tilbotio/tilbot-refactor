@@ -62,16 +62,14 @@ export class UserApiController {
         var UserDetails = mongoose.model('userschemas', UserSchema);
         UserDetails.findOne({ username: user, active: true }).then(function(schema) {
         if (schema != null) {
-            console.log('found it!');
 
             schema.verifyPassword(pass)
             .then(function(valid) {
-                console.log('valid? ' + valid);
-            resolve(valid);
+                resolve(valid);
             })
             .catch(function(err) {
-            console.log(err);
-            resolve(false);
+                console.log(err);
+                resolve(false);
             });
 
         }

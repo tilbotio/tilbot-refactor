@@ -1,8 +1,9 @@
-import { handler } from './build/handler.js';
+//import { handler } from './build/handler.js';
 import express from 'express';
 import mongoose from 'mongoose';
 import mongodbsession from 'express-mongodb-session';
 import session from 'express-session';
+import cors from 'cors';
 import { UserApiController } from './api/user.js';
 
 const app = express();
@@ -12,6 +13,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // parse application/json
 app.use(express.json());
+
+// For CORS
+app.use(cors({
+  'allowedHeaders': ['Content-Type'],
+  'origin': '*',
+  'preflightContinue': true
+}));
 
 // Set up the MongoDB connection
 var dbPath = 'mongodb://localhost/tilbot';
@@ -62,7 +70,6 @@ mongo.then(() => {
   // add a route that lives separately from the SvelteKit app
   app.post('/api/login', (req, res) => {
     res.status(200);
-    console.log(req.body);
 
     UserApiController.login(req.body.username, req.body.password).then(function(success) {
       if(success) {
@@ -77,11 +84,17 @@ mongo.then(() => {
     });
   });
 
-  // let SvelteKit handle everything else, including serving prerendered pages and static assets
-  app.use(handler);
+  app.get('/api/sesh', (req, res) => {
+    res.status(200);
+    console.log(req.session);
+  });
 
-  app.listen(3000, () => {
-    console.log('listening on port 3000');
+
+  // let SvelteKit handle everything else, including serving prerendered pages and static assets
+  //app.use(handler);
+
+  app.listen(3001, () => {
+    console.log('listening on port 3001');
   });
     
 });
