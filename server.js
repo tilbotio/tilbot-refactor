@@ -96,6 +96,44 @@ mongo.then(() => {
     res.send('OK');
   });
 
+  app.post('/api/change_pass', (req, res) => {
+    UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass).then(function(success) {
+      res.send(success);
+    });    
+  });
+
+  app.post('/api/set_user_active', (req, res) => {
+    res.status(200);
+
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 99) { // admin
+          UserApiController.set_user_active(req.body.username, req.body.active).then(async function(response) {
+            // If a user was set to inactive, stop all of their running projects.
+            if (req.body.active == 'false') {
+              var projects = await ProjectApiController.get_running_projects_user(req.body.username);
+
+              for (var p in projects) {
+                ProjectApiController.set_project_status(projects[p].id, 0).then(function(response) {
+                  //this.stop_bot(projects[p].id);
+                  // @TODO
+                });
+              }
+            }
+
+            res.send('OK');
+          });
+        }
+        else {
+          res.send('USER_NOT_ADMIN');
+        }
+      }
+      else {
+        res.send('USER_NOT_FOUND');
+      }
+    });    
+  });
+
   app.get('/api/get_dashboard', (req, res) => {
     res.status(200);
 
