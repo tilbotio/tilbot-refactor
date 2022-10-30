@@ -5,6 +5,7 @@ import mongodbsession from 'express-mongodb-session';
 import session from 'express-session';
 import cors from 'cors';
 import { UserApiController } from './api/user.js';
+import { ProjectApiController } from './api/project.js';
 
 const app = express();
 
@@ -16,9 +17,10 @@ app.use(express.json());
 
 // For CORS
 app.use(cors({
-  'allowedHeaders': ['Content-Type'],
-  'origin': '*',
-  'preflightContinue': true
+  allowedHeaders: ['Content-Type'],
+  origin: 'http://localhost:5173',
+  preflightContinue: true,
+  credentials: true,
 }));
 
 // Set up the MongoDB connection
@@ -63,7 +65,10 @@ mongo.then(() => {
     // * https://www.npmjs.com/package/express-session#resave
     // * https://www.npmjs.com/package/express-session#saveuninitialized
     resave: true,
-    saveUninitialized: true
+    saveUninitialized: true,
+    secure: process.env.HTTPS ? true : false,
+    httpOnly: true,
+    sameSite: 'none'
   }));
 
 
@@ -83,6 +88,56 @@ mongo.then(() => {
       }
     });
   });
+
+  app.post('/api/logout', (req, res) => {
+    res.status(200);
+
+    req.session.destroy();
+    res.send('OK');
+  });
+
+  app.get('/api/get_dashboard', (req, res) => {
+    res.status(200);
+
+    console.log(req.session);
+
+    // Return error message if not logged in
+    if (req.session.username === undefined) {
+      res.send('NOT_LOGGED_IN');
+    }
+
+    else {
+      var data = {'username': req.session.username};
+
+      UserApiController.get_user(req.session.username).then(function(user) {
+        if (user !== null) {
+          if (user.role == 99) { // admin, retrieve user accounts
+            UserApiController.get_users().then(async function(users) {
+
+              var promises = [];
+              for (var u in users) {
+                var projects = await ProjectApiController.get_running_projects_user(users[u].username);
+                users[u].running_projects = projects.length;
+              }
+
+              data.users = users;
+              res.send(JSON.stringify(data));
+            });
+          }
+          else { // regular user, retrieve projects
+            ProjectApiController.get_projects(req.session.username).then(function(projects) {
+              data.projects = projects;
+              res.send(JSON.stringify(data));
+            });
+          }
+        }
+        // An invalid username is somehow in the session
+        else {
+          res.send('USER_NOT_FOUND');
+        }
+      });
+    }
+  });  
 
   app.get('/api/sesh', (req, res) => {
     res.status(200);

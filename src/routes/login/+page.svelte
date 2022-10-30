@@ -40,7 +40,7 @@
     let error = false;
     let error_txt = '';
 
-    function login(e) {
+    function login(e: any) {
         error = false;
 
         const formData = new FormData(e.target);
@@ -54,6 +54,7 @@
 
         fetch(location.protocol + '//' + window.location.hostname + ":3001/api/login", {
             method: 'post',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -62,7 +63,7 @@
         .then(response => {
             response.text().then(txt => {
               if (txt == 'OK') {
-                alert('Ok');
+                window.location.replace('/dashboard');
 
               }
               else {

@@ -2,13 +2,14 @@ import { UserSchema } from '../db/user.js';
 import { mongoose } from 'mongoose';
 
 export class UserApiController {
-
+    static UserDetails = mongoose.model('userschemas', UserSchema);
+    
     /**
      * Managing users stored in the database.
      * @constructor
      */
     constructor() {
-
+        
     }
 
     /**
@@ -18,12 +19,11 @@ export class UserApiController {
      * @return {UserSchema} The user object from database if found, otherwise null.
      */
     static get_user(username) {
-    return new Promise(resolve => {
-        var UserDetails = mongoose.model('userschemas', UserSchema);
-        UserDetails.findOne({ username: username, active: true }).then(function(user) {
-        resolve(user);
+        return new Promise(resolve => {
+            this.UserDetails.findOne({ username: username, active: true }).then(function(user) {
+                resolve(user);
+            });
         });
-    });
     }
 
     /**
@@ -32,22 +32,22 @@ export class UserApiController {
      * @return {string[]} Array of usernames present in database.
      */
     static get_users() {
-    return new Promise(resolve => {
-        UserSchema.find({ role: 1 }).then(function(users) {
-        var users_return = [];
+        return new Promise(resolve => {
+            this.UserDetails.find({ role: 1 }).then(function(users) {
+                var users_return = [];
 
-        for (var u in users) {
-            users_return.push({
-            username: users[u].username,
-            active: users[u].active
+                for (var u in users) {
+                    users_return.push({
+                    username: users[u].username,
+                        active: users[u].active
+                    });
+                }
+
+                users_return.sort((a, b) => (a.username > b.username) ? 1 : -1);
+
+                resolve(users_return);
             });
-        }
-
-        users_return.sort((a, b) => (a.username > b.username) ? 1 : -1);
-
-        resolve(users_return);
         });
-    });
     }
 
     /**
@@ -58,28 +58,26 @@ export class UserApiController {
      * @return {boolean} true if logged in correctly, false if not.
      */
     static login(user, pass) {
-    return new Promise(resolve => {
-        var UserDetails = mongoose.model('userschemas', UserSchema);
-        UserDetails.findOne({ username: user, active: true }).then(function(schema) {
-        if (schema != null) {
+        return new Promise(resolve => {
+            this.UserDetails.findOne({ username: user, active: true }).then(function(schema) {
+                if (schema != null) {
 
-            schema.verifyPassword(pass)
-            .then(function(valid) {
-                resolve(valid);
-            })
-            .catch(function(err) {
-                console.log(err);
-                resolve(false);
+                    schema.verifyPassword(pass)
+                    .then(function(valid) {
+                        resolve(valid);
+                    })
+                    .catch(function(err) {
+                        console.log(err);
+                        resolve(false);
+                    });
+
+                }
+                else {
+                    resolve(false);
+                }
             });
 
-        }
-        else {
-            resolve(false);
-        }
         });
-
-    });
-
     }
 
     /**
@@ -91,17 +89,17 @@ export class UserApiController {
      * @return {boolean} true if logged in correctly, false if not.
      */
     static create_account(user, pass, role) {
-    return new Promise(resolve => {
-        var schema = new UserSchema();
-        schema.username = user;
-        schema.password = pass;
-        schema.role = role;
-        schema.save().then(function(e) {
-        resolve(e);
-        }).catch(function(error) {
-        resolve(error);
+        return new Promise(resolve => {
+            var schema = new UserSchema();
+            schema.username = user;
+            schema.password = pass;
+            schema.role = role;
+            schema.save().then(function(e) {
+                resolve(e);
+            }).catch(function(error) {
+                resolve(error);
+            });
         });
-    });
     }
 
     /**
@@ -112,29 +110,29 @@ export class UserApiController {
      * @param {string} newpass - New password
      */    
     static update_password(user, oldpass, newpass) {
-    return new Promise(resolve => {
-        UserSchema.findOne({ username: user, active: true }).then(function(schema) {
-        if (schema != null) {
+        return new Promise(resolve => {
+            this.UserDetails.findOne({ username: user, active: true }).then(function(schema) {
+                if (schema != null) {
 
-            schema.verifyPassword(oldpass)
-            .then(function(valid) {
-            if (valid) {
-                schema.password = newpass;
-                schema.save().then(function() {
-                resolve(true);
-                });                
-            }
-            else {
-                resolve(false);
-            }
-            })
-            .catch(function(err) {
-            console.log(err);
-            resolve(false);
-            });
-        }
-        });        
-    })
+                    schema.verifyPassword(oldpass)
+                    .then(function(valid) {
+                        if (valid) {
+                            schema.password = newpass;
+                            schema.save().then(function() {
+                                resolve(true);
+                            });                
+                        }
+                        else {
+                            resolve(false);
+                        }
+                    })
+                    .catch(function(err) {
+                        console.log(err);
+                        resolve(false);
+                    });
+                }
+            });        
+        })
     }
 
     /**
@@ -145,15 +143,15 @@ export class UserApiController {
      * @param {boolean} active - true if needs to be set to active, false for inactive
      */    
     static set_user_active(username, active) {
-    return new Promise(resolve => {
-        UserSchema.findOne({ username: username }).then(function(schema) {
-        if (schema != null) {
-            schema.active = active;
-            schema.save().then(function() {
-            resolve(active);
-            });            
-        }
-        });        
-    })
+        return new Promise(resolve => {
+            this.UserDetails.findOne({ username: username }).then(function(schema) {
+                if (schema != null) {
+                    schema.active = active;
+                    schema.save().then(function() {
+                        resolve(active);
+                    });            
+                }
+            });        
+        })
     }
 }  
