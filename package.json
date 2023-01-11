@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "node server.js & vite dev",
 		"dev-noserver": "vite dev",
-		"electron": "vite build & electron .",
+		"electron": "vite build && electron .",
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

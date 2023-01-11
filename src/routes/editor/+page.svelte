@@ -158,9 +158,18 @@
 
 
 <script lang="ts">
+    import { onMount } from "svelte";
+
     let jsonfileinput: HTMLElement;
     let simulator: HTMLIFrameElement;
     let project: JSON;
+
+    onMount(() => {
+        // Hack to fix the simulator in Electron (specifically on OS X)
+        if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
+            simulator.src = 'index.html';
+        }
+    });
     
     function btn_load_click() {
         jsonfileinput.click();

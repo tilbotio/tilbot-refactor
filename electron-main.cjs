@@ -5,6 +5,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     show: false, 
     title: "Tilbot",
+    nodeIntegration: true,
   });
   win.maximize();
 
@@ -12,18 +13,19 @@ const createWindow = () => {
 
     // Some paths need to be fixed
 
-    let url = request.url.substr(5);
+    let url = request.url;//.substr(5);
 
     if (url.indexOf('build') == -1) {
         if (url.indexOf('_app') != -1) {
-            callback({path: 'build/' + url.substring(url.indexOf('_app'))});
+            callback({url: 'build/' + url.substring(url.indexOf('_app'))});
         }
         else {
-            callback({path: 'build/index.html'});
+            // This should not be triggered anymore with a fix in place in the editor code
+            callback({url: 'build/index.html'});
         }        
     }
     else {
-        callback({path: 'build' + url.split('build')[1]});
+        callback({url: path.normalize(__dirname)});
     }    
 });  
 
