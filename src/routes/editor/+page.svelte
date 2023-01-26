@@ -3,6 +3,27 @@
         <img src="images/tilbot_logo.png" class="w-48" />
     <!--</a>-->
 
+<!-- Put this part before </body> tag -->
+<input type="checkbox" id="my-modal-3" class="modal-toggle" />
+<div class="modal">
+  <div class="modal-box relative">
+    <label for="my-modal-3" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
+    <h3 class="text-lg font-bold">
+        <svg style="display: inline; vertical-align: sub" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>                          
+
+        Introduction 1
+    </h3>
+    <p class="py-4">Text for the bot to say:</p>
+    <textarea class="textarea text-base textarea-bordered resize-none inset-y-2 w-full" placeholder="">Barty is like the Federer of women's tennis</textarea>
+
+    <br />
+    <div class="divider"></div> 
+    <p><button class="btn btn-active">Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline">Cancel</button></p>
+  </div>
+</div>    
+
 
     <div id="menu" class="float-left">
         <ul class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2">
@@ -15,11 +36,11 @@
             <ul class="bg-slate-100">
                 <div class="tooltip tooltip-right" data-tip="Automatically proceed">
                 <li>
-                    <a>
+                    <label for="my-modal-3">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>                          
-                    </a>
+                    </label>
                 </li>
                 </div>
                 <!--<div class="tooltip tooltip-right" data-tip="List">
