@@ -11,17 +11,17 @@ contextBridge.exposeInMainWorld(
     "api", {
         send: (channel, data) => {
             // whitelist channels
-            let validChannels = ["open-server"];
+            let validChannels = ["open-server", "close-server"];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);
             }
         },
-        /*receive: (channel, func) => {
-            let validChannels = ["fromMain"];
+        receive: (channel, func) => {
+            let validChannels = ["server-ip"];
             if (validChannels.includes(channel)) {
                 // Deliberately strip event as it includes `sender` 
                 ipcRenderer.on(channel, (event, ...args) => func(...args));
             }
-        }*/
+        }
     }
 );

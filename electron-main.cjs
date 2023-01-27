@@ -2,6 +2,7 @@ const { app, protocol, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
 const fs = require('fs');
+const publicIp = require('public-ip');
 
 let ps = undefined;
 
@@ -22,6 +23,29 @@ const createWindow = () => {
       ps.kill('SIGTERM');
     }
   });
+
+  // Get external and internal ip-address
+  (async () => {
+    var address, ifaces = require('os').networkInterfaces();
+    for (var dev in ifaces) {
+      ifaces[dev].filter((details) => details.family === 'IPv4' && details.internal === false ? address = details.address: undefined);
+    }
+
+    let ipv4 = await publicIp.v4();
+
+    ipcMain.on('open-server', (event, project_json) => {
+      fs.writeFileSync(`${__dirname}/electron-project.json`, project_json);
+      ps = fork(`${__dirname}/electron-server.cjs`);
+
+      win.webContents.send('server-ip', {public_ip: ipv4, local_ip: address});
+    });
+
+    ipcMain.on('close-server', (event) => {
+      if (ps !== undefined) {
+        ps.kill('SIGTERM');
+      }        
+    });
+  })();  
 
   protocol.interceptFileProtocol('file', (request, callback) => {        
 
@@ -53,12 +77,6 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow();
-
-  ipcMain.on('open-server', (event, project_json) => {
-    fs.writeFileSync(`${__dirname}/electron-project.json`, project_json);
-    ps = fork(`${__dirname}/electron-server.cjs`);
-  });
-
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
