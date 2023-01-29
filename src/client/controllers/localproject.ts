@@ -16,31 +16,31 @@ class LocalProjectController extends BasicProjectController {
     }
 
     send_message(block: any) {
-    let params: any = {};
+        let params: any = {};
 
-    if (block.type == 'MC') {
-        params.options = [];
-        for (var c in block.connectors) {
-            params.options.push(block.connectors[c].label);
+        if (block.type == 'MC') {
+            params.options = [];
+            for (var c in block.connectors) {
+                params.options.push(block.connectors[c].label);
+            }
+
+            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
         }
+        else if (block.type == 'List') {
+            params.options = block.items;
+            params.text_input = block.text_input;
+            params.number_input = block.number_input;
 
-        this.chatbot_message_callback({type: block.type, content: block.content, params: params});
-    }
-    else if (block.type == 'List') {
-        params.options = block.items;
-        params.text_input = block.text_input;
-        params.number_input = block.number_input;
-
-        this.chatbot_message_callback({type: block.type, content: block.content, params: params});
-    }
-    else if (block.type == 'Group') {
-        this.move_to_group({id: this.current_block_id, model: block});
-        this.current_block_id = block.starting_block_id;
-        this.send_message(block.blocks[block.starting_block_id]);
-    }
-    else {
-        this.chatbot_message_callback({type: block.type, content: block.content, params: params});
-    }
+            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
+        }
+        else if (block.type == 'Group') {
+            this.move_to_group({id: this.current_block_id, model: block});
+            this.current_block_id = block.starting_block_id;
+            this.send_message(block.blocks[block.starting_block_id]);
+        }
+        else {
+            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
+        }
     }
 
     check_group_exit(id: number) {

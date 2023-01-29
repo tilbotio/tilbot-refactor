@@ -7,27 +7,72 @@
     <span class="text-lg font-medium ml-4">Tilbot</span>
 </div>
 
-<div class="top-20 w-full bottom-20 fixed overflow-y-scroll py-2" bind:this={messages}>
-
+<div class="top-20 w-full bottom-20 fixed overflow-y-scroll py-2" bind:this={message_container}>
+  {#each messages as message}
+  {#if message.from == 'bot'}
+  <div class="chat chat-start">
+    <div class="chat-bubble">
+      {@html message.content}
+    </div>
+  </div>
+  {:else}
+  <div class="chat chat-end">
+    <div class="chat-bubble chat-bubble-secondary">
+      {@html message.content}
+    </div>
+  </div>
+  {/if}
+  {/each}
+  {#if show_typing_indicator}
+  <div class="chat chat-start">
+    <div class="chat-bubble">
+      ...
+    </div>
+  </div>
+  {/if}
 </div>
 
+{#if current_message_type == 'MC'}
+<div class="bg-gray-100 w-full drop-shadow-md absolute bottom-0">
+  <div class="p-3 mr-16 text-center">
+  {#each mc_options as mc_option}
+    {#if mc_option.selected}
+    <button class="btn m-1" on:click={mc_submit}>{mc_option.content}</button>
+    {:else}
+    <button class="btn btn-outline m-1" on:click={mc_select}>{mc_option.content}</button>
+    {/if}
+  {/each}
+  </div>
+  <button class="btn btn-circle absolute bottom-4 right-4" on:click={mc_submit}>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+      </svg>          
+  </button>
+</div>
 
+{:else}
 <div class="bg-gray-100 w-full h-20 drop-shadow-md absolute bottom-0">
-    <textarea class="textarea textarea-bordered resize-none inset-y-2 left-4 right-20 absolute" placeholder="" bind:this={input_text}></textarea>
-    <button class="btn btn-circle absolute bottom-4 right-4" on:click={user_message}>
+    <textarea class="textarea textarea-bordered resize-none inset-y-2 left-4 right-20 absolute" placeholder="" bind:this={input_text} on:keydown={input_key_down}></textarea>
+    <button class="btn btn-circle absolute bottom-4 right-4" on:click={text_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
         </svg>          
     </button>
 </div>
+{/if}
 
 <script lang="ts">
 import { onMount } from "svelte";
 import { LocalProjectController} from "../client/controllers/localproject";
 
-let messages: HTMLElement;
+let message_container: HTMLElement;
 let input_text: HTMLTextAreaElement;
 let controller: LocalProjectController;
+
+let messages: Array<any> = [];
+let current_message_type: string = 'Auto';
+let mc_options: Array<any> = [];
+let show_typing_indicator: boolean = false;
 
 onMount(() => {
     if (document.referrer == '') {
@@ -38,7 +83,7 @@ onMount(() => {
 });
 
 function project_received(event: MessageEvent) {
-    messages.innerHTML = '';
+    //messages.innerHTML = '';
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)
     // Set a fake timeout to get the highest timeout id
@@ -52,38 +97,79 @@ function project_received(event: MessageEvent) {
 
 function chatbot_message(msg: any) {
       // Send the message
-      //this.typingIndicator.show();
+      show_typing_indicator = true;
 
-      // @TODO: make typing indicator optional
       setTimeout(function() {
-        //self.typingIndicator.hide();
+        show_typing_indicator = false;
         show_message(msg.type, msg.content, msg.params);
         controller.message_sent_event();
-      }, msg.content.length / 15 * 1000);    
+      }, msg.content.length / 15 * 500);    
 }
 
-function user_message() {
-    // @TODO: empty input field
-    let chat = document.createElement('div');
-    chat.setAttribute('class', 'chat chat-end');
-    let chat_bubble = document.createElement('div');
-    chat_bubble.setAttribute('class', 'chat-bubble chat-bubble-secondary');
-    chat_bubble.textContent = input_text.value;
-    chat.appendChild(chat_bubble);
-    messages.appendChild(chat);
-    setTimeout(function() { messages.scrollTop = messages.scrollHeight; }, 10);
+function input_key_down(event: KeyboardEvent) {
+  if (event.key == "Enter" && !event.shiftKey) {
+    text_submit();
+    event.preventDefault();
+  }
+}
+
+function text_submit() {
+  user_message(input_text.value.replace(/(?:\r\n|\r|\n)/g, '<br>'));
+  input_text.value = '';
+}
+
+function mc_select(event: MouseEvent) {
+  if (event.target !== null) {
+    let tar = event.target as HTMLElement;
+    mc_options.forEach(function(value) {
+      if (value.content == tar.innerHTML) {
+        value.selected = true;
+      }
+      else {
+        value.selected = false;
+      }
+    });
+
+    mc_options = mc_options;
+  }
+}
+
+function mc_submit() {
+  mc_options.forEach(function(value) {
+    if (value.selected) {
+      user_message(value.content);
+      current_message_type = 'Text';
+      return;
+    }
+  });
+}
+
+function user_message(content: string) {
+    if (content == '') {
+      return;
+    }
+
+    messages.push({from: 'user', content: content});
+    messages = messages;
+
+    setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
+
+    controller.receive_message(content);
 }
 
 function show_message(type: string, content: string, params: any) {
-    let chat = document.createElement('div');
-    chat.setAttribute('class', 'chat chat-start');
-    let chat_bubble = document.createElement('div');
-    chat_bubble.setAttribute('class', 'chat-bubble');
-    chat_bubble.textContent = content;
-    chat.appendChild(chat_bubble);
-    messages.appendChild(chat);
-    setTimeout(function() { messages.scrollTop = messages.scrollHeight; }, 10);    
+    messages.push({from: 'bot', content: content});
+    messages = messages;
+    setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);    
 
+    current_message_type = type;
+    mc_options = [];
+    if (type == 'MC') {
+      params.options.forEach(function(value: string) {
+        mc_options.push({content: value, selected: false});
+      });
+      mc_options = mc_options;
+    }
       //this.current_type = type;
       //this.current_params = params;
 
