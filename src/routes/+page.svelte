@@ -61,6 +61,10 @@
 </div>
 {/if}
 
+{#if !iframe}
+<script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
+{/if}
+
 <script lang="ts">
 import { onMount } from "svelte";
 import { LocalProjectController} from "../client/controllers/localproject";
@@ -73,14 +77,24 @@ let messages: Array<any> = [];
 let current_message_type: string = 'Auto';
 let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
+let iframe = true;
 
 onMount(() => {
+    if (window.self === window.top) {
+      iframe = false;
+      //let socket = io();
+    }
+
     if (document.referrer == '') {
         // @TODO load a temp local file here to display to users connecting
     }    
 
     window.addEventListener('message', project_received, false);
 });
+
+function socket_script_loaded(event: Event) {
+  let socket = io();
+}
 
 function project_received(event: MessageEvent) {
     //messages.innerHTML = '';

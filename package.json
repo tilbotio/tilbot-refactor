@@ -36,6 +36,7 @@
 		"express-session": "^1.17.3",
 		"mongoose": "^6.6.7",
 		"mongoose-bcrypt": "^1.10.0",
-		"public-ip": "4.0.4"
+		"public-ip": "4.0.4",
+		"socket.io": "^4.5.4"
 	}
 }

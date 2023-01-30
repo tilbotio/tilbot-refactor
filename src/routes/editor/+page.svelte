@@ -1,6 +1,6 @@
 <div id="editor">
     <!--<a href="/dashboard">-->
-        <img src="images/tilbot_logo.png" class="w-48" />
+        <img src="images/tilbot_logo.png" class="ml-1 w-48" />
     <!--</a>-->
 
 <!-- Put this part before </body> tag -->
