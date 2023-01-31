@@ -35,7 +35,7 @@ const createWindow = () => {
 
     ipcMain.on('open-server', (event, project_json) => {
       fs.writeFileSync(`${__dirname}/electron-project.json`, project_json);
-      ps = fork(`${__dirname}/electron-server.cjs`);
+      ps = fork(`${__dirname}/electron/electron-server.cjs`);
 
       win.webContents.send('server-ip', {public_ip: ipv4, local_ip: address});
     });

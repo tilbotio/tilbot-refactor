@@ -94,6 +94,10 @@ onMount(() => {
 
 function socket_script_loaded(event: Event) {
   let socket = io();
+  import("../client/controllers/remoteproject").then(function(m: any) {
+    controller = new m.RemoteProjectController(socket, chatbot_message)  
+  });
+  
 }
 
 function project_received(event: MessageEvent) {
