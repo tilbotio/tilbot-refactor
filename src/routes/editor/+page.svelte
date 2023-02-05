@@ -47,6 +47,14 @@
     </div>    
 
 
+    <div id="editor_main">
+        {#if project.blocks !== undefined}
+            {#each Object.entries(project.blocks) as [id, block]}
+                <svelte:component this={block_components[block.type]} objAttributes={block} />
+            {/each}
+        {/if}
+    </div>
+
     <div id="menu" class="float-left">
         <ul class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2">
             <li>
@@ -204,6 +212,13 @@
 
 <script lang="ts">
     import { onMount } from "svelte";
+    import AutoBlock from './blocks/auto.svelte';
+    import MCBlock from './blocks/mc.svelte';
+
+    let block_components: {[key: string]: any} = {
+        'Auto': AutoBlock,
+        'MC': MCBlock
+    };
 
     let jsonfileinput: HTMLElement;
     let simulator: HTMLIFrameElement;
