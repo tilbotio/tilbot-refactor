@@ -50,15 +50,7 @@
     </div>    
 
 
-    <div id="editor_main">
-        {#if project.blocks !== undefined}
-            {#each Object.entries(project.blocks) as [id, block]}
-                <svelte:component this={block_components[block.type]} objAttributes={block} />
-            {/each}
-        {/if}
-    </div>
-
-    <div id="menu" class="float-left">
+    <div id="menu" class="fixed float-left z-10">
         <ul class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2">
             <li>
             <a>
@@ -95,7 +87,7 @@
                     </a>
                 </li>
                 </div>
-                <div class="tooltip tooltip-right" data-tip="Python">
+                <!--<div class="tooltip tooltip-right" data-tip="Python">
                 <li>
                     <a>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -103,13 +95,13 @@
                           </svg>
                     </a>
                 </li>
-                </div>                  
+                </div>-->                  
                 <div class="tooltip tooltip-right" data-tip="Text">
                 <li>
-                    <a>
+                    <a on:click={() => new_block('Text')}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
-                          </svg>
+                        </svg>
                     </a>
                 </li>
                 </div>                
@@ -120,7 +112,7 @@
                 <a>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
-                      </svg>
+                    </svg>
                 </a>
                 </li>
             </div>
@@ -177,35 +169,51 @@
             </div>                                
         </ul>
     </div>
-</div>
 
-<div id="simulator_menu" class="absolute w-1/4 max-w-sm right-1.5 top-2 text-center">
-    <button class="btn gap-2" on:click={run_all}>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-        </svg>         
-        Run all
-      </button>
-
-      <button class="btn gap-2 btn-disabled">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
-        </svg>          
-        From selected
-      </button>
-</div>
-
-<div id="simulator" class="mockup-phone w-1/4 max-w-sm top-16 inset-y-1.5 right-1.5 absolute">
-    <div class="camera"></div>
-    <div class="display h-full w-full">
-        <div class="artboard artboard-demo h-full">
-            <iframe src="/" class="w-full h-full" bind:this={simulator}>
-
-            </iframe>
+    <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
+        <div id="editor_main" class="grow overflow-auto">
+            <div class="relative">
+                {#if project.blocks !== undefined}
+                    {#each Object.entries(project.blocks) as [id, block]}
+                        <Draggable objAttributes={block}>
+                            <svelte:component this={block_components[block.type]} objAttributes={block} />
+                        </Draggable>
+                    {/each}
+                {/if}
+            </div>
         </div>
-        
-    </div>
+    
+        <div class="flex flex-col w-1/4 max-w-sm pr-1.5 pl-1.5 bottom-0">
+            <div id="simulator_menu" class="w-full mr-1.5 mt-2 text-center">
+                <button class="btn gap-2" on:click={run_all}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                    </svg>         
+                    Run all
+                </button>
+    
+                <button class="btn gap-2 btn-disabled">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+                    </svg>          
+                    From selected
+                </button>
+            </div>
+    
+            <div id="simulator" class="mockup-phone w-full my-1.5 h-full">
+                <div class="camera"></div>
+                <div class="display h-full w-full">
+                    <div class="artboard artboard-demo h-full">
+                        <iframe src="/" class="w-full h-full" bind:this={simulator}>
+    
+                        </iframe>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>    
 </div>
 
 
@@ -215,19 +223,24 @@
 
 <script lang="ts">
     import { onMount } from "svelte";
+    import Draggable from './draggable.svelte';
     import AutoBlock from './blocks/auto.svelte';
     import MCBlock from './blocks/mc.svelte';
+    import TextBlock from './blocks/text.svelte';
     import AutoBlockPopup from './block_popups/auto.svelte';
     import MCBlockPopup from './block_popups/mc.svelte';
+    import TextBlockPopup from './block_popups/text.svelte';
 
     let block_components: {[key: string]: any} = {
         'Auto': AutoBlock,
-        'MC': MCBlock
+        'MC': MCBlock,
+        'Text': TextBlock
     };
 
     let block_popup_components: {[key: string]: any} = {
         'Auto': AutoBlockPopup,
-        'MC': MCBlockPopup
+        'MC': MCBlockPopup,
+        'Text': TextBlockPopup
     }
 
     let jsonfileinput: HTMLElement;
@@ -265,7 +278,11 @@
     function new_block(type: string) {
         // @TODO: take into account current level / groupblock
         project.blocks[project.current_block_id] = {
-            type: type
+            type: type,
+            name: 'Block ' + project.current_block_id,
+            content: '',
+            x: 500,
+            y: 500
         }
         project.current_block_id += 1;
     }
