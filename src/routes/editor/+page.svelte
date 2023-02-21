@@ -176,7 +176,7 @@
                 {#if project.blocks !== undefined}
                     {#each Object.entries(project.blocks) as [id, block]}
                         <Draggable objAttributes={block}>
-                            <svelte:component this={block_components[block.type]} objAttributes={block} />
+                            <svelte:component this={block_components[block.type]} blockId={id} objAttributes={block} />
                         </Draggable>
                     {/each}
                 {/if}
@@ -266,12 +266,12 @@
         if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
             is_electron = true;
             simulator.src = 'index.html';
-        }
 
-        window.api.receive('server-ip', (data: any) => {
-            public_ip = data.public_ip;
-            local_ip = data.local_ip;
-        });
+            window.api.receive('server-ip', (data: any) => {
+                public_ip = data.public_ip;
+                local_ip = data.local_ip;
+            });
+        }
 
     });
 
@@ -325,6 +325,7 @@
 
     function load_project(json:JSON) {
         project = json;
+        project.blocks = project.blocks;
     }
 
     function run_all() {

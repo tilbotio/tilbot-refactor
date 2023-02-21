@@ -1,4 +1,4 @@
-<div class="card w-64 bg-slate-100 shadow-lg indicator">
+<div class="card w-64 bg-slate-100 shadow-lg indicator" id="block_{blockId}">
     <span class="indicator-item indicator-middle indicator-start badge slate-800 z-0"></span>
     <div class="card-body p-4">
         <div class="flex">
@@ -12,10 +12,18 @@
             </div>     
         </div>  
         <div class="text-sm h-16 line-clamp-3">{@html objAttributes.content}</div>
-        <div class="divider m-0"></div>
+        {#each Object.entries(objAttributes.connectors) as [id, connector]}
+            <div class="divider m-0"></div>
+            Yo
+            {#each Object.entries(connector.targets) as [idt, target]}
+                target {target} {blockId}
+            {/each}
+        {/each}
+        
     </div>
 </div>
 
 <script type="ts">
     export let objAttributes = {};
+    export let blockId = {};
 </script>
