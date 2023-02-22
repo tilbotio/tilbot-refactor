@@ -126,14 +126,18 @@ function chatbot_message(msg: any) {
 
 function input_key_down(event: KeyboardEvent) {
   if (event.key == "Enter" && !event.shiftKey) {
-    text_submit();
-    event.preventDefault();
+    try {
+      text_submit();
+    }
+    finally {
+      event.preventDefault();
+      input_text.value = '';
+    }
   }
 }
 
 function text_submit() {
-  user_message(input_text.value.replace(/(?:\r\n|\r|\n)/g, '<br>'));
-  input_text.value = '';
+    user_message(input_text.value.replace(/(?:\r\n|\r|\n)/g, '<br>'));
 }
 
 function mc_select(event: MouseEvent) {
