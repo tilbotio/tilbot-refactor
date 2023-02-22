@@ -1,5 +1,5 @@
 <div class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selectedId == blockId ? 'scale-110' : ''}" id="block_{blockId}" on:click={click_event}>
-    <span class="indicator-item indicator-middle indicator-start badge slate-800 z-0"></span>
+    <span class="indicator-item indicator-middle indicator-start badge z-0" id="block_{blockId}_in"></span>
 
     {#if selectedId == blockId}
     <button class="btn btn-sm btn-circle btn-outline absolute -right-4 -top-4">
@@ -31,12 +31,13 @@
             {@html objAttributes.content}
         </div>
         {#if objAttributes.connectors !== undefined}
-        {#each Object.entries(objAttributes.connectors) as [id, connector]}
-            <div class="divider m-0"></div>
-            {#each Object.entries(connector.targets) as [idt, target]}
-                target {target} {blockId}
+            {#each Object.entries(objAttributes.connectors) as [id, connector]}
+                <div class="divider m-0"></div>
+                <div class="relative text-sm font-medium">
+                    &nbsp;
+                    <span id="block_{blockId}_c_{id}" class="indicator-item indicator-middle indicator-end badge z-0"></span>
+                </div>
             {/each}
-        {/each}
         {/if}
         
     </div>

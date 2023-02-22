@@ -11,13 +11,13 @@
   {#each messages as message}
   {#if message.from == 'bot'}
   <div class="chat chat-start">
-    <div class="chat-bubble">
+    <div class="chat-bubble bg-tilbot-secondary-purple">
       {@html message.content}
     </div>
   </div>
   {:else}
   <div class="chat chat-end">
-    <div class="chat-bubble chat-bubble-secondary">
+    <div class="chat-bubble chat-bubble-secondary bg-tilbot-secondary-hardpink">
       {@html message.content}
     </div>
   </div>
@@ -25,7 +25,7 @@
   {/each}
   {#if show_typing_indicator}
   <div class="chat chat-start">
-    <div class="chat-bubble">
+    <div class="chat-bubble bg-tilbot-secondary-purple">
       ...
     </div>
   </div>

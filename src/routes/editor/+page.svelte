@@ -1,6 +1,6 @@
 <div id="editor">
     <!--<a href="/dashboard">-->
-        <img src="images/tilbot_logo.png" class="ml-1 w-48" />
+        <img src="images/tilbot_logo.svg" class="ml-1 mt-2 w-48" />
     <!--</a>-->
 
 <!-- Put this part before </body> tag -->
@@ -16,7 +16,7 @@
         Introduction 1
     </h3>
     <p class="py-4">Text for the bot to say:</p>
-    <textarea class="textarea text-base textarea-bordered resize-none inset-y-2 w-full" placeholder="">Barty is like the Federer of women's tennis</textarea>
+    <textarea class="textarea text-base textarea-bordered resize-none inset-y-2 w-full" placeholder=""></textarea>
 
     <br />
     <!-- TODO: show the right block_popup module just like incorporating the blocks below -->
@@ -172,10 +172,23 @@
 
     <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
         <div id="editor_main" class="grow overflow-auto" on:click={editor_clicked}>
-            <div class="relative">
+            <div class="relative" style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}">
+                <svg style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}" class="absolute pointer-events-none stroke-cyan-500">
+                    {#if Object.entries(line_locations).length > 0}
+                        {#each Object.entries(project.blocks) as [id, block]}
+                            {#each Object.entries(block.connectors) as [cid, connector]}
+                                {#each connector.targets as target}
+                                    <line x1="{line_locations[id].connectors[cid].x}" y1="{line_locations[id].connectors[cid].y}" x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y2="{line_locations[id].connectors[cid].y}" stroke="black" stroke-width="2" />
+                                    <line x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y1="{line_locations[id].connectors[cid].y}" x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y2="{line_locations[target].y}" stroke="black" stroke-width="2" />
+                                    <line x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y1="{line_locations[target].y}" x2="{line_locations[target].x}" y2="{line_locations[target].y}" stroke="black" stroke-width="2" />
+                                {/each}
+                            {/each}
+                        {/each}
+                    {/if}
+                </svg>
                 {#if project.blocks !== undefined}
                     {#each Object.entries(project.blocks) as [id, block]}
-                        <Draggable objAttributes={block}>
+                        <Draggable objAttributes={block} on:message={handleDraggableMessage} id={id}>
                             <svelte:component this={block_components[block.type]} blockId={id} selectedId={selected_id} objAttributes={block} on:message={handleBlockMessage} />
                         </Draggable>
                     {/each}
@@ -183,7 +196,7 @@
             </div>
         </div>
     
-        <div class="flex flex-col w-1/4 max-w-sm pr-1.5 pl-1.5 bottom-0">
+        <div class="flex flex-col w-full max-w-sm pr-1.5 pl-1.5 bottom-0">
             <div id="simulator_menu" class="w-full mr-1.5 mt-2 text-center">
                 <button class="btn gap-2" on:click={run_all}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -251,13 +264,18 @@
         'blocks': {},
         'starting_block_id': 1,
         'canvas_width': 2240,
-        'canvas_heigh': 1480,
+        'canvas_height': 1480,
         'bot_name': 'Tilbot',
         'avatar_image': '/client/img/default_profile.svg'
     };
     let modal_launch: HTMLInputElement;
 
     let selected_id = 0;
+
+    // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
+    let line_locations = {};
+
+    let num_draggable_loaded = 0;
 
     let is_electron: boolean = false;
     let local_ip = '';
@@ -274,7 +292,6 @@
                 local_ip = data.local_ip;
             });
         }
-
     });
 
     function new_block(type: string) {
@@ -286,7 +303,11 @@
             x: 500,
             y: 500
         }
-        project.current_block_id += 1;
+        
+        setTimeout(function() {
+            selected_id = project.current_block_id;
+            project.current_block_id += 1;
+        }, 50);
     }
     
     function btn_load_click() {
@@ -325,6 +346,53 @@
       }
     }
 
+    function handleDraggableMessage(e: Event) {
+        if (e.detail.event == 'draggable_loaded') {
+            num_draggable_loaded += 1;
+            if (num_draggable_loaded == Object.keys(project.blocks).length) {
+                // Build the look-up table for connecting lines.
+                for (const [key, value] of Object.entries(project.blocks)) {
+                    
+                    let in_obj = document.getElementById('block_' + key + '_in').getBoundingClientRect();
+
+                    line_locations[key] = {
+                        x: in_obj.left + in_obj.width / 2,
+                        y: in_obj.top + in_obj.height / 2
+                    };
+                    
+                    line_locations[key].connectors = {};
+
+                    for (const cid in value.connectors) {
+                        var con_obj = document.getElementById('block_' + key + '_c_' + cid).getBoundingClientRect();
+                        line_locations[key].connectors[cid] = {
+                            x: con_obj.left + con_obj.width / 2,
+                            y: con_obj.top + con_obj.height / 2
+                        }
+                    }
+
+                    console.log(line_locations);
+                }
+            }
+        }
+
+        else if (e.detail.event == 'dragging') {
+            console.log('dragging...');
+            // Update look-up table
+            let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
+
+            line_locations[e.detail.id].x = in_obj.left + in_obj.width / 2;
+            line_locations[e.detail.id].y = in_obj.top + in_obj.height / 2;
+
+            for (const cid in line_locations[e.detail.id].connectors) {
+                let con_obj = document.getElementById('block_' + e.detail.id + '_c_' + cid).getBoundingClientRect();
+                line_locations[e.detail.id].connectors[cid].x = con_obj.left + con_obj.width / 2;
+                line_locations[e.detail.id].connectors[cid].y = con_obj.top + con_obj.height / 2;
+            }
+        }
+
+        // @TODO: also update if a change in the connectors occurs (e.g., connectors added or removed)
+    }
+
     function handleBlockMessage(e: Event) {
         if (e.detail.event == 'block_selected') {
             selected_id = e.detail.block_id;
@@ -338,6 +406,7 @@
     }
 
     function load_project(json:JSON) {
+        num_draggable_loaded = 0;
         project = json;
         project.blocks = project.blocks;
     }

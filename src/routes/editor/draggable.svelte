@@ -3,15 +3,22 @@
 </div>
 
 <script type="ts">
-    import { onMount } from "svelte";
+    import { onMount, createEventDispatcher } from "svelte";
 
     let draggable: HTMLDivElement;
     let is_dragging: boolean = false;
     export let objAttributes = {};
+    export let id = 0;
+
+    const dispatch = createEventDispatcher();
 
     onMount(() => {
         draggable.style.left = objAttributes.x + 'px';
         draggable.style.top = objAttributes.y + 'px';
+
+        dispatch('message', {
+            event: 'draggable_loaded'
+        });
     });
 
     function mouse_down(e: MouseEvent) {
@@ -35,6 +42,10 @@
         if (is_dragging) {
             draggable.style.left = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20 + 'px';
             draggable.style.top = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20 + 'px';
+            dispatch('message', {
+                event: 'dragging',
+                id: id
+            })
         }
     }
 </script>
