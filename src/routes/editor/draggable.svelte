@@ -14,22 +14,27 @@
         draggable.style.top = objAttributes.y + 'px';
     });
 
-    function mouse_down() {
-        is_dragging = true;
+    function mouse_down(e: MouseEvent) {
+        if (e.button == 0) {
+            is_dragging = true;
+        }
+        
     }
 
     function mouse_up(e: MouseEvent) {
-        is_dragging = false;
+        if (e.button == 0) {
+            is_dragging = false;
         
-        objAttributes.x = e.x - (draggable.offsetWidth / 2);
-        objAttributes.y = e.y - (draggable.offsetHeight / 2);
+            objAttributes.x = e.x - (draggable.offsetWidth / 2);
+            objAttributes.y = e.y - (draggable.offsetHeight / 2);
+        }
     }
 
     function mouse_move(e: MouseEvent) {
         console.log(document.getElementById('editor_main').scrollLeft);
         if (is_dragging) {
-            draggable.style.left = (e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) + 'px';
-            draggable.style.top = (e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) + 'px';
+            draggable.style.left = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20 + 'px';
+            draggable.style.top = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20 + 'px';
         }
     }
 </script>

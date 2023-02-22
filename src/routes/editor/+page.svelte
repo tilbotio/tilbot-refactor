@@ -171,12 +171,12 @@
     </div>
 
     <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
-        <div id="editor_main" class="grow overflow-auto">
+        <div id="editor_main" class="grow overflow-auto" on:click={editor_clicked}>
             <div class="relative">
                 {#if project.blocks !== undefined}
                     {#each Object.entries(project.blocks) as [id, block]}
                         <Draggable objAttributes={block}>
-                            <svelte:component this={block_components[block.type]} blockId={id} objAttributes={block} />
+                            <svelte:component this={block_components[block.type]} blockId={id} selectedId={selected_id} objAttributes={block} on:message={handleBlockMessage} />
                         </Draggable>
                     {/each}
                 {/if}
@@ -256,8 +256,10 @@
         'avatar_image': '/client/img/default_profile.svg'
     };
     let modal_launch: HTMLInputElement;
-    let is_electron: boolean = false;
 
+    let selected_id = 0;
+
+    let is_electron: boolean = false;
     let local_ip = '';
     let public_ip = '';
 
@@ -321,6 +323,18 @@
                 reader.readAsText(tar.files[0]);
         }
       }
+    }
+
+    function handleBlockMessage(e: Event) {
+        if (e.detail.event == 'block_selected') {
+            selected_id = e.detail.block_id;
+        }        
+    }
+
+    function editor_clicked(e: MouseEvent) {
+        if (e.button == 0) {
+            selected_id = 0;
+        }
     }
 
     function load_project(json:JSON) {
