@@ -51,7 +51,7 @@
 
 
     <div id="menu" class="fixed float-left z-10">
-        <ul class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2">
+        <ul class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md">
             <li>
             <a>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -225,6 +225,28 @@
                     
                 </div>
             </div>
+
+            <!--<div class="card shadow-md bg-tilbot-primary-200 w-84 fixed grid place-items-center bottom-2 left-2">
+                <div class="card-body p-4">
+                  <h2 class="card-title text-sm text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+                    </svg>
+                      
+                    ThronoCrigger — Tilbot song
+                </h2>
+                  <p class="text-sm text-center text-white">02:00 <progress class="progress w-56 progress-accent" value="40" max="100"></progress> 05:00 <br />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="inline w-6 h-6 mt-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9v6m-4.5 0V9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg> 
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="inline w-5 h-5 stroke-accent mt-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                      </svg>
+                      
+                  </p>
+                </div>
+            </div>-->
+
         </div>
     </div>    
 </div>
@@ -356,8 +378,8 @@
                     let in_obj = document.getElementById('block_' + key + '_in').getBoundingClientRect();
 
                     line_locations[key] = {
-                        x: in_obj.left + in_obj.width / 2,
-                        y: in_obj.top + in_obj.height / 2
+                        x: in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                        y: in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop
                     };
                     
                     line_locations[key].connectors = {};
@@ -365,8 +387,8 @@
                     for (const cid in value.connectors) {
                         var con_obj = document.getElementById('block_' + key + '_c_' + cid).getBoundingClientRect();
                         line_locations[key].connectors[cid] = {
-                            x: con_obj.left + con_obj.width / 2,
-                            y: con_obj.top + con_obj.height / 2
+                            x: con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                            y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
                         }
                     }
 
@@ -380,13 +402,13 @@
             // Update look-up table
             let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
 
-            line_locations[e.detail.id].x = in_obj.left + in_obj.width / 2;
-            line_locations[e.detail.id].y = in_obj.top + in_obj.height / 2;
+            line_locations[e.detail.id].x = in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft;
+            line_locations[e.detail.id].y = in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop;
 
             for (const cid in line_locations[e.detail.id].connectors) {
                 let con_obj = document.getElementById('block_' + e.detail.id + '_c_' + cid).getBoundingClientRect();
-                line_locations[e.detail.id].connectors[cid].x = con_obj.left + con_obj.width / 2;
-                line_locations[e.detail.id].connectors[cid].y = con_obj.top + con_obj.height / 2;
+                line_locations[e.detail.id].connectors[cid].x = con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft;
+                line_locations[e.detail.id].connectors[cid].y = con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop;
             }
         }
 
