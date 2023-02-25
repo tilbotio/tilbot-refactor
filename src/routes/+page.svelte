@@ -1,4 +1,4 @@
-<div class="bg-gray-100 w-full top-0 h-20 drop-shadow-md fixed">
+<div class="bg-gray-100 w-full top-0 h-20 drop-shadow fixed">
     <div class="avatar online placeholder mt-4 ml-4">
         <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
           <span>TB</span>

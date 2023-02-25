@@ -24,6 +24,11 @@
     function mouse_down(e: MouseEvent) {
         if (e.button == 0) {
             is_dragging = true;
+
+            dispatch('message', {
+                event: 'start_dragging'
+            });
+
         }
         
     }

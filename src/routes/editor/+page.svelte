@@ -178,14 +178,57 @@
                         {#each Object.entries(project.blocks) as [id, block]}
                             {#each Object.entries(block.connectors) as [cid, connector]}
                                 {#each connector.targets as target}
-                                    <line x1="{line_locations[id].connectors[cid].x}" y1="{line_locations[id].connectors[cid].y}" x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y2="{line_locations[id].connectors[cid].y}" stroke="black" stroke-width="2" />
-                                    <line x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y1="{line_locations[id].connectors[cid].y}" x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y2="{line_locations[target].y}" stroke="black" stroke-width="2" />
-                                    <line x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" y1="{line_locations[target].y}" x2="{line_locations[target].x}" y2="{line_locations[target].y}" stroke="black" stroke-width="2" />
+                                    <line 
+                                        x1="{line_locations[id].connectors[cid].x}" 
+                                        y1="{line_locations[id].connectors[cid].y}" 
+                                        x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
+                                        y2="{line_locations[id].connectors[cid].y}" 
+                                        stroke="black" 
+                                        stroke-width="2" 
+                                        data-from-block="{id}" 
+                                        data-from-connector="{cid}" 
+                                        data-to-block="{target}" 
+                                        on:click={line_clicked} 
+                                        class="pointer-events-auto stroke-tilbot-primary-300"
+                                    />
+                                    <line 
+                                        x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
+                                        y1="{line_locations[id].connectors[cid].y}" 
+                                        x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
+                                        y2="{line_locations[target].y}" 
+                                        stroke="black" 
+                                        stroke-width="2" 
+                                        data-from-block="{id}" 
+                                        data-from-connector="{cid}" 
+                                        data-to-block="{target}" 
+                                        on:click={line_clicked} 
+                                        class="pointer-events-auto stroke-tilbot-primary-300"
+                                    />
+                                    <line 
+                                        x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
+                                        y1="{line_locations[target].y}" 
+                                        x2="{line_locations[target].x}" 
+                                        y2="{line_locations[target].y}" 
+                                        stroke="black" 
+                                        stroke-width="2" 
+                                        data-from-block="{id}" 
+                                        data-from-connector="{cid}" 
+                                        data-to-block="{target}" 
+                                        on:click={line_clicked} 
+                                        class="pointer-events-auto stroke-tilbot-primary-300"
+                                    />
                                 {/each}
                             {/each}
                         {/each}
                     {/if}
                 </svg>
+
+                <div id="btn_del_line" class="absolute invisible">
+                    <button class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink" on:click={delete_selected_line}>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                </div>
+
                 {#if project.blocks !== undefined}
                     {#each Object.entries(project.blocks) as [id, block]}
                         <Draggable objAttributes={block} on:message={handleDraggableMessage} id={id}>
@@ -325,6 +368,8 @@
             x: 500,
             y: 500
         }
+
+        deselect_all();
         
         setTimeout(function() {
             selected_id = project.current_block_id;
@@ -397,6 +442,10 @@
             }
         }
 
+        else if (e.detail.event == 'start_dragging') {
+            deselect_all();
+        }
+
         else if (e.detail.event == 'dragging') {
             console.log('dragging...');
             // Update look-up table
@@ -417,13 +466,80 @@
 
     function handleBlockMessage(e: Event) {
         if (e.detail.event == 'block_selected') {
+            deselect_all();
             selected_id = e.detail.block_id;
         }        
     }
 
+    function line_clicked(e: MouseEvent) {
+        select_line(e.target as HTMLElement);
+        e.stopPropagation();    
+    }
+
+    function deselect_all() {
+        selected_id = 0;
+        let lines = document.getElementsByTagName('line');
+        
+        for (let i = 0; i < lines.length; i++) {
+            lines[i].classList.remove('stroke-tilbot-secondary-hardpink');
+        }
+
+        document.getElementById('btn_del_line')?.classList.add('invisible');
+    }
+
+    function select_line(l: HTMLElement) {
+        deselect_all();
+
+        let fromBlock = l.dataset.fromBlock;
+        let fromConnector = l.dataset.fromConnector;
+        let toBlock = l.dataset.toBlock;
+
+        let lines = document.querySelectorAll("[data-from-block='" + fromBlock +"'][data-from-connector='" + fromConnector + "'][data-to-block='" + toBlock + "']");
+        
+        for (let i = 0; i < lines.length; i++) {
+            lines[i].classList.add('stroke-tilbot-secondary-hardpink');
+
+            if (i == 1) {
+                let line_loc = lines[i].getBoundingClientRect();
+                let btn_del = document.getElementById('btn_del_line');
+                btn_del?.setAttribute('style', 'left: ' + (line_loc.left + document.getElementById('editor_main').scrollLeft - 8) + 'px; top: ' + (line_loc.top + document.getElementById('editor_main').scrollTop - 28) + 'px');
+                btn_del?.classList.remove('invisible');
+            }
+        }        
+    }
+
+    function delete_selected_line() {
+        let l = document.querySelector('line.stroke-tilbot-secondary-hardpink');
+
+        let fromBlock = l.dataset.fromBlock;
+        let fromConnector = l.dataset.fromConnector;
+        let toBlock = l.dataset.toBlock;
+
+        let idx = project.blocks[fromBlock].connectors[fromConnector].targets.indexOf(parseInt(toBlock));
+
+        if (idx !== -1) {
+            project.blocks[fromBlock].connectors[fromConnector].targets.splice(idx, 1);
+
+            // To refresh things.
+            project.blocks[fromBlock].connectors[fromConnector].targets = project.blocks[fromBlock].connectors[fromConnector].targets;
+            
+        }
+    }
+
     function editor_clicked(e: MouseEvent) {
         if (e.button == 0) {
-            selected_id = 0;
+            deselect_all();
+
+            // Find and select a line if nearby, to increase the hitbox on the rather thin connector lines.
+            for (let x = -3; x <= 3; x++) {
+                for (let y = -3; y <= 3; y++) {
+                    let el = document.elementFromPoint(e.clientX + x, e.clientY + y);
+                    if (el && el.nodeName && el.nodeName.toLowerCase() == 'line') {
+                        select_line(el as HTMLElement);
+                        return;
+                    }
+                }
+            }
         }
     }
 
