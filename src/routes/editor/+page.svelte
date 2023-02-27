@@ -341,6 +341,7 @@
     let line_locations = {};
 
     let num_draggable_loaded = 0;
+    let is_loading = false;
 
     let is_electron: boolean = false;
     let local_ip = '';
@@ -366,7 +367,17 @@
             name: 'Block ' + project.current_block_id,
             content: '',
             x: 500,
-            y: 500
+            y: 500,
+            connectors: []
+        }
+
+        if (type == 'Auto') {
+            project.blocks[project.current_block_id].connectors = [
+                {
+                    type: "Basic",
+                    targets: []
+                }
+            ]
         }
 
         deselect_all();
@@ -408,6 +419,22 @@
                         load_project(JSON.parse(res));        
                     }                    
                 }
+
+                // First clear everything
+                project = {
+                'name': 'New project',
+                'current_block_id': 1,
+                'blocks': {},
+                'starting_block_id': 1,
+                'canvas_width': 2240,
+                'canvas_height': 1480,
+                'bot_name': 'Tilbot',
+                'avatar_image': '/client/img/default_profile.svg'
+                };        
+                line_locations = {};
+
+                is_loading = true;
+
                 reader.readAsText(tar.files[0]);
         }
       }
@@ -415,30 +442,55 @@
 
     function handleDraggableMessage(e: Event) {
         if (e.detail.event == 'draggable_loaded') {
-            num_draggable_loaded += 1;
-            if (num_draggable_loaded == Object.keys(project.blocks).length) {
-                // Build the look-up table for connecting lines.
-                for (const [key, value] of Object.entries(project.blocks)) {
-                    
-                    let in_obj = document.getElementById('block_' + key + '_in').getBoundingClientRect();
+            if (is_loading) {            
+                num_draggable_loaded += 1;
 
-                    line_locations[key] = {
-                        x: in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
-                        y: in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop
-                    };
-                    
-                    line_locations[key].connectors = {};
+                if (num_draggable_loaded == Object.keys(project.blocks).length) {
+                    is_loading = false;
+                    // Build the look-up table for connecting lines.
+                    for (const [key, value] of Object.entries(project.blocks)) {
+                        
+                        let in_obj = document.getElementById('block_' + key + '_in').getBoundingClientRect();
 
-                    for (const cid in value.connectors) {
-                        var con_obj = document.getElementById('block_' + key + '_c_' + cid).getBoundingClientRect();
-                        line_locations[key].connectors[cid] = {
-                            x: con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
-                            y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
+                        line_locations[key] = {
+                            x: in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                            y: in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop
+                        };
+                        
+                        line_locations[key].connectors = {};
+
+                        for (const cid in value.connectors) {
+                            var con_obj = document.getElementById('block_' + key + '_c_' + cid).getBoundingClientRect();
+                            line_locations[key].connectors[cid] = {
+                                x: con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                                y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
+                            }
                         }
-                    }
 
-                    console.log(line_locations);
+                        console.log(line_locations);
+                    }
                 }
+            }
+            else {
+                // Just add the one new entry in the collection
+                let block = project.blocks[e.detail.id];
+                let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
+                line_locations[e.detail.id] = {
+                    x: in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                    y: in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop                    
+                };
+
+                line_locations[e.detail.id].connectors = {};
+
+                for (const cid in block.connectors) {
+                    var con_obj = document.getElementById('block_' + e.detail.id + '_c_' + cid).getBoundingClientRect();
+                    line_locations[e.detail.id].connectors[cid] = {
+                        x: con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                        y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
+                    }
+                }                               
+
+                console.log(line_locations);
             }
         }
 
@@ -447,7 +499,6 @@
         }
 
         else if (e.detail.event == 'dragging') {
-            console.log('dragging...');
             // Update look-up table
             let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
 

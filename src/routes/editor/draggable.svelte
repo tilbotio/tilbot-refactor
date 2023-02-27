@@ -17,7 +17,8 @@
         draggable.style.top = objAttributes.y + 'px';
 
         dispatch('message', {
-            event: 'draggable_loaded'
+            event: 'draggable_loaded',
+            id: id
         });
     });
 
@@ -43,7 +44,6 @@
     }
 
     function mouse_move(e: MouseEvent) {
-        console.log(document.getElementById('editor_main').scrollLeft);
         if (is_dragging) {
             draggable.style.left = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20 + 'px';
             draggable.style.top = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20 + 'px';
