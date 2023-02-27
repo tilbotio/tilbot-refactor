@@ -171,9 +171,9 @@
     </div>
 
     <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
-        <div id="editor_main" class="grow overflow-auto" on:click={editor_clicked}>
+        <div id="editor_main" class="grow overflow-auto" on:click={editor_clicked} on:mousedown={editor_mousedown} on:mousemove={editor_mousemove} on:mouseup={editor_mouseup}>
             <div class="relative" style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}">
-                <svg style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}" class="absolute pointer-events-none stroke-cyan-500">
+                <svg style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}" class="absolute pointer-events-none z-40">
                     {#if Object.entries(line_locations).length > 0}
                         {#each Object.entries(project.blocks) as [id, block]}
                             {#each Object.entries(block.connectors) as [cid, connector]}
@@ -220,6 +220,11 @@
                                 {/each}
                             {/each}
                         {/each}
+                    {/if}
+
+                    <!-- For creating new lines -->
+                    {#if dragging_connector.block_id !== undefined}
+                        <line class="z-50" x1="{line_locations[dragging_connector.block_id].connectors[dragging_connector.connector_id].x}" y1="{line_locations[dragging_connector.block_id].connectors[dragging_connector.connector_id].y}" x2="{dragging_connector.mouseX}" y2="{dragging_connector.mouseY}" stroke="black" stroke-width="2" />
                     {/if}
                 </svg>
 
@@ -347,6 +352,9 @@
     let local_ip = '';
     let public_ip = '';
 
+    // For creating lines
+    let dragging_connector = {};
+
     onMount(() => {
         // Hack to fix the simulator in Electron (specifically on OS X)
         if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
@@ -466,8 +474,6 @@
                                 y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
                             }
                         }
-
-                        console.log(line_locations);
                     }
                 }
             }
@@ -489,8 +495,6 @@
                         y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
                     }
                 }                               
-
-                console.log(line_locations);
             }
         }
 
@@ -572,8 +576,7 @@
             project.blocks[fromBlock].connectors[fromConnector].targets.splice(idx, 1);
 
             // To refresh things.
-            project.blocks[fromBlock].connectors[fromConnector].targets = project.blocks[fromBlock].connectors[fromConnector].targets;
-            
+            project.blocks[fromBlock].connectors[fromConnector].targets = project.blocks[fromBlock].connectors[fromConnector].targets;            
         }
     }
 
@@ -592,6 +595,41 @@
                 }
             }
         }
+    }
+
+    function editor_mousemove(e: MouseEvent) {
+        if (dragging_connector.block_id !== undefined) {
+            dragging_connector.mouseX = e.clientX + document.getElementById('editor_main').scrollLeft;
+            dragging_connector.mouseY = e.clientY + document.getElementById('editor_main').scrollTop;
+        }
+    }
+
+    function editor_mousedown(e: MouseEvent) {
+        let block_id = e.target.getAttribute('data-block-id');
+        let conn_id = e.target.getAttribute('data-connector-id');
+
+        if (block_id !== null && conn_id !== null) {
+            deselect_all();
+            dragging_connector = {
+                block_id: block_id,
+                connector_id: conn_id,
+                mouseX: line_locations[block_id].connectors[conn_id].x,
+                mouseY: line_locations[block_id].connectors[conn_id].y
+            };            
+        }
+    }
+
+    function editor_mouseup(e: MouseEvent) {
+        let el = document.elementFromPoint(e.clientX, e.clientY);
+        let el_id = el?.getAttribute('data-block-id');
+        if (el_id !== null && el?.getAttribute('id') == 'block_' + el_id + '_in') {
+            project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.push(parseInt(el_id)); 
+            
+            // Force refresh
+            project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets = project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets;
+        }
+        
+        dragging_connector = {};
     }
 
     function load_project(json:JSON) {

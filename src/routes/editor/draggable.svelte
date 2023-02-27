@@ -23,7 +23,7 @@
     });
 
     function mouse_down(e: MouseEvent) {
-        if (e.button == 0) {
+        if (e.button == 0 && e.target.getAttribute('data-connector-id') === null) {
             is_dragging = true;
 
             dispatch('message', {

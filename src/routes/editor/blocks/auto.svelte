@@ -1,5 +1,5 @@
-<div class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selectedId == blockId ? 'scale-110' : ''}" id="block_{blockId}" on:click={click_event}>
-    <span class="indicator-item indicator-middle indicator-start badge z-0" id="block_{blockId}_in"></span>
+<div class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selectedId == blockId ? 'scale-110 z-50' : ''}" id="block_{blockId}" on:click={click_event}>
+    <span class="indicator-item indicator-middle indicator-start badge z-0" id="block_{blockId}_in" data-block-id="{blockId}"></span>
 
     {#if selectedId == blockId}
     <button class="btn btn-sm btn-circle btn-outline absolute -right-4 -top-4">
@@ -32,11 +32,7 @@
         </div>
         {#if objAttributes.connectors !== undefined}
             {#each Object.entries(objAttributes.connectors) as [id, connector]}
-                <div class="divider m-0"></div>
-                <div class="relative text-sm font-medium">
-                    &nbsp;
-                    <span id="block_{blockId}_c_{id}" class="indicator-item indicator-middle indicator-end badge z-0"></span>
-                </div>
+                <BasicConnector blockId={blockId} connectorId={id}></BasicConnector>
             {/each}
         {/if}
         
@@ -45,6 +41,7 @@
 
 <script type="ts">
     import { onMount, createEventDispatcher } from "svelte";
+    import BasicConnector from '../connectors/basic.svelte';
 
     export let objAttributes = {};
     export let blockId = 0;
