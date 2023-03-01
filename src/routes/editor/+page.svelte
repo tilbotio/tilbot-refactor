@@ -388,11 +388,12 @@
             ]
         }
 
+        project.current_block_id += 1;
+
         deselect_all();
         
         setTimeout(function() {
             selected_id = project.current_block_id;
-            project.current_block_id += 1;
         }, 50);
     }
     
@@ -524,6 +525,26 @@
             deselect_all();
             selected_id = e.detail.block_id;
         }        
+
+        else if (e.detail.event == 'delete_block') {
+            deselect_all();
+
+            // Delete any blocks connecting to this one
+            for (const [key, value] of Object.entries(project.blocks)) {
+                for (let ci = 0; ci < value.connectors.length; ci++) {
+                    let idx = value.connectors[ci].targets.indexOf(parseInt(e.detail.block_id));
+                    
+                    if (idx != -1) {
+                        value.connectors[ci].targets.splice(idx, 1);
+                    }
+                }
+            }
+
+            delete project.blocks[e.detail.block_id];
+            delete line_locations[e.detail.block_id];
+
+            project.blocks = project.blocks;
+        }        
     }
 
     function line_clicked(e: MouseEvent) {
@@ -622,6 +643,7 @@
     function editor_mouseup(e: MouseEvent) {
         let el = document.elementFromPoint(e.clientX, e.clientY);
         let el_id = el?.getAttribute('data-block-id');
+
         if (el_id !== null && el?.getAttribute('id') == 'block_' + el_id + '_in') {
             project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.push(parseInt(el_id)); 
             
