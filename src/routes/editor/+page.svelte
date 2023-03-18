@@ -50,7 +50,7 @@
     </div>    
 
 
-    <div id="menu" class="fixed float-left z-10">
+    <div id="menu" class="fixed float-left z-10 mt-4">
         <ul class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md">
             <li>
             <a>
@@ -107,7 +107,7 @@
                 </div>                
             </ul>
             </li>
-            <div class="tooltip tooltip-right" data-tip="Add group">
+            <!--<div class="tooltip tooltip-right" data-tip="Add group">
                 <li>
                 <a>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -115,7 +115,7 @@
                     </svg>
                 </a>
                 </li>
-            </div>
+            </div>-->
             <li>
                 
                 &nbsp;<br /><br />
@@ -174,7 +174,7 @@
         <div id="editor_main" class="grow overflow-auto" on:click={editor_clicked} on:mousedown={editor_mousedown} on:mousemove={editor_mousemove} on:mouseup={editor_mouseup}>
             <div class="relative" style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}">
                 <svg style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}" class="absolute pointer-events-none z-40">
-                    {#if Object.entries(line_locations).length > 0}
+                    {#if Object.entries(line_locations).length > 1}
                         {#each Object.entries(project.blocks) as [id, block]}
                             {#each Object.entries(block.connectors) as [cid, connector]}
                                 {#each connector.targets as target}
@@ -202,6 +202,29 @@
                                 {/each}
                             {/each}
                         {/each}
+
+                        {#if project.starting_block_id !== -1}
+                        <path d="{
+                            'M' + line_locations['-1'].x + ',' + line_locations['-1'].y +
+                            ' L' + (Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.05 + line_locations['-1'].x) + 
+                            ',' + line_locations['-1'].y + 
+                            ' C' + (line_locations['-1'].x + Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.5) +
+                            ',' + line_locations['-1'].y +
+                            ' ' + (line_locations[project.starting_block_id.toString()].x - Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.5) + 
+                            ',' + line_locations[project.starting_block_id.toString()].y + 
+                            ' ' + (- Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.05 + line_locations[project.starting_block_id.toString()].x) + 
+                            ',' + line_locations[project.starting_block_id.toString()].y +
+                            ' L' + line_locations[project.starting_block_id.toString()].x + ',' + line_locations[project.starting_block_id.toString()].y
+                        }" 
+                        stroke-width="2" 
+                        fill="none" 
+                        data-from-block="-1"  
+                        data-to-block="{project.starting_block_id}" 
+                        on:click={line_clicked} 
+                        class="pointer-events-auto stroke-tilbot-primary-300">
+    
+                        </path>                    
+                        {/if}                        
                     {/if}
 
                     <!-- For creating new lines -->
@@ -215,6 +238,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                 </div>
+
+                <Start bind:el={start}></Start>
 
                 {#if project.blocks !== undefined}
                     {#each Object.entries(project.blocks) as [id, block]}
@@ -287,8 +312,9 @@
 
 
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, SvelteComponent } from "svelte";
     import Draggable from './draggable.svelte';
+    import Start from './start.svelte';
     import AutoBlock from './blocks/auto.svelte';
     import MCBlock from './blocks/mc.svelte';
     import TextBlock from './blocks/text.svelte';
@@ -310,11 +336,13 @@
 
     let jsonfileinput: HTMLElement;
     let simulator: HTMLIFrameElement;
+    let start: SvelteComponent;
+
     let project: any = {
         'name': 'New project',
         'current_block_id': 1,
         'blocks': {},
-        'starting_block_id': 1,
+        'starting_block_id': -1,
         'canvas_width': 2240,
         'canvas_height': 1480,
         'bot_name': 'Tilbot',
@@ -338,6 +366,8 @@
     let dragging_connector = {};
 
     onMount(() => {
+        add_start_location();
+
         // Hack to fix the simulator in Electron (specifically on OS X)
         if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
             is_electron = true;
@@ -349,6 +379,17 @@
             });
         }
     });
+    
+    function add_start_location() {
+        let r = start.getBoundingClientRect();
+        line_locations['-1'] = {
+                            x: r.left + r.width / 2 + document.getElementById('editor_main').scrollLeft,
+                            y: r.bottom + document.getElementById('editor_main').scrollTop
+                        };        
+
+
+        console.log(line_locations);
+    }
 
     function new_block(type: string) {
         // @TODO: take into account current level / groupblock
@@ -423,6 +464,7 @@
                 'avatar_image': '/client/img/default_profile.svg'
                 };        
                 line_locations = {};
+                add_start_location();
 
                 is_loading = true;
 
@@ -548,11 +590,17 @@
     function select_line(l: HTMLElement) {
         deselect_all();
 
-        let fromBlock = l.dataset.fromBlock;
-        let fromConnector = l.dataset.fromConnector;
-        let toBlock = l.dataset.toBlock;
+        let line = document.querySelector("[data-from-block='-1']");
 
-        let line = document.querySelector("[data-from-block='" + fromBlock +"'][data-from-connector='" + fromConnector + "'][data-to-block='" + toBlock + "']");
+        let fromBlock = l.dataset.fromBlock;
+
+        // Starting point
+        if (fromBlock != '-1') {
+            let fromConnector = l.dataset.fromConnector;
+            let toBlock = l.dataset.toBlock;
+
+            line = document.querySelector("[data-from-block='" + fromBlock +"'][data-from-connector='" + fromConnector + "'][data-to-block='" + toBlock + "']");
+        }
         
         line.classList.add('stroke-tilbot-secondary-hardpink');
         let line_loc = line.getBoundingClientRect();
@@ -565,16 +613,23 @@
         let l = document.querySelector('path.stroke-tilbot-secondary-hardpink');
 
         let fromBlock = l.dataset.fromBlock;
-        let fromConnector = l.dataset.fromConnector;
-        let toBlock = l.dataset.toBlock;
 
-        let idx = project.blocks[fromBlock].connectors[fromConnector].targets.indexOf(parseInt(toBlock));
+        // Starting point
+        if (fromBlock == '-1') {
+            project.starting_block_id = -1;
+        }
+        else {
+            let fromConnector = l.dataset.fromConnector;
+            let toBlock = l.dataset.toBlock;
 
-        if (idx !== -1) {
-            project.blocks[fromBlock].connectors[fromConnector].targets.splice(idx, 1);
+            let idx = project.blocks[fromBlock].connectors[fromConnector].targets.indexOf(parseInt(toBlock));
 
-            // To refresh things.
-            project.blocks[fromBlock].connectors[fromConnector].targets = project.blocks[fromBlock].connectors[fromConnector].targets;            
+            if (idx !== -1) {
+                project.blocks[fromBlock].connectors[fromConnector].targets.splice(idx, 1);
+
+                // To refresh things.
+                project.blocks[fromBlock].connectors[fromConnector].targets = project.blocks[fromBlock].connectors[fromConnector].targets;            
+            }
         }
     }
 
