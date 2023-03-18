@@ -645,10 +645,12 @@
         let el_id = el?.getAttribute('data-block-id');
 
         if (el_id !== null && el?.getAttribute('id') == 'block_' + el_id + '_in') {
-            project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.push(parseInt(el_id)); 
+            if (project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.indexOf(parseInt(el_id)) == -1) {
+                project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.push(parseInt(el_id)); 
             
-            // Force refresh
-            project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets = project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets;
+                // Force refresh
+                project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets = project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets;
+            }
         }
         
         dragging_connector = {};
