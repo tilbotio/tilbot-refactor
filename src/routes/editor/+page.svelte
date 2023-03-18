@@ -4,26 +4,12 @@
     <!--</a>-->
 
 <!-- Put this part before </body> tag -->
-<input type="checkbox" id="my-modal-3" class="modal-toggle" />
+<input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
 <div class="modal">
   <div class="modal-box relative">
-    <label for="my-modal-3" class="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
-    <h3 class="text-lg font-bold">
-        <svg style="display: inline; vertical-align: sub" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>                          
-
-        Introduction 1
-    </h3>
-    <p class="py-4">Text for the bot to say:</p>
-    <textarea class="textarea text-base textarea-bordered resize-none inset-y-2 w-full" placeholder=""></textarea>
-
-    <br />
-    <!-- TODO: show the right block_popup module just like incorporating the blocks below -->
-    <!-- <svelte:component this={block_popup_components[selected_block.type]} objAttributes={block} /> -->
-
-    <div class="divider"></div> 
-    <p><button class="btn btn-active">Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline">Cancel</button></p>
+    {#if edit_block !== null}
+    <svelte:component this={block_popup_components[edit_block.type]} objAttributes={edit_block} on:message={handleEditBlockMessage} />
+    {/if}
   </div>
 </div>    
 
@@ -349,8 +335,10 @@
         'avatar_image': '/client/img/default_profile.svg'
     };
     let modal_launch: HTMLInputElement;
+    let modal_edit: HTMLInputElement;
 
     let selected_id = 0;
+    let edit_block = null;
 
     // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
     let line_locations = {};
@@ -557,11 +545,29 @@
         // @TODO: also update if a change in the connectors occurs (e.g., connectors added or removed)
     }
 
+    function handleEditBlockMessage(e: Event) {
+        if (e.detail.event == 'cancel') {
+            edit_block = null;
+            modal_edit.click();
+        }
+
+        else if (e.detail.event == 'save') {
+            project.blocks[selected_id] = e.detail.block;
+            edit_block = null;
+            modal_edit.click();
+        }
+    }
+
     function handleBlockMessage(e: Event) {
         if (e.detail.event == 'block_selected') {
             deselect_all();
             selected_id = e.detail.block_id;
-        }        
+        }
+        
+        else if (e.detail.event == 'edit_block') {
+            edit_block = project.blocks[e.detail.block_id];
+            modal_edit.click();
+        }
 
         else if (e.detail.event == 'delete_block') {
             deselect_all();
@@ -671,7 +677,6 @@
     }
 
     function editor_mousedown(e: MouseEvent) {
-        console.log(e.target);
         let block_id = e.target.getAttribute('data-block-id');
         let conn_id = e.target.getAttribute('data-connector-id');
 
