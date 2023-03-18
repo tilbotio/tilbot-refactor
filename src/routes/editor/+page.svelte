@@ -160,7 +160,7 @@
             </div>    
             <div class="tooltip tooltip-right" data-tip="Save project">
                 <li>
-                <a>
+                <a on:click={btn_save_click}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                     </svg>                                         
@@ -386,9 +386,6 @@
                             x: r.left + r.width / 2 + document.getElementById('editor_main').scrollLeft,
                             y: r.bottom + document.getElementById('editor_main').scrollTop
                         };        
-
-
-        console.log(line_locations);
     }
 
     function new_block(type: string) {
@@ -422,6 +419,16 @@
     
     function btn_load_click() {
         jsonfileinput.click();
+    }
+
+    function btn_save_click() {
+        let dataStr: string = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(project));
+        let downloadAnchorNode: HTMLElement = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "project.json"); // @TODO: name based on project name?
+        document.body.appendChild(downloadAnchorNode); // required for some browsers
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     }
 
     function btn_launch_click() {
