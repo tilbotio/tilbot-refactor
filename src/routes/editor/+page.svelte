@@ -178,45 +178,27 @@
                         {#each Object.entries(project.blocks) as [id, block]}
                             {#each Object.entries(block.connectors) as [cid, connector]}
                                 {#each connector.targets as target}
-                                    <line 
-                                        x1="{line_locations[id].connectors[cid].x}" 
-                                        y1="{line_locations[id].connectors[cid].y}" 
-                                        x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
-                                        y2="{line_locations[id].connectors[cid].y}" 
-                                        stroke="black" 
-                                        stroke-width="2" 
-                                        data-from-block="{id}" 
-                                        data-from-connector="{cid}" 
-                                        data-to-block="{target}" 
-                                        on:click={line_clicked} 
-                                        class="pointer-events-auto stroke-tilbot-primary-300"
-                                    />
-                                    <line 
-                                        x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
-                                        y1="{line_locations[id].connectors[cid].y}" 
-                                        x2="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
-                                        y2="{line_locations[target].y}" 
-                                        stroke="black" 
-                                        stroke-width="2" 
-                                        data-from-block="{id}" 
-                                        data-from-connector="{cid}" 
-                                        data-to-block="{target}" 
-                                        on:click={line_clicked} 
-                                        class="pointer-events-auto stroke-tilbot-primary-300"
-                                    />
-                                    <line 
-                                        x1="{line_locations[id].connectors[cid].x + (line_locations[target].x - line_locations[id].connectors[cid].x) / 2}" 
-                                        y1="{line_locations[target].y}" 
-                                        x2="{line_locations[target].x}" 
-                                        y2="{line_locations[target].y}" 
-                                        stroke="black" 
-                                        stroke-width="2" 
-                                        data-from-block="{id}" 
-                                        data-from-connector="{cid}" 
-                                        data-to-block="{target}" 
-                                        on:click={line_clicked} 
-                                        class="pointer-events-auto stroke-tilbot-primary-300"
-                                    />
+                                    <path d="{
+                                        'M' + line_locations[id].connectors[cid].x + ',' + line_locations[id].connectors[cid].y +
+                                        ' L' + (Math.abs(line_locations[target].x - line_locations[id].connectors[cid].x) * 0.05 + line_locations[id].connectors[cid].x) + 
+                                        ',' + line_locations[id].connectors[cid].y + 
+                                        ' C' + (line_locations[id].connectors[cid].x + Math.abs(line_locations[target].x - line_locations[id].connectors[cid].x) * 0.5) +
+                                        ',' + line_locations[id].connectors[cid].y +
+                                        ' ' + (line_locations[target].x - Math.abs(line_locations[target].x - line_locations[id].connectors[cid].x) * 0.5) + 
+                                        ',' + line_locations[target].y + 
+                                        ' ' + (- Math.abs(line_locations[target].x - line_locations[id].connectors[cid].x) * 0.05 + line_locations[target].x) + 
+                                        ',' + line_locations[target].y +
+                                        ' L' + line_locations[target].x + ',' + line_locations[target].y
+                                    }" 
+                                    stroke-width="2" 
+                                    fill="none" 
+                                    data-from-block="{id}" 
+                                    data-from-connector="{cid}" 
+                                    data-to-block="{target}" 
+                                    on:click={line_clicked} 
+                                    class="pointer-events-auto stroke-tilbot-primary-300">
+
+                                    </path>
                                 {/each}
                             {/each}
                         {/each}
@@ -554,7 +536,7 @@
 
     function deselect_all() {
         selected_id = 0;
-        let lines = document.getElementsByTagName('line');
+        let lines = document.getElementsByTagName('path');
         
         for (let i = 0; i < lines.length; i++) {
             lines[i].classList.remove('stroke-tilbot-secondary-hardpink');
@@ -609,7 +591,7 @@
             for (let x = -3; x <= 3; x++) {
                 for (let y = -3; y <= 3; y++) {
                     let el = document.elementFromPoint(e.clientX + x, e.clientY + y);
-                    if (el && el.nodeName && el.nodeName.toLowerCase() == 'line') {
+                    if (el && el.nodeName && el.nodeName.toLowerCase() == 'path') {
                         select_line(el as HTMLElement);
                         return;
                     }
