@@ -205,14 +205,14 @@
 
                         {#if project.starting_block_id !== -1}
                         <path d="{
-                            'M' + line_locations['-1'].x + ',' + line_locations['-1'].y +
-                            ' L' + (Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.05 + line_locations['-1'].x) + 
-                            ',' + line_locations['-1'].y + 
-                            ' C' + (line_locations['-1'].x + Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.5) +
-                            ',' + line_locations['-1'].y +
-                            ' ' + (line_locations[project.starting_block_id.toString()].x - Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.5) + 
+                            'M' + line_locations['-1'].connectors[0].x + ',' + line_locations['-1'].connectors[0].y +
+                            ' L' + (Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].connectors[0].x) * 0.05 + line_locations['-1'].connectors[0].x) + 
+                            ',' + line_locations['-1'].connectors[0].y + 
+                            ' C' + (line_locations['-1'].connectors[0].x + Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].connectors[0].x) * 0.5) +
+                            ',' + line_locations['-1'].connectors[0].y +
+                            ' ' + (line_locations[project.starting_block_id.toString()].x - Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].connectors[0].x) * 0.5) + 
                             ',' + line_locations[project.starting_block_id.toString()].y + 
-                            ' ' + (- Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].x) * 0.05 + line_locations[project.starting_block_id.toString()].x) + 
+                            ' ' + (- Math.abs(line_locations[project.starting_block_id.toString()].x - line_locations['-1'].connectors[0].x) * 0.05 + line_locations[project.starting_block_id.toString()].x) + 
                             ',' + line_locations[project.starting_block_id.toString()].y +
                             ' L' + line_locations[project.starting_block_id.toString()].x + ',' + line_locations[project.starting_block_id.toString()].y
                         }" 
@@ -384,7 +384,13 @@
         let r = start.getBoundingClientRect();
         line_locations['-1'] = {
                             x: r.left + r.width / 2 + document.getElementById('editor_main').scrollLeft,
-                            y: r.bottom + document.getElementById('editor_main').scrollTop
+                            y: r.bottom + document.getElementById('editor_main').scrollTop,
+                            connectors: [
+                                {
+                                    x: r.left + r.width / 2 + document.getElementById('editor_main').scrollLeft,
+                                    y: r.bottom + document.getElementById('editor_main').scrollTop
+                                }
+                            ]
                         };        
     }
 
@@ -665,8 +671,20 @@
     }
 
     function editor_mousedown(e: MouseEvent) {
+        console.log(e.target);
         let block_id = e.target.getAttribute('data-block-id');
         let conn_id = e.target.getAttribute('data-connector-id');
+
+        // Only allow to connect something to the starting point if it is not already connected to something
+        if (block_id == '-1' && project.starting_block_id === -1) {
+            deselect_all();
+            dragging_connector = {
+                block_id: -1,
+                connector_id: 0,
+                mouseX: line_locations['-1'].connectors[0].x,
+                mouseY: line_locations['-1'].connectors[0].y
+            };
+        }
 
         if (block_id !== null && conn_id !== null) {
             deselect_all();
@@ -684,7 +702,12 @@
         let el_id = el?.getAttribute('data-block-id');
 
         if (el_id !== null && el?.getAttribute('id') == 'block_' + el_id + '_in') {
-            if (project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.indexOf(parseInt(el_id)) == -1) {
+            // Starting point
+            if (dragging_connector.block_id == -1) {
+                project.starting_block_id = parseInt(el_id);
+            }
+
+            else if (project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.indexOf(parseInt(el_id)) == -1) {
                 project.blocks[dragging_connector.block_id].connectors[dragging_connector.connector_id].targets.push(parseInt(el_id)); 
             
                 // Force refresh
