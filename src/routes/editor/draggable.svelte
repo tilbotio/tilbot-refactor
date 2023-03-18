@@ -7,6 +7,8 @@
 
     let draggable: HTMLDivElement;
     let is_dragging: boolean = false;
+    let has_moved: boolean = false;
+
     export let objAttributes = {};
     export let id = 0;
 
@@ -26,6 +28,7 @@
 
         if (e.button == 0 && conn_id === null && (btn_del.length == 0 || !btn_del[0].contains(e.target)) && (btn_edit.length == 0 || !btn_edit[0].contains(e.target))) {
             is_dragging = true;
+            has_moved = false;
 
             dispatch('message', {
                 event: 'start_dragging'
@@ -40,13 +43,17 @@
 
             is_dragging = false;
 
-            objAttributes.x = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20;
-            objAttributes.y = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20;        
+            if (has_moved) {
+                objAttributes.x = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20;
+                objAttributes.y = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20;        
+            }
         }
     }
 
     function mouse_move(e: MouseEvent) {
         if (is_dragging) {
+            has_moved = true;
+
             draggable.style.left = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20 + 'px';
             draggable.style.top = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20 + 'px';
             dispatch('message', {

@@ -552,22 +552,17 @@
         let fromConnector = l.dataset.fromConnector;
         let toBlock = l.dataset.toBlock;
 
-        let lines = document.querySelectorAll("[data-from-block='" + fromBlock +"'][data-from-connector='" + fromConnector + "'][data-to-block='" + toBlock + "']");
+        let line = document.querySelector("[data-from-block='" + fromBlock +"'][data-from-connector='" + fromConnector + "'][data-to-block='" + toBlock + "']");
         
-        for (let i = 0; i < lines.length; i++) {
-            lines[i].classList.add('stroke-tilbot-secondary-hardpink');
-
-            if (i == 1) {
-                let line_loc = lines[i].getBoundingClientRect();
-                let btn_del = document.getElementById('btn_del_line');
-                btn_del?.setAttribute('style', 'left: ' + (line_loc.left + document.getElementById('editor_main').scrollLeft - 8) + 'px; top: ' + (line_loc.top + document.getElementById('editor_main').scrollTop - 28) + 'px');
-                btn_del?.classList.remove('invisible');
-            }
-        }        
+        line.classList.add('stroke-tilbot-secondary-hardpink');
+        let line_loc = line.getBoundingClientRect();
+        let btn_del = document.getElementById('btn_del_line');
+        btn_del?.setAttribute('style', 'left: ' + ((line_loc.left + line_loc.width / 2) + document.getElementById('editor_main').scrollLeft - 8) + 'px; top: ' + ((line_loc.top + line_loc.height / 2) + document.getElementById('editor_main').scrollTop - 28) + 'px');
+        btn_del?.classList.remove('invisible');
     }
 
     function delete_selected_line() {
-        let l = document.querySelector('line.stroke-tilbot-secondary-hardpink');
+        let l = document.querySelector('path.stroke-tilbot-secondary-hardpink');
 
         let fromBlock = l.dataset.fromBlock;
         let fromConnector = l.dataset.fromConnector;
