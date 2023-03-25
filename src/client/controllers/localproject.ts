@@ -133,11 +133,23 @@ class LocalProjectController extends BasicProjectController {
             }
         }
         else if (block.type == 'Text' || block.type == 'List') {
+            let found = false;
+            let else_connector_id = '-1';
+
             for (var c in block.connectors) {
-                if (block.connectors[c].label == str || block.connectors[c].label == '[else]') {
+                if (block.connectors[c].label == '[else]') {
+                    else_connector_id = c;
+                }
+                else if (str.toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
+                    found = true;
                     this.current_block_id = block.connectors[c].targets[0];
                     this._send_current_message();
                 }
+            }
+
+            if (!found && else_connector_id !== '-1') {
+                this.current_block_id = block.connectors[else_connector_id].targets[0];
+                this._send_current_message();
             }
         }
     }

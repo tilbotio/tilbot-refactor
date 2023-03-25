@@ -15,8 +15,6 @@ console.log(project);
 
 let clients = {};
 
-console.log(ProjectController);
-
 app.use(express.static(path.join(__dirname, '/../build/')));
 
 app.get('/', (req, res) => {
@@ -39,7 +37,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('user_message', (str) => {
-      //self.clients[socket.id].receive_message(str);
+      clients[socket.id].receive_message(str);
     });
 
     socket.on('disconnect', () => {

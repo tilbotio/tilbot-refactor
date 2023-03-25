@@ -101,7 +101,7 @@ function socket_script_loaded(event: Event) {
 }
 
 function project_received(event: MessageEvent) {
-    //messages.innerHTML = '';
+    messages = [];
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)
     // Set a fake timeout to get the highest timeout id
@@ -114,6 +114,7 @@ function project_received(event: MessageEvent) {
 }
 
 function chatbot_message(msg: any) {
+    console.log(msg);
       // Send the message
       show_typing_indicator = true;
 

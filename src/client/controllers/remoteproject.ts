@@ -16,31 +16,15 @@ class RemoteProjectController extends BasicProjectController {
     }
 
     send_message(block: any) {
-        console.log('bot!');
-        let params: any = {};
-
-        if (block.type == 'MC') {
-            params.options = [];
-            for (var c in block.connectors) {
-                params.options.push(block.connectors[c].label);
-            }
-
-            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
-        }
-        else if (block.type == 'List') {
-            params.options = block.items;
-            params.text_input = block.text_input;
-            params.number_input = block.number_input;
-
-            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
-        }
-        else {
-            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
-        }
+        this.chatbot_message_callback(block);
     }
 
     message_sent_event() {
         this.socket.emit('message sent');
+    }
+
+    receive_message(str: string) {
+        this.socket.emit('user_message', str);
     }
 
     /*check_group_exit(id: number) {

@@ -13,13 +13,9 @@ class ProjectController {
     get_path() {
       var path = [];
 
-      console.log(this.selected_group_blocks);
-
       for (var b in this.selected_group_blocks) {
         path.push(this.selected_group_blocks[b].id);
       }
-
-      console.log(path);
 
       return path;
     }
@@ -57,9 +53,13 @@ class ProjectController {
 
       if (block.type == 'MC') {
         params.options = [];
+
+        console.log(block.connectors);
         for (var c in block.connectors) {
           params.options.push(block.connectors[c].label);
         }
+
+        console.log(params);
 
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
         /*let msg = new MessageSchema();
@@ -97,6 +97,7 @@ class ProjectController {
         params.options = block.options;
 
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
+
         /*let msg = new MessageSchema();
         msg.message = block.content;
         msg.source = 'bot';
@@ -107,8 +108,21 @@ class ProjectController {
           }
         });  */        
       }
+      else if (block.type == 'Auto') {
+        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
+
+        if (this.project.blocks[this.current_block_id.toString()].connectors[0].targets.length > 0) {
+          this.current_block_id = this.project.blocks[this.current_block_id.toString()].connectors[0].targets[0];
+          
+          var self = this;
+          setTimeout(function() {
+            self._send_current_message();
+          }, 500);  
+        }
+      }
       else {
-          this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
+          this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
+  
           /*let msg = new MessageSchema();
           msg.message = block.content;
           msg.source = 'bot';
@@ -120,6 +134,42 @@ class ProjectController {
             }
           });*/
       }        
+    }
+    
+    receive_message(str) {
+      console.log('receive!' + str);
+
+      var block = this.project.blocks[this.current_block_id.toString()];
+
+      // @TODO: improve processing of message
+      if (block.type == 'MC') {
+          for (var c in block.connectors) {
+              if (block.connectors[c].label == str) {
+                  this.current_block_id = block.connectors[c].targets[0];
+                  this._send_current_message();
+              }
+          }
+      }
+      else if (block.type == 'Text' || block.type == 'List') {
+          let found = false;
+          let else_connector_id = '-1';
+
+          for (var c in block.connectors) {
+              if (block.connectors[c].label == '[else]') {
+                  else_connector_id = c;
+              }
+              else if (str.toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
+                  found = true;
+                  this.current_block_id = block.connectors[c].targets[0];
+                  this._send_current_message();
+              }
+          }
+
+          if (!found && else_connector_id !== '-1') {
+              this.current_block_id = block.connectors[else_connector_id].targets[0];
+              this._send_current_message();
+          }
+      }      
     }    
 }
 
