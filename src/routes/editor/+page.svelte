@@ -6,7 +6,7 @@
 <!-- Put this part before </body> tag -->
 <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
 <div class="modal">
-  <div class="modal-box relative">
+  <div class="modal-box relative max-w-4xl">
     {#if edit_block !== null}
     <svelte:component this={block_popup_components[edit_block.type]} objAttributes={edit_block} on:message={handleEditBlockMessage} />
     {/if}
@@ -402,6 +402,16 @@
             ]
         }
 
+        else if (type == 'Text') {
+            project.blocks[project.current_block_id].connectors = [
+                {
+                    type: "Labeled",
+                    label: "[else]",
+                    targets: []
+                }
+            ]
+        }
+
         project.current_block_id += 1;
 
         deselect_all();
@@ -552,6 +562,13 @@
         }
 
         else if (e.detail.event == 'save') {
+            // Remove the line_locations for the connectors in case some were deleted/moved
+            for (const [key, value] of Object.entries(line_locations[selected_id].connectors)) {
+                if (!(key in e.detail.block.connectors)) {
+                    delete line_locations[selected_id].connectors[key];
+                }
+            }
+
             project.blocks[selected_id] = e.detail.block;
             edit_block = null;
             modal_edit.click();
@@ -587,7 +604,25 @@
             delete line_locations[e.detail.block_id];
 
             project.blocks = project.blocks;
-        }        
+        }      
+        
+        else if (e.detail.event == 'connector_loaded') {
+            if (e.detail.block_id in line_locations) {
+                // Location of the block should also be updated just in case, because the size of the block can change when adding/removing connectors.
+                let in_obj = document.getElementById('block_' + e.detail.block_id + '_in').getBoundingClientRect();
+
+                line_locations[e.detail.block_id].x = in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft;
+                line_locations[e.detail.block_id].y = in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop;
+
+
+                // Update the location of the connector for building lines
+                var con_obj = document.getElementById('block_' + e.detail.block_id + '_c_' + e.detail.connector_id).getBoundingClientRect();
+                line_locations[e.detail.block_id].connectors[e.detail.connector_id] = {
+                    x: con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft,
+                    y: con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop
+                };
+            }
+        }
     }
 
     function line_clicked(e: MouseEvent) {

@@ -7,11 +7,9 @@
     <div class="inline" contenteditable="true" bind:textContent={copy.name} on:keypress={name_keypress}></div>
 </h3>
 <p class="py-4">Text for the bot to say:</p>
-<div class="textarea text-base textarea-bordered resize-none inset-y-2 w-full max-h-40 overflow-scroll" contenteditable="true" bind:innerHTML={copy.content}></div>
+<div class="textarea text-base textarea-bordered resize-none inset-y-2 w-full h-24 max-h-40 overflow-scroll" contenteditable="true" bind:innerHTML={copy.content}></div>
 
 <br />
-<!-- TODO: show the right block_popup module just like incorporating the blocks below -->
-<!-- <svelte:component this={block_popup_components[selected_block.type]} objAttributes={block} /> -->
 
 <div class="divider"></div> 
 <p><button class="btn btn-active" on:click={save}>Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline" on:click={cancel}>Cancel</button></p>

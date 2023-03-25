@@ -30,7 +30,8 @@
         <div class="text-sm min-h-6 max-h-16 line-clamp-3">
             {@html objAttributes.content}
         </div>
-        {#if objAttributes.connectors !== undefined}
+        {#if objAttributes.connectors !== undefined && objAttributes.connectors.length > 0}
+            <div class="divider m-0"></div>
             {#each Object.entries(objAttributes.connectors) as [id, connector]}
                 <BasicConnector blockId={blockId} connectorId={id}></BasicConnector>
             {/each}
