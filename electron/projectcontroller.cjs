@@ -110,15 +110,6 @@ class ProjectController {
       }
       else if (block.type == 'Auto') {
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
-
-        if (this.project.blocks[this.current_block_id.toString()].connectors[0].targets.length > 0) {
-          this.current_block_id = this.project.blocks[this.current_block_id.toString()].connectors[0].targets[0];
-          
-          var self = this;
-          setTimeout(function() {
-            self._send_current_message();
-          }, 500);  
-        }
       }
       else {
           this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
@@ -135,6 +126,30 @@ class ProjectController {
           });*/
       }        
     }
+
+    message_sent_event() {
+      var path = this.get_path();
+
+      if (path.length == 0) {
+          if (this.project.blocks[this.current_block_id.toString()].type == 'Auto' && this.project.blocks[this.current_block_id.toString()].connectors[0].targets.length > 0) {
+              this.current_block_id = this.project.blocks[this.current_block_id.toString()].connectors[0].targets[0];
+              this._send_current_message();
+          }  
+      }
+
+      else {
+          var block = this.project.blocks[path[0]];
+
+          for (var i = 1; i < path.length; i++) {
+              block = block.blocks[path[i]];
+          }
+
+          if (block.blocks[this.current_block_id.toString()].type == 'Auto' && block.blocks[this.current_block_id.toString()].connectors[0].targets.length > 0) {
+              //var new_id = block.blocks[this.current_block_id.toString()].connectors[0].targets[0];
+              //this.check_group_exit(new_id);
+          }                  
+      }      
+    }    
     
     receive_message(str) {
       console.log('receive!' + str);

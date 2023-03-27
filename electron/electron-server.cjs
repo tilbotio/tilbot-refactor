@@ -32,8 +32,7 @@ io.on('connection', (socket) => {
     clients[socket.id] = new ProjectController(io, project, socket.id);
   
     socket.on('message sent', () => {
-      console.log('message sent event');
-      //self.clients[socket.id].message_sent_event();
+      clients[socket.id].message_sent_event();
     });
 
     socket.on('user_message', (str) => {
