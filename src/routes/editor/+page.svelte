@@ -366,6 +366,9 @@
                 local_ip = data.local_ip;
             });
         }
+
+        project.canvas_width = screen.width * 1.5;
+        project.canvas_height = screen.height * 1.5;
     });
     
     function add_start_location() {
@@ -388,8 +391,8 @@
             type: type,
             name: 'Block ' + project.current_block_id,
             content: '',
-            x: 500,
-            y: 500,
+            x: document.getElementById('editor_main').scrollLeft + screen.width * 0.35,
+            y: document.getElementById('editor_main').scrollTop + screen.height * 0.4,
             connectors: []
         }
 
@@ -542,14 +545,29 @@
             // Update look-up table
             let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
 
-            line_locations[e.detail.id].x = in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft;
-            line_locations[e.detail.id].y = in_obj.top + in_obj.height / 2 + document.getElementById('editor_main').scrollTop;
+            let obj_left = in_obj.left + in_obj.width / 2;
+            let obj_top = in_obj.top + in_obj.height / 2;
+
+            line_locations[e.detail.id].x = obj_left + document.getElementById('editor_main').scrollLeft;
+            line_locations[e.detail.id].y = obj_top + document.getElementById('editor_main').scrollTop;
 
             for (const cid in line_locations[e.detail.id].connectors) {
                 let con_obj = document.getElementById('block_' + e.detail.id + '_c_' + cid).getBoundingClientRect();
                 line_locations[e.detail.id].connectors[cid].x = con_obj.left + con_obj.width / 2 + document.getElementById('editor_main').scrollLeft;
                 line_locations[e.detail.id].connectors[cid].y = con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop;
             }
+
+            if (document.getElementById('editor_main').offsetHeight - obj_top < 150) {
+                document.getElementById('editor_main').scrollTop += 10;
+            }
+
+            if (document.getElementById('editor_main').offsetWidth - obj_left < 200) {
+                // @TODO: prevent scrolling further than possible
+                // @TODO: after drop (other event), check if canvas needs to be larger or smaller
+                document.getElementById('editor_main').scrollLeft = document.getElementById('editor_main').scrollLeft + 10;
+            }
+
+            console.log(document.getElementById('editor_main').offsetWidth + ' - ' + obj_left);
         }
 
         // @TODO: also update if a change in the connectors occurs (e.g., connectors added or removed)
