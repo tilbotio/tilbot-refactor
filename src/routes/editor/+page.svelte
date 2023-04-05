@@ -246,7 +246,7 @@
                     Run all
                 </button>
     
-                <button class="btn gap-2 btn-disabled">
+                <button class="btn gap-2 {selected_id === 0 ? 'btn-disabled' : ''}" on:click={run_selected}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
@@ -420,7 +420,7 @@
         deselect_all();
         
         setTimeout(function() {
-            selected_id = project.current_block_id;
+            selected_id = project.current_block_id-1;
         }, 50);
     }
     
@@ -832,5 +832,17 @@
         if (simulator.contentWindow !== null) {
             simulator.contentWindow.postMessage(JSON.stringify(project), "*");
         }        
+    }
+
+    function run_selected() {
+        if (simulator.contentWindow !== null) {
+            let project_copy = JSON.parse(JSON.stringify(project));
+
+            if (selected_id !== 0) {
+                project_copy.starting_block_id = selected_id;
+            }
+
+            simulator.contentWindow.postMessage(JSON.stringify(project_copy), "*");            
+        }
     }
 </script>
