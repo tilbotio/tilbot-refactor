@@ -1,9 +1,12 @@
+const Logger = require('./logger.cjs');
+
 class ProjectController {
     constructor(io, project, socket_id) {
         this.io = io;
         this.project = project;
         this.socket_id = socket_id;
         this.current_block_id = this.project.starting_block_id;
+        this.logger = new Logger();
 
         // @TODO: logging
 
@@ -62,15 +65,7 @@ class ProjectController {
         console.log(params);
 
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
-        /*let msg = new MessageSchema();
-        msg.message = block.content;
-        msg.source = 'bot';
-        this.log.messages.push(msg);
-        this.log.save((err) => {
-          if (err) {
-            //console.log(err);
-          }
-        });*/
+        this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'List') {
         params.options = block.items;
@@ -78,15 +73,7 @@ class ProjectController {
         params.number_input = block.number_input;
 
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
-        /*let msg = new MessageSchema();
-        msg.message = block.content;
-        msg.source = 'bot';
-        this.log.messages.push(msg);
-        this.log.save((err) => {
-          if (err) {
-            //console.log(err);
-          }
-        });*/
+        this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Group') {
           this.move_to_group({id: this.current_block_id, model: block});
@@ -97,33 +84,15 @@ class ProjectController {
         params.options = block.options;
 
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
-
-        /*let msg = new MessageSchema();
-        msg.message = block.content;
-        msg.source = 'bot';
-        this.log.messages.push(msg);
-        this.log.save((err) => {
-          if (err) {
-            //console.log(err);
-          }
-        });  */        
+        this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Auto') {
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
+        this.logger.log('message_bot', block.content);
       }
       else {
           this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
-  
-          /*let msg = new MessageSchema();
-          msg.message = block.content;
-          msg.source = 'bot';
-          this.log.messages.push(msg);
-          this.log.markModified('messages');
-          this.log.save((err) => {
-            if (err) {
-              //console.log(err);
-            }
-          });*/
+          this.logger.log('message_bot', block.content);  
       }        
     }
 
@@ -155,6 +124,7 @@ class ProjectController {
       console.log('receive!' + str);
 
       var block = this.project.blocks[this.current_block_id.toString()];
+      this.logger.log('message_user', str);
 
       // @TODO: improve processing of message
       if (block.type == 'MC') {
@@ -185,7 +155,11 @@ class ProjectController {
               this._send_current_message();
           }
       }      
-    }    
+    }
+    
+    disconnected() {
+      this.logger.log('session_end');
+    }
 }
 
 module.exports = ProjectController;

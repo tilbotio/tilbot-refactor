@@ -40,12 +40,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-      //self.clients[socket.id].log_disconnect();
-      //self.clients[socket.id].session_closed = new Date();
-      //self.clients[socket.id].save();
-      
-      //delete clients[socket.id];
-
+      clients[socket.id].disconnected();
+      delete clients[socket.id];
       console.log('disconnected');
     });
 
