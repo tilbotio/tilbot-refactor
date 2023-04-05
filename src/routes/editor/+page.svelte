@@ -157,7 +157,7 @@
     </div>
 
     <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
-        <div id="editor_main" class="grow overflow-auto" on:click={editor_clicked} on:mousedown={editor_mousedown} on:mousemove={editor_mousemove} on:mouseup={editor_mouseup}>
+        <div id="editor_main" class="grow overflow-auto" style="max-width: calc(100vw - 24rem)" on:click={editor_clicked} on:mousedown={editor_mousedown} on:mousemove={editor_mousemove} on:mouseup={editor_mouseup}>
             <div class="relative" style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}">
                 <svg style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}" class="absolute pointer-events-none z-40">
                     {#if Object.entries(line_locations).length > 1}
@@ -541,6 +541,38 @@
             deselect_all();
         }
 
+        else if (e.detail.event == 'draggable_dropped') {
+            // See if we need to make the canvas smaller
+            let max_x = 0;
+            let max_y = 0;
+
+            for (const [key, value] of Object.entries(line_locations)) {
+                if (Object.entries(value.connectors).length == 0) {
+                    if (value.x + 200 > max_x) {
+                        max_x = value.x + 200;
+                    }
+
+                    if (value.y + 200 > max_y) {
+                        max_y = value.y + 200;
+                    }
+                }
+
+                else {
+                    if (value.connectors[Object.entries(value.connectors).length-1].x > max_x) {
+                        max_x = value.x;
+                    }
+
+                    if (value.connectors[Object.entries(value.connectors).length-1].y > max_y) {
+                        max_y = value.y;
+                    }
+                    
+                }
+            }
+
+            project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
+            project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
+        }
+
         else if (e.detail.event == 'dragging') {
             // Update look-up table
             let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
@@ -557,20 +589,34 @@
                 line_locations[e.detail.id].connectors[cid].y = con_obj.top + con_obj.height / 2 + document.getElementById('editor_main').scrollTop;
             }
 
-            if (document.getElementById('editor_main').offsetHeight - obj_top < 150) {
-                document.getElementById('editor_main').scrollTop += 10;
+            if (document.getElementById('editor_main').offsetHeight - obj_top < 100) {
+                if (document.getElementById('editor_main').firstChild.offsetHeight - (obj_top + document.getElementById('editor_main').scrollTop) < 100) {
+                    project.canvas_height += 100;
+                }
+
+                document.getElementById('editor_main').scrollTop += 30;
+            }
+
+            else if (obj_top < 50 && document.getElementById('editor_main').scrollTop > 0) {
+                // @TODO: bind editor_main?
+                document.getElementById('editor_main').scrollTop = document.getElementById('editor_main').scrollTop - 30;
+                document.getElementById('block_' + e.detail.id).parentElement.dispatchEvent(new Event('mousemove'));
             }
 
             if (document.getElementById('editor_main').offsetWidth - obj_left < 200) {
-                // @TODO: prevent scrolling further than possible
-                // @TODO: after drop (other event), check if canvas needs to be larger or smaller
-                document.getElementById('editor_main').scrollLeft = document.getElementById('editor_main').scrollLeft + 10;
+                if (document.getElementById('editor_main').firstChild.offsetWidth - (obj_left + document.getElementById('editor_main').scrollLeft) < 200) {
+                    project.canvas_width += 100;
+                }
+                document.getElementById('editor_main').scrollLeft = document.getElementById('editor_main').scrollLeft + 30;
+                document.getElementById('block_' + e.detail.id).parentElement.dispatchEvent(new Event('mousemove'));
             }
 
-            console.log(document.getElementById('editor_main').offsetWidth + ' - ' + obj_left);
-        }
+            else if (obj_left < -50 && document.getElementById('editor_main').scrollLeft > 0) {
+                document.getElementById('editor_main').scrollLeft = document.getElementById('editor_main').scrollLeft - 30;
+                document.getElementById('block_' + e.detail.id).parentElement.dispatchEvent(new Event('mousemove'));
+            }
 
-        // @TODO: also update if a change in the connectors occurs (e.g., connectors added or removed)
+        }
     }
 
     function handleEditBlockMessage(e: Event) {
