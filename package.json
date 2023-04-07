@@ -35,6 +35,7 @@
 		"express": "^4.18.2",
 		"express-mongodb-session": "^3.2.1",
 		"express-session": "^1.17.3",
+		"html5-qrcode": "^2.3.7",
 		"mongoose": "^6.6.7",
 		"mongoose-bcrypt": "^1.10.0",
 		"public-ip": "4.0.4",

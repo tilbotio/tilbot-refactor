@@ -1,4 +1,13 @@
-<div class="bg-gray-100 w-full top-0 h-20 drop-shadow fixed">
+<div class="fixed top-0 left-0 w-full h-full bg-tilbot-secondary-purple z-50 hidden flex flex-col justify-center text-white" bind:this={scan_overlay}>
+  <button class="btn btn-circle absolute right-4 top-4 z-10 bg-white text-tilbot-secondary-purple hover:bg-white" on:click={close_scan_overlay}>
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+  </button>
+  <div id="barcodereader" class="!border-0 z-0">
+    
+  </div>
+</div>
+
+<div class="bg-gray-100 w-full top-0 h-20 drop-shadow fixed" bind:this={header}>
     <div class="avatar online placeholder mt-4 ml-4">
         <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
           <span>TB</span>
@@ -52,12 +61,35 @@
 
 {:else}
 <div class="bg-gray-100 w-full h-20 drop-shadow-md absolute bottom-0">
-    <textarea class="textarea textarea-bordered resize-none inset-y-2 left-4 right-20 absolute" placeholder="" bind:this={input_text} on:keydown={input_key_down}></textarea>
-    <button class="btn btn-circle absolute bottom-4 right-4" on:click={text_submit}>
+    <textarea class="textarea textarea-bordered resize-none inset-y-2 left-4 right-20 absolute" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
+    <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
         </svg>          
     </button>
+    <div id="menu" class="float-right z-10 {(input_text !== undefined && input_text.value == '') ? '' : 'hidden'}">
+      <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
+          <li>
+            <a class="active:bg-tilbot-secondary-hardpink">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+              </svg>              
+            </a>
+            <ul class="bg-slate-100 shadow-md -top-full">
+                <div class="tooltip tooltip-left" data-tip="Scan barcode">
+                  <li>
+                      <a class="active:bg-tilbot-secondary-hardpink" on:click={start_barcode}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                        </svg>                                                  
+                      </a>
+                  </li>
+                </div>
+            </ul>
+          </li>
+        </ul>
+      </div>  
 </div>
 {/if}
 
@@ -68,8 +100,15 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { LocalProjectController} from "../client/controllers/localproject";
+import { Html5Qrcode } from "html5-qrcode";
 
 let message_container: HTMLElement;
+let header: HTMLElement;
+
+// For the barcode scanner
+let scan_overlay: HTMLElement;
+let html5Qrcode: any = undefined;
+
 let input_text: HTMLTextAreaElement;
 let controller: LocalProjectController;
 
@@ -125,7 +164,7 @@ function chatbot_message(msg: any) {
       }, msg.content.length / 15 * 500);    
 }
 
-function input_key_down(event: KeyboardEvent) {
+function input_key_down(event: KeyboardEvent) {  
   if (event.key == "Enter" && !event.shiftKey) {
     try {
       text_submit();
@@ -134,6 +173,55 @@ function input_key_down(event: KeyboardEvent) {
       event.preventDefault();
       input_text.value = '';
     }
+  }
+}
+
+function input_key_up(event: KeyboardEvent) {
+  // Refresh the value to trigger buttons to show/hide if needed
+  input_text.value = input_text.value;
+}
+
+function close_scan_overlay() {
+  html5Qrcode.stop().then((ignore) => {
+    }).catch((err) => {
+    }).finally(() => {
+      scan_overlay.classList.add('hidden');
+    });
+}
+
+function start_barcode() {
+  html5Qrcode = new Html5Qrcode("barcodereader");
+
+  scan_overlay.classList.remove('hidden');
+
+  html5Qrcode.start({
+    facingMode: 'environment'
+  },
+  {
+    fps: 10,
+    qrbox: {
+      width: 250,
+      height: 250
+    }
+  },
+  onScanSuccess);
+
+  //html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+
+function onScanSuccess(decodedText: string, decodedResult: any) {
+  input_text.value = decodedText;
+  try {
+    text_submit();
+  }
+  finally {
+    input_text.value = '';
+    html5Qrcode.stop().then((ignore) => {
+    }).catch((err) => {
+    }).finally(() => {
+      message_container.dispatchEvent(new Event('mousedown'));
+      scan_overlay.classList.add('hidden');
+    });
   }
 }
 
