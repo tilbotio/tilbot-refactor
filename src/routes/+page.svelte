@@ -7,7 +7,8 @@
   </div>
 </div>
 
-<div class="bg-gray-100 w-full top-0 h-20 drop-shadow fixed" bind:this={header}>
+<div class="flex flex-col w-full h-full">
+<div class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow" bind:this={header}>
     <div class="avatar online placeholder mt-4 ml-4">
         <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
           <span>TB</span>
@@ -16,7 +17,7 @@
     <span class="text-lg font-medium ml-4">Tilbot</span>
 </div>
 
-<div class="top-20 w-full bottom-20 fixed overflow-y-scroll py-2" bind:this={message_container}>
+<div class="w-full h-full flex-1 overflow-y-scroll py-2" bind:this={message_container}>
   {#each messages as message}
   {#if message.from == 'bot'}
   <div class="chat chat-start">
@@ -42,7 +43,7 @@
 </div>
 
 {#if current_message_type == 'MC'}
-<div class="bg-gray-100 w-full drop-shadow-md absolute bottom-0">
+<div class="bg-gray-100 w-full drop-shadow-md">
   <div class="p-3 mr-16 text-center">
   {#each mc_options as mc_option}
     {#if mc_option.selected}
@@ -60,8 +61,8 @@
 </div>
 
 {:else}
-<div class="bg-gray-100 w-full h-20 drop-shadow-md absolute bottom-0">
-    <textarea class="textarea textarea-bordered resize-none inset-y-2 left-4 right-20 absolute" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
+<div class="bg-gray-100 w-full h-20 drop-shadow-md">
+    <textarea class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
     <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
@@ -92,6 +93,7 @@
       </div>  
 </div>
 {/if}
+</div>
 
 {#if !iframe}
 <script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
@@ -182,11 +184,14 @@ function input_key_up(event: KeyboardEvent) {
 }
 
 function close_scan_overlay() {
-  html5Qrcode.stop().then((ignore) => {
+  try {
+    html5Qrcode.stop().then((ignore) => {
     }).catch((err) => {
-    }).finally(() => {
-      scan_overlay.classList.add('hidden');
     });
+  }
+  finally {
+    scan_overlay.classList.add('hidden');
+  }
 }
 
 function start_barcode() {
