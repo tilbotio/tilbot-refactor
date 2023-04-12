@@ -63,12 +63,12 @@
 {:else}
 <div class="bg-gray-100 w-full h-20 drop-shadow-md">
     <textarea class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
-    <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit}>
+    <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text !== null && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
         </svg>          
     </button>
-    <div id="menu" class="float-right z-10 {(input_text !== undefined && input_text.value == '') ? '' : 'hidden'}">
+    <div id="menu" class="float-right z-10 {(input_text !== undefined && input_text !== null && input_text.value == '') ? '' : 'hidden'}">
       <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
           <li>
             <a class="active:bg-tilbot-secondary-hardpink">
