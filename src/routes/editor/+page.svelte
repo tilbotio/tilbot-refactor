@@ -3,15 +3,16 @@
         <img src="images/tilbot_logo.svg" class="ml-1 mt-2 w-48" />
     <!--</a>-->
 
-<!-- Put this part before </body> tag -->
-<input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
-<div class="modal">
-  <div class="modal-box relative max-w-4xl">
-    {#if edit_block !== null}
-    <svelte:component this={block_popup_components[edit_block.type]} objAttributes={edit_block} on:message={handleEditBlockMessage} />
-    {/if}
-  </div>
-</div>    
+    <Variables bind:variablewindow={variables_window} variables={project.variables}></Variables>
+
+    <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
+    <div class="modal">
+    <div class="modal-box relative max-w-4xl">
+        {#if edit_block !== null}
+        <svelte:component this={block_popup_components[edit_block.type]} objAttributes={edit_block} on:message={handleEditBlockMessage} />
+        {/if}
+    </div>
+    </div>    
 
 
     <input type="checkbox" bind:this={modal_launch} class="modal-toggle" />
@@ -107,6 +108,15 @@
                 &nbsp;<br /><br />
             
             </li>            
+            <div class="tooltip tooltip-right" data-tip="Variables & data">
+                <li>
+                <a class="active:bg-tilbot-secondary-hardpink" on:click="{btn_variables_click}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.745 3A23.933 23.933 0 003 12c0 3.183.62 6.22 1.745 9M19.5 3c.967 2.78 1.5 5.817 1.5 9s-.533 6.22-1.5 9M8.25 8.885l1.444-.89a.75.75 0 011.105.402l2.402 7.206a.75.75 0 001.104.401l1.445-.889m-8.25.75l.213.09a1.687 1.687 0 002.062-.617l4.45-6.676a1.688 1.688 0 012.062-.618l.213.09" />
+                      </svg>
+                </a>
+                </li>
+            </div>              
             <div class="tooltip tooltip-right" data-tip="Settings">
                 <li>
                 <a class="active:bg-tilbot-secondary-hardpink">
@@ -308,6 +318,7 @@
 
 <script lang="ts">
     import { onMount, SvelteComponent } from "svelte";    
+    import Variables from './variables.svelte';
     import Draggable from './draggable.svelte';
     import Start from './start.svelte';
     import AutoBlock from './blocks/auto.svelte';
@@ -332,6 +343,7 @@
     let jsonfileinput: HTMLElement;
     let simulator: HTMLIFrameElement;
     let start: SvelteComponent;
+    let variables_window: SvelteComponent;
 
     let project: any = {
         'name': 'New project',
@@ -341,7 +353,8 @@
         'canvas_width': 2240,
         'canvas_height': 1480,
         'bot_name': 'Tilbot',
-        'avatar_image': '/client/img/default_profile.svg'
+        'avatar_image': '/client/img/default_profile.svg',
+        'variables': []
     };
     let modal_launch: HTMLInputElement;
     let modal_edit: HTMLInputElement;
@@ -374,21 +387,21 @@
                 public_ip = data.public_ip;
                 local_ip = data.local_ip;
             });
+
+            window.api.receive('project-load', (project_str: string) => {
+                load_project(project_str);
+            });
+
+
+            window.api.receive('project-saved', () => {
+                document.getElementById('alert_text').textContent = 'Project saved!';
+                document.getElementById('alert')?.classList.remove('invisible');
+
+                setTimeout(function() {
+                    document.getElementById('alert')?.classList.add('invisible');
+                }, 3000);
+            });            
         }
-
-        window.api.receive('project-load', (project_str: string) => {
-            load_project(project_str);
-        });
-
-
-        window.api.receive('project-saved', () => {
-            document.getElementById('alert_text').textContent = 'Project saved!';
-            document.getElementById('alert')?.classList.remove('invisible');
-
-            setTimeout(function() {
-                document.getElementById('alert')?.classList.add('invisible');
-            }, 3000);
-        });
 
         project.canvas_width = screen.width * 1.5;
         project.canvas_height = screen.height * 1.5;
@@ -454,6 +467,10 @@
 
     function btn_save_click() {
         window.api.send('do-save', JSON.stringify(project));
+    }
+
+    function btn_variables_click() {
+        variables_window.show();
     }
 
     function btn_launch_click() {
@@ -830,7 +847,8 @@
         'canvas_width': 2240,
         'canvas_height': 1480,
         'bot_name': 'Tilbot',
-        'avatar_image': '/client/img/default_profile.svg'
+        'avatar_image': '/client/img/default_profile.svg',
+        'variables': []
         };        
         line_locations = {};
         add_start_location();
