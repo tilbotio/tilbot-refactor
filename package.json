@@ -17,6 +17,7 @@
 		"@sveltejs/adapter-static": "^1.0.1",
 		"@sveltejs/kit": "next",
 		"@tailwindcss/line-clamp": "^0.4.2",
+		"@types/papaparse": "^5.3.7",
 		"autoprefixer": "^10.4.12",
 		"postcss": "^8.4.18",
 		"svelte": "^3.44.0",
@@ -39,6 +40,7 @@
 		"html5-qrcode": "^2.3.7",
 		"mongoose": "^6.6.7",
 		"mongoose-bcrypt": "^1.10.0",
+		"papaparse": "^5.4.1",
 		"public-ip": "4.0.4",
 		"socket.io": "^4.5.4"
 	}

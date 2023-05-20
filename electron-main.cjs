@@ -85,6 +85,27 @@ const createWindow = () => {
       // @TODO: something with additional files like avatar, data files, etc.
     }
   });  
+
+  ipcMain.on('do-load-csv-data', (event) => {
+    let load_file = dialog.showOpenDialogSync({
+        properties: [
+          'openFile'
+        ],
+        filters: [{
+            name: 'Comma-separated value (CSV) file',
+            extensions: [
+                '.csv'
+            ]
+        }]
+    });
+
+    if (load_file !== undefined) {
+        let csv = fs.readFileSync(load_file[0], 'utf8');
+        win.webContents.send('csv-load', csv);
+
+        // @TODO: load into csvdb for use
+    }
+  });    
   
   ipcMain.on('do-save', (event, project) => {
     let save_file = dialog.showSaveDialogSync({
