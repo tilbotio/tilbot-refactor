@@ -156,6 +156,15 @@
         </ul>
     </div>
 
+    <div id="alert" class="flex justify-center w-full absolute top-4 invisible">
+        <div class="alert alert-success shadow-lg w-[250px]">
+            <div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span id="alert_text">Project saved!</span>
+            </div>
+        </div>    
+    </div>
+
     <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
         <div id="editor_main" class="grow overflow-auto" style="max-width: calc(100vw - 24rem)" on:click={editor_clicked} on:mousedown={editor_mousedown} on:mousemove={editor_mousemove} on:mouseup={editor_mouseup}>
             <div class="relative" style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}">
@@ -298,7 +307,7 @@
 
 
 <script lang="ts">
-    import { onMount, SvelteComponent } from "svelte";
+    import { onMount, SvelteComponent } from "svelte";    
     import Draggable from './draggable.svelte';
     import Start from './start.svelte';
     import AutoBlock from './blocks/auto.svelte';
@@ -367,6 +376,20 @@
             });
         }
 
+        window.api.receive('project-load', (project_str: string) => {
+            load_project(project_str);
+        });
+
+
+        window.api.receive('project-saved', () => {
+            document.getElementById('alert_text').textContent = 'Project saved!';
+            document.getElementById('alert')?.classList.remove('invisible');
+
+            setTimeout(function() {
+                document.getElementById('alert')?.classList.add('invisible');
+            }, 3000);
+        });
+
         project.canvas_width = screen.width * 1.5;
         project.canvas_height = screen.height * 1.5;
     });
@@ -425,17 +448,12 @@
     }
     
     function btn_load_click() {
-        jsonfileinput.click();
+        window.api.send('do-load');
+        //jsonfileinput.click(); // For web version
     }
 
     function btn_save_click() {
-        let dataStr: string = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(project));
-        let downloadAnchorNode: HTMLElement = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "project.json"); // @TODO: name based on project name?
-        document.body.appendChild(downloadAnchorNode); // required for some browsers
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        window.api.send('do-save', JSON.stringify(project));
     }
 
     function btn_launch_click() {
@@ -453,38 +471,18 @@
             const tar = event.target as HTMLInputElement;
 
             if (tar.files !== null && tar.files[0] !== undefined) {
+
                 const reader = new FileReader();
                 reader.onload = function(load_event) {
-                    // Empty canvas first before loading?
-                    //$('#connector_lines').empty();
-                    //$('#editor_panel .block').remove();
-                    //this.blockControllers = {};
-
                     if (load_event.target !== null) {
                         const res = load_event.target.result as string;
-                        load_project(JSON.parse(res));        
+                        load_project(res);        
                     }                    
                 }
 
-                // First clear everything
-                project = {
-                'name': 'New project',
-                'current_block_id': 1,
-                'blocks': {},
-                'starting_block_id': 1,
-                'canvas_width': 2240,
-                'canvas_height': 1480,
-                'bot_name': 'Tilbot',
-                'avatar_image': '/client/img/default_profile.svg'
-                };        
-                line_locations = {};
-                add_start_location();
-
-                is_loading = true;
-
-                reader.readAsText(tar.files[0]);
+                reader.readAsText(tar.files[0]);                    
+            }
         }
-      }
     }
 
     function handleDraggableMessage(e: Event) {
@@ -822,9 +820,24 @@
         dragging_connector = {};
     }
 
-    function load_project(json:JSON) {
+    function load_project(json_str:string) {
+        // First clear everything
+        project = {
+        'name': 'New project',
+        'current_block_id': 1,
+        'blocks': {},
+        'starting_block_id': 1,
+        'canvas_width': 2240,
+        'canvas_height': 1480,
+        'bot_name': 'Tilbot',
+        'avatar_image': '/client/img/default_profile.svg'
+        };        
+        line_locations = {};
+        add_start_location();
+
+        is_loading = true;
         num_draggable_loaded = 0;
-        project = json;
+        project = JSON.parse(json_str);
         project.blocks = project.blocks;
     }
 

@@ -1,8 +1,9 @@
-const { app, protocol, BrowserWindow, ipcMain } = require('electron');
+const { app, protocol, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
 const fs = require('fs');
 const publicIp = require('public-ip');
+const AdmZip = require('adm-zip');
 
 let ps = undefined;
 
@@ -45,7 +46,66 @@ const createWindow = () => {
         ps.kill('SIGTERM');
       }        
     });
-  })();  
+  })(); 
+
+  ipcMain.on('do-load', (event) => {
+    let load_file = dialog.showOpenDialogSync({
+        properties: [
+          'openFile'
+        ],
+        filters: [{
+            name: 'Tilbot project',
+            extensions: [
+                '.tilbot',
+                '.json'
+            ]
+        }]
+    });
+
+    if (load_file !== undefined) {
+      // Only one file should be allowed to be selected.
+      if (load_file[0].endsWith('.tilbot')) {
+        const zip = new AdmZip(load_file[0]);
+        var zipEntries = zip.getEntries(); // an array of ZipEntry records
+  
+        zipEntries.forEach(function (zipEntry) {
+            console.log(zipEntry.toString()); // outputs zip entries information
+            if (zipEntry.entryName == "project.json") {
+                win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
+            }
+        });  
+      }
+
+      else {
+        let json = fs.readFileSync(load_file[0], 'utf8');
+        console.log(json);
+        win.webContents.send('project-load', json);
+      }
+
+      // @TODO: something with additional files like avatar, data files, etc.
+    }
+  });  
+  
+  ipcMain.on('do-save', (event, project) => {
+    let save_file = dialog.showSaveDialogSync({
+        filters: [{
+            name: 'Tilbot project',
+            extensions: [
+                '.tilbot'
+            ]
+        }]
+    });
+
+    if (save_file !== undefined) {
+      const file = new AdmZip();
+      file.addFile('project.json', Buffer.from(project));
+      fs.writeFileSync(save_file, file.toBuffer());
+      win.webContents.send('project-saved');
+    }
+
+    // @TODO: save related files (avatar image, data files, etc.)
+  });
+
 
   protocol.interceptFileProtocol('file', (request, callback) => {        
 

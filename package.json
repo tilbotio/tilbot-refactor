@@ -29,6 +29,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"adm-zip": "^0.5.10",
 		"cors": "^2.8.5",
 		"daisyui": "^2.46.0",
 		"electron": "^22.0.0",
