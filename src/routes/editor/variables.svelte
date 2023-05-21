@@ -76,7 +76,7 @@
     import Papa from "papaparse";
 
     let toggle: HTMLElement;
-    export let variables: any;
+    export let variables: Array<any>;
     let selected_variable: number = -1;
     let current_csv: any = undefined;
 
@@ -92,8 +92,9 @@
         // Only works in Electron for now. @TODO: implement for online version of Tilbot.
         if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
 
-            window.api.receive('csv-load', (csv_str: string) => {
-                current_csv = Papa.parse(csv_str).data;
+            window.api.receive('csv-load', (param: any) => {
+                variables[selected_variable].csvfile = param.filename;
+                current_csv = Papa.parse(param.csv).data;
             });
         }
     });
@@ -129,7 +130,7 @@
 
         variables.push({
             name: name,
-            type: 'var'
+            type: 'csv'
         });
 
         current_csv = undefined;

@@ -35,7 +35,10 @@ const createWindow = () => {
     let ipv4 = await publicIp.v4();
 
     ipcMain.on('open-server', (event, project_json) => {
-      fs.writeFileSync(`${__dirname}/electron-project.json`, project_json);
+      if (!fs.existsSync(`${__dirname}/currentproject/`)) {
+        fs.mkdirSync(`${__dirname}/currentproject`);
+      }
+      fs.writeFileSync(`${__dirname}/currentproject/electron-project.json`, project_json);
       ps = fork(`${__dirname}/electron/electron-server.cjs`);
 
       win.webContents.send('server-ip', {public_ip: ipv4, local_ip: address});
@@ -63,17 +66,25 @@ const createWindow = () => {
     });
 
     if (load_file !== undefined) {
+      // Remove the old temp project
+      if (fs.existsSync(`${__dirname}/currentproject`)) {
+        fs.rmSync(`${__dirname}/currentproject`, { recursive: true });
+      }
+      fs.mkdirSync(`${__dirname}/currentproject`);
+
       // Only one file should be allowed to be selected.
       if (load_file[0].endsWith('.tilbot')) {
         const zip = new AdmZip(load_file[0]);
         var zipEntries = zip.getEntries(); // an array of ZipEntry records
   
         zipEntries.forEach(function (zipEntry) {
-            console.log(zipEntry.toString()); // outputs zip entries information
             if (zipEntry.entryName == "project.json") {
                 win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
             }
-        });  
+            else if (zipEntry.entryName.startsWith('var/')) {
+              zip.extractEntryTo(zipEntry, `${__dirname}/currentproject`);              
+            }
+        });          
       }
 
       else {
@@ -100,8 +111,19 @@ const createWindow = () => {
     });
 
     if (load_file !== undefined) {
+        let fname = path.basename(load_file[0]);
+
+        if (!fs.existsSync(`${__dirname}/currentproject/`)) {
+          fs.mkdirSync(`${__dirname}/currentproject`);
+        }
+
+        if (!fs.existsSync(`${__dirname}/currentproject/var/`)) {
+          fs.mkdirSync(`${__dirname}/currentproject/var`);
+        }
+          
+        fs.copyFileSync(load_file[0], `${__dirname}/currentproject/var/` + fname);
         let csv = fs.readFileSync(load_file[0], 'utf8');
-        win.webContents.send('csv-load', csv);
+        win.webContents.send('csv-load', { filename: fname, csv: csv });
 
         // @TODO: load into csvdb for use
     }
@@ -120,6 +142,14 @@ const createWindow = () => {
     if (save_file !== undefined) {
       const file = new AdmZip();
       file.addFile('project.json', Buffer.from(project));
+
+      let proj_obj = JSON.parse(project);
+      for (v in proj_obj.variables) {
+        if (proj_obj.variables[v].type == 'csv') {
+          file.addLocalFile(`${__dirname}/currentproject/var/` + proj_obj.variables[v].csvfile, 'var');
+        }
+      }
+      
       fs.writeFileSync(save_file, file.toBuffer());
       win.webContents.send('project-saved');
     }
