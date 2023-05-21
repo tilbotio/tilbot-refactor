@@ -164,6 +164,9 @@ const createWindow = () => {
     // @TODO: save related files (avatar image, data files, etc.)
   });
 
+  // @TODO: For the online version, this will have to be integrated with the editorsocket, I think.
+  // @TODO: CSV client thing here when launching the simulator (send project file here, load CSV things)
+
 
   protocol.interceptFileProtocol('file', (request, callback) => {        
 

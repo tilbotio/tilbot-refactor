@@ -215,7 +215,7 @@ function start_barcode() {
 }
 
 function onScanSuccess(decodedText: string, decodedResult: any) {
-  input_text.value = decodedText;
+  input_text.value = 'barcode:' + decodedText;
   try {
     text_submit();
   }

@@ -18,7 +18,8 @@
         <!-- head -->
         <thead>
           <tr>
-            <th>Answer option</th>
+            <th>Selection method</th>
+            <th>User response to match with</th>
             <th></th>
           </tr>
         </thead>
@@ -26,6 +27,12 @@
             {#each Object.entries(copy.connectors) as [id, connector]}
             {#if connector.label !== '[else]'}
             <tr>
+                <td>
+                    <select bind:value={connector.method} class="select select-bordered w-full max-w-xs">
+                        <option selected value="contains">Contains text</option>
+                        <option value="barcode">Barcode/QR scan</option>
+                    </select>                    
+                </td>
                 <td><input type="text" placeholder="Type here" class="input input-bordered w-full max-w-xs" bind:value={connector.label} /></td>
                 <td>
                     <button class="btn btn-square btn-outline btn-sm" on:click={() => btn_del_option_clicked(id)}>

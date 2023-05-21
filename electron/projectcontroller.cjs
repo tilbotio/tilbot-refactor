@@ -1,4 +1,5 @@
 const Logger = require('./logger.cjs');
+const CsvData = require('./csvdata.cjs');
 
 class ProjectController {
     constructor(io, project, socket_id) {
@@ -7,8 +8,15 @@ class ProjectController {
         this.socket_id = socket_id;
         this.current_block_id = this.project.starting_block_id;
         this.logger = new Logger();
+        
+        this.csv_datas = {};
 
-        // @TODO: logging
+        // Set up the data files
+        for (let v in this.project.variables) {
+          if (this.project.variables[v].type == 'csv') {
+            this.csv_datas[this.project.variables[v].name] = new CsvData(this.project.variables[v].csvfile);
+          }
+        }
 
         this._send_current_message();
     }
@@ -23,7 +31,7 @@ class ProjectController {
       return path;
     }
     
-    _send_current_message() {
+    _send_current_message(input = '') {
         if (this.current_block_id == undefined) {
           return;
         }
@@ -40,19 +48,31 @@ class ProjectController {
           }
         }       
         
-        block = block.blocks[this.current_block_id.toString()];
-        
+        block = block.blocks[this.current_block_id.toString()];        
   
         setTimeout(function() {
-          self.send_message(block);
+          self.send_message(block, input);
         }, block.delay * 1000);  
   
     }    
 
-    send_message(block) {
+    send_message(block, input = '') {
       this.message_processed = false;
 
       var params = {};
+
+      let content = block.content;
+
+      let regExp = /\[([^\]]+)\]/g;
+      let matches = regExp.exec(content);
+
+      console.log(matches);
+
+      if (matches !== null) {
+        if (typeof input === 'object' && input !== null) {
+          content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
+        }
+      }
 
       if (block.type == 'MC') {
         params.options = [];
@@ -64,7 +84,7 @@ class ProjectController {
 
         console.log(params);
 
-        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
+        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'List') {
@@ -72,7 +92,7 @@ class ProjectController {
         params.text_input = block.text_input;
         params.number_input = block.number_input;
 
-        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
+        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Group') {
@@ -83,15 +103,15 @@ class ProjectController {
       else if (block.type == 'AutoComplete') {
         params.options = block.options;
 
-        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});
+        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Auto') {
-        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
+        this.io.to(this.socket_id).emit('bot message', {type: block.type, content: content, params: params});          
         this.logger.log('message_bot', block.content);
       }
       else {
-          this.io.to(this.socket_id).emit('bot message', {type: block.type, content: block.content, params: params});          
+          this.io.to(this.socket_id).emit('bot message', {type: block.type, content: content, params: params});          
           this.logger.log('message_bot', block.content);  
       }        
     }
@@ -120,7 +140,7 @@ class ProjectController {
       }      
     }    
     
-    receive_message(str) {
+    async receive_message(str) {
       console.log('receive!' + str);
 
       var block = this.project.blocks[this.current_block_id.toString()];
@@ -143,10 +163,51 @@ class ProjectController {
               if (block.connectors[c].label == '[else]') {
                   else_connector_id = c;
               }
-              else if (str.toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
-                  found = true;
-                  this.current_block_id = block.connectors[c].targets[0];
-                  this._send_current_message();
+              else if (block.connectors[c].method !== undefined && (block.connectors[c].method !== 'barcode' || str.startsWith('barcode:'))) {
+                // Check for tags / special commands
+                let regExp = /\[([^\]]+)\]/g;
+                let matches = regExp.exec(block.connectors[c].label);
+
+                if (matches !== null) {
+                  let should_match = true;
+                  // @TODO: do something in case of multiple matches, and support [and] or [or]
+                  //let match = matches[0];
+
+                  // If it's a column from a CSV table, there should be a period.
+                  // Element 1 of the match contains the string without the brackets.
+                  let csv_parts = matches[1].split('.');
+
+                  if (csv_parts.length == 2) {
+                    let db = csv_parts[0];
+                    let col = csv_parts[1];
+
+                    if (db.startsWith('!')) {
+                      should_match = false;
+                      db = db.substring(1);
+                    }
+
+                    let res = await this.csv_datas[db].get(col, str.replace('barcode:', ''));
+                  
+                    if (res.length > 0 && should_match) {
+                      found = true;
+                      this.current_block_id = block.connectors[c].targets[0];
+                      this._send_current_message(res[0]);
+                    }
+                    else if (res.length == 0 && !should_match) {
+                      found = true;
+                      this.current_block_id = block.connectors[c].targets[0];
+                      this._send_current_message();
+                    }
+                  }
+                }
+
+                else {
+                  if (str.replace('barcode:', '').toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
+                    found = true;
+                    this.current_block_id = block.connectors[c].targets[0];
+                    this._send_current_message();
+                  }                  
+                }            
               }
           }
 
