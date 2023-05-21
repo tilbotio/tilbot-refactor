@@ -94,6 +94,16 @@
                 </div>                
             </ul>
             </li>
+            <div class="tooltip tooltip-right" data-tip="Add trigger">
+                <li>
+                <a class="active:bg-tilbot-secondary-hardpink" on:click={() => new_block('Trigger')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M3.124 7.5A8.969 8.969 0 015.292 3m13.416 0a8.969 8.969 0 012.168 4.5" />
+                    </svg>
+                </a>
+                </li>
+            </div>
+              
             <!--<div class="tooltip tooltip-right" data-tip="Add group">
                 <li>
                 <a>
@@ -324,20 +334,24 @@
     import AutoBlock from './blocks/auto.svelte';
     import MCBlock from './blocks/mc.svelte';
     import TextBlock from './blocks/text.svelte';
+    import TriggerBlock from './blocks/trigger.svelte';
     import AutoBlockPopup from './block_popups/auto.svelte';
     import MCBlockPopup from './block_popups/mc.svelte';
     import TextBlockPopup from './block_popups/text.svelte';
+    import TriggerBlockPopup from './block_popups/trigger.svelte';
 
     let block_components: {[key: string]: any} = {
         'Auto': AutoBlock,
         'MC': MCBlock,
-        'Text': TextBlock
+        'Text': TextBlock,
+        'Trigger': TriggerBlock
     };
 
     let block_popup_components: {[key: string]: any} = {
         'Auto': AutoBlockPopup,
         'MC': MCBlockPopup,
-        'Text': TextBlockPopup
+        'Text': TextBlockPopup,
+        'Trigger': TriggerBlockPopup
     }
 
     let jsonfileinput: HTMLElement;
@@ -451,6 +465,10 @@
             ]
         }
 
+        else if (type == 'Trigger') {
+            project.blocks[project.current_block_id].name = 'Trigger ' + project.current_block_id;
+        }
+ 
         project.current_block_id += 1;
 
         deselect_all();
@@ -511,7 +529,7 @@
                     is_loading = false;
                     // Build the look-up table for connecting lines.
                     for (const [key, value] of Object.entries(project.blocks)) {
-                        
+
                         let in_obj = document.getElementById('block_' + key + '_in').getBoundingClientRect();
 
                         line_locations[key] = {
@@ -534,6 +552,7 @@
             else {
                 // Just add the one new entry in the collection
                 let block = project.blocks[e.detail.id];
+
                 let in_obj = document.getElementById('block_' + e.detail.id + '_in').getBoundingClientRect();
                 line_locations[e.detail.id] = {
                     x: in_obj.left + in_obj.width / 2 + document.getElementById('editor_main').scrollLeft,

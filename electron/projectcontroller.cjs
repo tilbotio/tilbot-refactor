@@ -137,9 +137,73 @@ class ProjectController {
           }                  
       }      
     }    
+
+    async check_labeled_connector(connector, str) {
+      let found = false;
+      
+      if (connector.method !== undefined && (connector.method !== 'barcode' || str.startsWith('barcode:'))) {
+        // Check for tags / special commands
+        let regExp = /\[([^\]]+)\]/g;
+        let matches = regExp.exec(connector.label);
+
+        if (matches !== null) {
+          let should_match = true;
+          // @TODO: do something in case of multiple matches, and support [and] or [or]
+          //let match = matches[0];
+
+          // If it's a column from a CSV table, there should be a period.
+          // Element 1 of the match contains the string without the brackets.
+          let csv_parts = matches[1].split('.');
+
+          if (csv_parts.length == 2) {
+            let db = csv_parts[0];
+            let col = csv_parts[1];
+
+            if (db.startsWith('!')) {
+              should_match = false;
+              db = db.substring(1);
+            }
+
+            let res = await this.csv_datas[db].get(col, str.replace('barcode:', ''));
+          
+            if (res.length > 0 && should_match) {
+              found = true;
+              this.current_block_id = connector.targets[0];
+              this._send_current_message(res[0]);
+            }
+            else if (res.length == 0 && !should_match) {
+              found = true;
+              this.current_block_id = connector.targets[0];
+              this._send_current_message();
+            }
+          }
+        }
+
+        else {
+          if (str.replace('barcode:', '').toLowerCase().includes(connector.label.toLowerCase())) {
+            found = true;
+            this.current_block_id = connector.targets[0];
+            this._send_current_message();
+          }                  
+        }            
+      }     
+      
+      return found;
+    }
     
     async receive_message(str) {
       console.log('receive!' + str);
+
+        // Check if we need to fire a trigger -- prioritize these over continuing the flow of the interaction?
+        for (var b in this.project.blocks) {
+          if (this.project.blocks[b].type == 'Trigger') {
+              for (var c in this.project.blocks[b].connectors) {
+                  if (await this.check_labeled_connector(this.project.blocks[b].connectors[c], str)) {
+                      break;
+                  }
+              }                
+          }
+      }      
 
       var block = this.project.blocks[this.current_block_id.toString()];
       this.logger.log('message_user', str);
@@ -161,51 +225,12 @@ class ProjectController {
               if (block.connectors[c].label == '[else]') {
                   else_connector_id = c;
               }
-              else if (block.connectors[c].method !== undefined && (block.connectors[c].method !== 'barcode' || str.startsWith('barcode:'))) {
-                // Check for tags / special commands
-                let regExp = /\[([^\]]+)\]/g;
-                let matches = regExp.exec(block.connectors[c].label);
 
-                if (matches !== null) {
-                  let should_match = true;
-                  // @TODO: do something in case of multiple matches, and support [and] or [or]
-                  //let match = matches[0];
-
-                  // If it's a column from a CSV table, there should be a period.
-                  // Element 1 of the match contains the string without the brackets.
-                  let csv_parts = matches[1].split('.');
-
-                  if (csv_parts.length == 2) {
-                    let db = csv_parts[0];
-                    let col = csv_parts[1];
-
-                    if (db.startsWith('!')) {
-                      should_match = false;
-                      db = db.substring(1);
-                    }
-
-                    let res = await this.csv_datas[db].get(col, str.replace('barcode:', ''));
-                  
-                    if (res.length > 0 && should_match) {
-                      found = true;
-                      this.current_block_id = block.connectors[c].targets[0];
-                      this._send_current_message(res[0]);
-                    }
-                    else if (res.length == 0 && !should_match) {
-                      found = true;
-                      this.current_block_id = block.connectors[c].targets[0];
-                      this._send_current_message();
-                    }
-                  }
+              else {
+                found = await this.check_labeled_connector(block.connectors[c], str);                    
+                if (found) {
+                    break;
                 }
-
-                else {
-                  if (str.replace('barcode:', '').toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
-                    found = true;
-                    this.current_block_id = block.connectors[c].targets[0];
-                    this._send_current_message();
-                  }                  
-                }            
               }
           }
 
