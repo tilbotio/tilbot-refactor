@@ -121,7 +121,8 @@ let show_typing_indicator: boolean = false;
 let iframe = true;
 
 onMount(() => {
-    if (window.self === window.top) {
+    // Check if we're in the editor
+    if (window.self === window.top || window.parent.isTilbotEditor === undefined) {
       iframe = false;
       //let socket = io();
     }

@@ -390,6 +390,9 @@
     let dragging_connector = {};
 
     onMount(() => {
+        // Set a property on the window so that the simulator knows it's part of the editor.
+        window.isTilbotEditor = true;
+        
         add_start_location();
 
         // Hack to fix the simulator in Electron (specifically on OS X)
