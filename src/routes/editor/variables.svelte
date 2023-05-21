@@ -140,6 +140,10 @@
     function variable_row_clicked() {
         current_csv = undefined;
         selected_variable = this.dataset.variableId;
+
+        if (variables[selected_variable].type == 'csv' && variables[selected_variable].csvfile !== undefined) {
+            window.api.send('get-csv', variables[selected_variable].csvfile);
+        }
     }
 
     function import_csv() {

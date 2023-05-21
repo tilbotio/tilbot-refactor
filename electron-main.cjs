@@ -97,6 +97,13 @@ const createWindow = () => {
     }
   });  
 
+  ipcMain.on('get-csv', (event, filename) => {
+    if (fs.existsSync(`${__dirname}/currentproject/var/` + filename)) {
+      let csv = fs.readFileSync(`${__dirname}/currentproject/var/` + filename, 'utf8');
+      win.webContents.send('csv-load', { filename: filename, csv: csv });
+    }
+  });  
+
   ipcMain.on('do-load-csv-data', (event) => {
     let load_file = dialog.showOpenDialogSync({
         properties: [
