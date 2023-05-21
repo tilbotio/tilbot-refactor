@@ -861,6 +861,7 @@
 
     function run_all() {
         if (simulator.contentWindow !== null) {
+            window.api.send('load-project-db', project);
             simulator.contentWindow.postMessage(JSON.stringify(project), "*");
         }        
     }
@@ -872,6 +873,8 @@
             if (selected_id !== 0) {
                 project_copy.starting_block_id = selected_id;
             }
+
+            window.api.send('load-project-db', project_copy);
 
             simulator.contentWindow.postMessage(JSON.stringify(project_copy), "*");            
         }

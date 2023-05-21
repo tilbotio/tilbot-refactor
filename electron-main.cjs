@@ -4,8 +4,11 @@ const { fork } = require('child_process');
 const fs = require('fs');
 const publicIp = require('public-ip');
 const AdmZip = require('adm-zip');
+const CsvData = require('./electron/csvdata.cjs');
 
 let ps = undefined;
+
+let csv_datas = {};
 
 const createWindow = () => {       
   const win = new BrowserWindow({
@@ -103,6 +106,23 @@ const createWindow = () => {
       win.webContents.send('csv-load', { filename: filename, csv: csv });
     }
   });  
+
+  ipcMain.on('load-project-db', (event, project) => {
+    csv_datas = {};
+
+    // Set up the data files
+    for (let v in project.variables) {
+      if (project.variables[v].type == 'csv') {
+        csv_datas[project.variables[v].name] = new CsvData(project.variables[v].csvfile);
+      }
+    }
+    
+  });
+
+  ipcMain.handle('query-db', async (event, params) => {
+    let res = await csv_datas[params.db].get(params.col, params.val);    
+    return res;
+  });
 
   ipcMain.on('do-load-csv-data', (event) => {
     let load_file = dialog.showOpenDialogSync({

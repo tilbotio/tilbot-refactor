@@ -15,8 +15,19 @@ class LocalProjectController extends BasicProjectController {
         this.send_message(this.project.blocks[this.project.starting_block_id.toString()]);
     }
 
-    send_message(block: any) {
+    send_message(block: any, input: string = '') {
         let params: any = {};
+
+        let content = block.content;
+
+        let regExp = /\[([^\]]+)\]/g;
+        let matches = regExp.exec(content);
+  
+        if (matches !== null) {
+          if (typeof input === 'object' && input !== null) {
+            content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
+          }
+        }  
 
         if (block.type == 'MC') {
             params.options = [];
@@ -24,14 +35,14 @@ class LocalProjectController extends BasicProjectController {
                 params.options.push(block.connectors[c].label);
             }
 
-            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
+            this.chatbot_message_callback({type: block.type, content: content, params: params});
         }
         else if (block.type == 'List') {
             params.options = block.items;
             params.text_input = block.text_input;
             params.number_input = block.number_input;
 
-            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
+            this.chatbot_message_callback({type: block.type, content: content, params: params});
         }
         else if (block.type == 'Group') {
             this.move_to_group({id: this.current_block_id, model: block});
@@ -39,7 +50,7 @@ class LocalProjectController extends BasicProjectController {
             this.send_message(block.blocks[block.starting_block_id]);
         }
         else {
-            this.chatbot_message_callback({type: block.type, content: block.content, params: params});
+            this.chatbot_message_callback({type: block.type, content: content, params: params});
         }
     }
 
@@ -100,7 +111,7 @@ class LocalProjectController extends BasicProjectController {
         }      
     }
 
-    _send_current_message() {
+    _send_current_message(input:string = '') {
         var self = this;
         var path = this.get_path();
         var block = this.project;
@@ -116,11 +127,11 @@ class LocalProjectController extends BasicProjectController {
         block = block.blocks[this.current_block_id.toString()];
 
         setTimeout(function() {
-            self.send_message(block);
+            self.send_message(block, input);
         }, block.delay * 1000);
     }
 
-    receive_message(str: string) {
+    async receive_message(str: string) {
         var block = this.project.blocks[this.current_block_id.toString()];
 
         // @TODO: improve processing of message
@@ -140,6 +151,56 @@ class LocalProjectController extends BasicProjectController {
                 if (block.connectors[c].label == '[else]') {
                     else_connector_id = c;
                 }
+
+                else if (block.connectors[c].method !== undefined && (block.connectors[c].method !== 'barcode' || str.startsWith('barcode:'))) {
+                    // Check for tags / special commands
+                    let regExp = /\[([^\]]+)\]/g;
+                    let matches = regExp.exec(block.connectors[c].label);
+    
+                    if (matches !== null) {
+                      let should_match = true;
+                      // @TODO: do something in case of multiple matches, and support [and] or [or]
+                      //let match = matches[0];
+    
+                      // If it's a column from a CSV table, there should be a period.
+                      // Element 1 of the match contains the string without the brackets.
+                      let csv_parts = matches[1].split('.');
+    
+                      if (csv_parts.length == 2) {
+                        let db = csv_parts[0];
+                        let col = csv_parts[1];
+    
+                        if (db.startsWith('!')) {
+                          should_match = false;
+                          db = db.substring(1);
+                        }
+    
+                        //let res = await this.csv_datas[db].get(col, str.replace('barcode:', ''));
+                        // Check if we're in Electron
+                        // @TODO: if not, query the socket for the db
+                        let res = await window.parent.api.invoke('query-db', {db: db, col: col, val: str.replace('barcode:', '')});
+                      
+                        if (res.length > 0 && should_match) {
+                          found = true;
+                          this.current_block_id = block.connectors[c].targets[0];
+                          this._send_current_message(res[0]);
+                        }
+                        else if (res.length == 0 && !should_match) {
+                          found = true;
+                          this.current_block_id = block.connectors[c].targets[0];
+                          this._send_current_message();
+                        }
+                      }
+                    }
+    
+                    else {
+                      if (str.replace('barcode:', '').toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
+                        found = true;
+                        this.current_block_id = block.connectors[c].targets[0];
+                        this._send_current_message();
+                      }                  
+                    }            
+                }                
                 else if (str.toLowerCase().includes(block.connectors[c].label.toLowerCase())) {
                     found = true;
                     this.current_block_id = block.connectors[c].targets[0];

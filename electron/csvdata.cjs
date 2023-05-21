@@ -1,6 +1,5 @@
 //const fs = require('fs');
 const LineByLine = require('n-readlines');
-const rl = require('n-readlines');
 const csvdb = require('csv-database');
 
 class CsvData {

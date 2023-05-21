@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld(
     "api", {
         send: (channel, data) => {
             // whitelist channels
-            let validChannels = ["open-server", "close-server", "do-save", "do-load", "do-load-csv-data", "get-csv"];
+            let validChannels = ["open-server", "close-server", "do-save", "do-load", "do-load-csv-data", "get-csv", "load-project-db"];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);
             }
@@ -21,6 +21,13 @@ contextBridge.exposeInMainWorld(
             if (validChannels.includes(channel)) {
                 // Deliberately strip event as it includes `sender` 
                 ipcRenderer.on(channel, (event, ...args) => func(...args));
+            }
+        },
+        invoke: async (channel, data) => {
+            let validChannels = ["query-db"];
+            if (validChannels.includes(channel)) {
+                let res = await ipcRenderer.invoke(channel, data);
+                return res;
             }
         }
     }

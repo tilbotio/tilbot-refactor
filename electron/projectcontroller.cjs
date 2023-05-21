@@ -66,8 +66,6 @@ class ProjectController {
       let regExp = /\[([^\]]+)\]/g;
       let matches = regExp.exec(content);
 
-      console.log(matches);
-
       if (matches !== null) {
         if (typeof input === 'object' && input !== null) {
           content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
