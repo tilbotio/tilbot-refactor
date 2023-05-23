@@ -131,7 +131,7 @@ onMount(() => {
         // @TODO load a temp local file here to display to users connecting
     }    
 
-    window.addEventListener('message', project_received, false);
+    window.addEventListener('message', message_received, false);
 });
 
 function socket_script_loaded(event: Event) {
@@ -142,7 +142,28 @@ function socket_script_loaded(event: Event) {
   
 }
 
-function project_received(event: MessageEvent) {
+function message_received(event: MessageEvent) {
+  // A message could either be a project file (simulator) or a text message from a parent window.
+  try {
+    JSON.parse(event.data);
+  }
+  catch (e: any) {
+    input_text.value = event.data;
+
+    try {
+      text_submit();
+    }
+    finally {
+      input_text.value = '';
+    }    
+    return;    
+  }
+
+  project_received(event.data);
+
+}
+
+function project_received(project: any) {
     messages = [];
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)
@@ -152,7 +173,7 @@ function project_received(event: MessageEvent) {
         clearTimeout(i);
     }
 
-    controller = new LocalProjectController(event.data, chatbot_message);
+    controller = new LocalProjectController(project, chatbot_message);
 }
 
 function chatbot_message(msg: any) {
