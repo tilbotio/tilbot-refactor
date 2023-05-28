@@ -45,6 +45,10 @@ class BasicProjectController {
     move_to_root() {
         this.selected_group_blocks = [];
     }
+
+    log(str: string) {
+
+    }
 }
 
 export {BasicProjectController}

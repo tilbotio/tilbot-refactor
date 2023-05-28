@@ -45,4 +45,8 @@ io.on('connection', (socket) => {
       console.log('disconnected');
     });
 
+    socket.on('log', (str) => {
+      clients[socket.id].log(str);
+    });
+
 });

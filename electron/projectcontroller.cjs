@@ -259,6 +259,10 @@ class ProjectController {
     disconnected() {
       this.logger.log('session_end');
     }
+
+    log(str) {
+      this.logger.log(str);
+    }
 }
 
 module.exports = ProjectController;

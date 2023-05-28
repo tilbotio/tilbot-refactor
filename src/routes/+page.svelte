@@ -148,16 +148,22 @@ async function message_received(event: MessageEvent) {
     JSON.parse(event.data);
   }
   catch (e: any) {
-    current_message_type = 'Text';
-    await tick();
-    input_text.value = event.data;
-
-    try {
-      text_submit();
+    if (event.data.startsWith('log:')) {
+      controller.log(event.data.substring(5));
     }
-    finally {
-      input_text.value = '';
-    }    
+    else {
+      current_message_type = 'Text';
+      await tick();
+      input_text.value = event.data;
+
+      try {
+        text_submit();
+      }
+      finally {
+        input_text.value = '';
+      }    
+    }
+
     return;    
   }
 
@@ -187,7 +193,7 @@ function chatbot_message(msg: any) {
         show_typing_indicator = false;
         show_message(msg.type, msg.content, msg.params);
         controller.message_sent_event();
-      }, msg.content.length / 15 * 500);    
+      }, 2000);//msg.content.length / 15 * 500);    
 }
 
 function input_key_down(event: KeyboardEvent) {  
