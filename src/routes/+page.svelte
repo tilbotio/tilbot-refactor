@@ -100,7 +100,7 @@
 {/if}
 
 <script lang="ts">
-import { onMount } from "svelte";
+import { onMount, tick } from "svelte";
 import { LocalProjectController} from "../client/controllers/localproject";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -142,12 +142,14 @@ function socket_script_loaded(event: Event) {
   
 }
 
-function message_received(event: MessageEvent) {
+async function message_received(event: MessageEvent) {
   // A message could either be a project file (simulator) or a text message from a parent window.
   try {
     JSON.parse(event.data);
   }
   catch (e: any) {
+    current_message_type = 'Text';
+    await tick();
     input_text.value = event.data;
 
     try {

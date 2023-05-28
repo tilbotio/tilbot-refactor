@@ -33,7 +33,7 @@
         {#if objAttributes.connectors !== undefined && objAttributes.connectors.length > 0}
             <div class="divider m-0"></div>
             {#each Object.entries(objAttributes.connectors) as [id, connector]}
-                <BasicConnector blockId={blockId} connectorId={id}></BasicConnector>
+                <BasicConnector blockId={blockId} connectorId={id} hasEvents={(connector.events !== undefined && connector.events.length > 0)}></BasicConnector>
             {/each}
         {/if}
         

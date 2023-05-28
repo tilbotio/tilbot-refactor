@@ -13,10 +13,15 @@ class RemoteProjectController extends BasicProjectController {
         this.chatbot_message_callback = chatbot_message_callback;
         this.socket = socket;
         socket.on('bot message', this.send_message.bind(this)); 
+        socket.on('window message', this.window_message.bind(this));
     }
 
     send_message(block: any) {
         this.chatbot_message_callback(block);
+    }
+
+    window_message(msg: any) {
+        window.parent.postMessage(msg.content);
     }
 
     message_sent_event() {

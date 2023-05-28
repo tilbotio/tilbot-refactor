@@ -48,13 +48,23 @@ class ProjectController {
           }
         }       
         
-        block = block.blocks[this.current_block_id.toString()];        
-  
+        block = block.blocks[this.current_block_id.toString()];  
+          
         setTimeout(function() {
           self.send_message(block, input);
         }, block.delay * 1000);  
   
     }    
+
+    send_events(connector, input_str) {
+      if (connector.events !== undefined) {
+        for (let c = 0; c < connector.events.length; c++) {
+          if (connector.events[c].type == 'message') {
+            this.io.to(this.socket_id).emit('window message', {content: connector.events[c].content.replace('[input]', input_str)});
+          }
+        }
+      }
+    }
 
     send_message(block, input = '') {
       this.message_processed = false;
@@ -169,11 +179,13 @@ class ProjectController {
             if (res.length > 0 && should_match) {
               found = true;
               this.current_block_id = connector.targets[0];
+              this.send_events(connector, str);
               this._send_current_message(res[0]);
             }
             else if (res.length == 0 && !should_match) {
               found = true;
               this.current_block_id = connector.targets[0];
+              this.send_events(connector, str);
               this._send_current_message();
             }
           }
@@ -183,6 +195,7 @@ class ProjectController {
           if (str.replace('barcode:', '').toLowerCase().includes(connector.label.toLowerCase())) {
             found = true;
             this.current_block_id = connector.targets[0];
+            this.send_events(connector, str);
             this._send_current_message();
           }                  
         }            
@@ -213,6 +226,7 @@ class ProjectController {
           for (var c in block.connectors) {
               if (block.connectors[c].label == str) {
                   this.current_block_id = block.connectors[c].targets[0];
+                  this.send_events(block.connectors[c], str);
                   this._send_current_message();
               }
           }
@@ -236,6 +250,7 @@ class ProjectController {
 
           if (!found && else_connector_id !== '-1') {
               this.current_block_id = block.connectors[else_connector_id].targets[0];
+              this.send_events(block.connectors[else_connector_id], str);
               this._send_current_message();
           }
       }      
