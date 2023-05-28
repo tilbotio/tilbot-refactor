@@ -8,3 +8,4 @@ node_modules
 !.env.example
 /logs
 /currentproject
+/tilbot-win32-x64

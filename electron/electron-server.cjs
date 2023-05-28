@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socket(server);
 
-let project = fs.readFileSync('currentproject/electron-project.json');
+let project = fs.readFileSync(__dirname + '/../currentproject/electron-project.json');
 project = JSON.parse(project);
 console.log(project);
 

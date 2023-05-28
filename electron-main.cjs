@@ -62,8 +62,8 @@ const createWindow = () => {
         filters: [{
             name: 'Tilbot project',
             extensions: [
-                '.tilbot',
-                '.json'
+                'tilbot',
+                'json'
             ]
         }]
     });
