@@ -30,12 +30,26 @@ const createWindow = () => {
 
   // Get external and internal ip-address
   (async () => {
-    var address, ifaces = require('os').networkInterfaces();
-    for (var dev in ifaces) {
-      ifaces[dev].filter((details) => details.family === 'IPv4' && details.internal === false ? address = details.address: undefined);
+    let ipv4 = 'localhost';
+    let address = 'localhost';
+    let ifaces = null;
+
+    try {
+      address, ifaces = require('os').networkInterfaces();
+      for (var dev in ifaces) {
+        ifaces[dev].filter((details) => details.family === 'IPv4' && details.internal === false ? address = details.address: undefined);
+      }
+
+      ipv4 = await publicIp.v4({
+        timeout: 200
+      });  
+
+      console.log('doneee');
     }
 
-    let ipv4 = await publicIp.v4();
+    catch {
+      console.log('error with ip');
+    }
 
     ipcMain.on('open-server', (event, project_json) => {
       if (!fs.existsSync(`${__dirname}/currentproject/`)) {
