@@ -46,11 +46,7 @@
 <div class="bg-gray-100 w-full drop-shadow-md">
   <div class="p-3 mr-16 text-center">
   {#each mc_options as mc_option}
-    {#if mc_option.selected}
-    <button class="btn m-1" on:click={mc_submit}>{mc_option.content}</button>
-    {:else}
-    <button class="btn btn-outline m-1" on:click={mc_select}>{mc_option.content}</button>
-    {/if}
+    <button class="btn btn-outline m-1" on:click={mc_submit}>{mc_option.content}</button>
   {/each}
   </div>
   <button class="btn btn-circle absolute bottom-4 right-4" on:click={mc_submit}>
@@ -230,7 +226,7 @@ function start_barcode() {
   scan_overlay.classList.remove('hidden');
 
   html5Qrcode.start({
-    facingMode: 'environment'
+    facingMode: 'user'
   },
   {
     fps: 10,
@@ -264,30 +260,19 @@ function text_submit() {
     user_message(input_text.value.replace(/(?:\r\n|\r|\n)/g, '<br>'));
 }
 
-function mc_select(event: MouseEvent) {
+function mc_submit(event: MouseEvent) {
+
   if (event.target !== null) {
     let tar = event.target as HTMLElement;
     mc_options.forEach(function(value) {
       if (value.content == tar.innerHTML) {
-        value.selected = true;
-      }
-      else {
-        value.selected = false;
+        user_message(value.content);
+        current_message_type = 'Text';
+        return;
       }
     });
-
-    mc_options = mc_options;
   }
-}
 
-function mc_submit() {
-  mc_options.forEach(function(value) {
-    if (value.selected) {
-      user_message(value.content);
-      current_message_type = 'Text';
-      return;
-    }
-  });
 }
 
 function user_message(content: string) {
