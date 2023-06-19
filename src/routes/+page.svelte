@@ -221,7 +221,7 @@ function close_scan_overlay() {
 }
 
 function qrboxFunction(viewfinderWidth: number, viewfinderHeight: number) {
-  let minEdgePercentage = 0.7; // 70%
+  let minEdgePercentage = 0.9; // 70%
   let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
   let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
   return {
@@ -236,7 +236,7 @@ function start_barcode() {
   scan_overlay.classList.remove('hidden');
 
   html5Qrcode.start({
-    facingMode: 'user'
+    facingMode: 'environment'
   },
   {
     fps: 10,
