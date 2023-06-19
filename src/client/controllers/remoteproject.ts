@@ -8,8 +8,6 @@ class RemoteProjectController extends BasicProjectController {
     constructor(socket: any, chatbot_message_callback: Function) {
         super();
 
-        console.log(chatbot_message_callback);
-
         this.chatbot_message_callback = chatbot_message_callback;
         this.socket = socket;
         socket.on('bot message', this.send_message.bind(this)); 
@@ -21,7 +19,9 @@ class RemoteProjectController extends BasicProjectController {
     }
 
     window_message(msg: any) {
-        window.parent.postMessage(msg.content);
+        if (window.self !== window.top) {
+            window.parent.postMessage(msg.content);
+        }
     }
 
     message_sent_event() {

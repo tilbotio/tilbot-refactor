@@ -60,7 +60,30 @@ class ProjectController {
       if (connector.events !== undefined) {
         for (let c = 0; c < connector.events.length; c++) {
           if (connector.events[c].type == 'message') {
-            this.io.to(this.socket_id).emit('window message', {content: connector.events[c].content.replace('[input]', input_str)});
+
+            if (typeof input_str == 'object') {
+              // Check for tags / special commands
+              let regExp = /\[([^\]]+)\]/g;
+              let matches = regExp.exec(connector.events[c].content);
+
+              if (matches !== null) {
+                // If it's a column from a CSV table, there should be a period.
+                // Element 1 of the match contains the string without the brackets.
+                let csv_parts = matches[1].split('.');
+
+                if (csv_parts.length == 2) {
+                  let db = csv_parts[0];
+                  let col = csv_parts[1];
+
+                  this.io.to(this.socket_id).emit('window message', {content: connector.events[c].content.replace('[' + db + '.' + col + ']', input_str[col])});
+                }
+              
+              }
+            }
+            else {
+              this.io.to(this.socket_id).emit('window message', {content: connector.events[c].content.replace('[input]', input_str)});
+            }
+
           }
         }
       }
@@ -79,6 +102,9 @@ class ProjectController {
       if (matches !== null) {
         if (typeof input === 'object' && input !== null) {
           content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
+        }
+        else if (input !== null) {
+          content = content.replace('[input]', input);
         }
       }
 
@@ -179,13 +205,13 @@ class ProjectController {
             if (res.length > 0 && should_match) {
               found = true;
               this.current_block_id = connector.targets[0];
-              this.send_events(connector, str);
+              this.send_events(connector, res[0]);
               this._send_current_message(res[0]);
             }
             else if (res.length == 0 && !should_match) {
               found = true;
               this.current_block_id = connector.targets[0];
-              this.send_events(connector, str);
+              this.send_events(connector, '');
               this._send_current_message();
             }
           }
@@ -196,7 +222,7 @@ class ProjectController {
             found = true;
             this.current_block_id = connector.targets[0];
             this.send_events(connector, str);
-            this._send_current_message();
+            this._send_current_message(str);
           }                  
         }            
       }     
@@ -251,7 +277,7 @@ class ProjectController {
           if (!found && else_connector_id !== '-1') {
               this.current_block_id = block.connectors[else_connector_id].targets[0];
               this.send_events(block.connectors[else_connector_id], str);
-              this._send_current_message();
+              this._send_current_message(str);
           }
       }      
     }

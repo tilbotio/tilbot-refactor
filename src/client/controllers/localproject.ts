@@ -27,6 +27,9 @@ class LocalProjectController extends BasicProjectController {
           if (typeof input === 'object' && input !== null) {
             content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
           }
+          else if (input !== null) {
+            content = content.replace('[input]', input);
+          }  
         }  
 
         if (block.type == 'MC') {
@@ -179,14 +182,14 @@ class LocalProjectController extends BasicProjectController {
               if (str.replace('barcode:', '').toLowerCase().includes(connector.label.toLowerCase())) {
                 found = true;
                 this.current_block_id = connector.targets[0];
-                this._send_current_message();
+                this._send_current_message(str);
               }                  
             }            
         }                
         else if (str.toLowerCase().includes(connector.label.toLowerCase())) {
             found = true;
             this.current_block_id = connector.targets[0];
-            this._send_current_message();
+            this._send_current_message(str);
         }
 
         return found;
@@ -234,7 +237,7 @@ class LocalProjectController extends BasicProjectController {
 
             if (!found && else_connector_id !== '-1') {
                 this.current_block_id = block.connectors[else_connector_id].targets[0];
-                this._send_current_message();
+                this._send_current_message(str);
             }
         }
     }
