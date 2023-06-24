@@ -6,16 +6,19 @@ class CsvData {
 
     db = null;
 
-    constructor(filename) {
+    constructor(filename, p) {
+        if (p.includes(`${__dirname}`)) {
+            p += '/..';
+        }
         // Retrieve the columns from the first row of the CSV file
-        let csvfile = new LineByLine(`${__dirname}/../currentproject/var/` + filename);
+        let csvfile = new LineByLine(p + '/currentproject/var/' + filename);
         let firstline = csvfile.next();
         let firstlineutf = firstline.toString('utf8').replace("\r", "").replace(/[\u0000-\u001F\u007F-\u009F\u200B\u200C\uFEFF]/g, "");
         let cols = firstlineutf.split(';');
 
         // Set up the CSV database
         let self = this;
-        csvdb(`${__dirname}/../currentproject/var/` + filename, cols, ";").then(function(db) {
+        csvdb(p + '/currentproject/var/' + filename, cols, ";").then(function(db) {
             self.db = db;
         });
     }

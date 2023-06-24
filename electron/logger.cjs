@@ -36,12 +36,13 @@ class Logger {
 
     stream = null;
 
-    constructor() {
-        if (!fs.existsSync('logs')) {
-            fs.mkdirSync('logs');
+    constructor(p) {
+
+        if (!fs.existsSync(p + '/logs')) {
+            fs.mkdirSync(p + '/logs');
         }
 
-        this.stream = fs.createWriteStream("logs/" + new Date().toFilenameString() + ".csv", {flags: 'a'});
+        this.stream = fs.createWriteStream(p + "/logs/" + new Date().toFilenameString() + ".csv", {flags: 'a'});
         this.stream.write("timestamp;event;detail\r\n");
         this.log('session_start');
     }

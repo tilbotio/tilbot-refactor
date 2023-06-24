@@ -52,11 +52,17 @@ const createWindow = () => {
     }
 
     ipcMain.on('open-server', (event, project_json) => {
-      if (!fs.existsSync(`${__dirname}/currentproject/`)) {
-        fs.mkdirSync(`${__dirname}/currentproject`);
+      let p = `${__dirname}`;
+      if (process.platform === 'darwin') {
+        p = app.getPath('userData');
       }
-      fs.writeFileSync(`${__dirname}/currentproject/electron-project.json`, project_json);
-      ps = fork(`${__dirname}/electron/electron-server.cjs`);
+      if (!fs.existsSync(p + '/currentproject/')) {
+        fs.mkdirSync(p + '/currentproject');
+      }
+      fs.writeFileSync(p + '/currentproject/electron-project.json', project_json);
+      ps = fork(`${__dirname}/electron/electron-server.cjs`,
+        ['-p=' + p]
+      );
 
       win.webContents.send('server-ip', {public_ip: ipv4, local_ip: address});
     });
@@ -83,11 +89,16 @@ const createWindow = () => {
     });
 
     if (load_file !== undefined) {
-      // Remove the old temp project
-      if (fs.existsSync(`${__dirname}/currentproject`)) {
-        fs.rmSync(`${__dirname}/currentproject`, { recursive: true });
+      let p = `${__dirname}`;
+      if (process.platform === 'darwin') {
+        p = app.getPath('userData');
       }
-      fs.mkdirSync(`${__dirname}/currentproject`);
+
+      // Remove the old temp project
+      if (fs.existsSync(p + '/currentproject')) {
+        fs.rmSync(p + '/currentproject', { recursive: true });
+      }
+      fs.mkdirSync(p + '/currentproject');
 
       // Only one file should be allowed to be selected.
       if (load_file[0].endsWith('.tilbot')) {
@@ -99,7 +110,7 @@ const createWindow = () => {
                 win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
             }
             else if (zipEntry.entryName.startsWith('var/')) {
-              zip.extractEntryTo(zipEntry, `${__dirname}/currentproject`);              
+              zip.extractEntryTo(zipEntry, p + '/currentproject');              
             }
         });          
       }
@@ -115,8 +126,13 @@ const createWindow = () => {
   });  
 
   ipcMain.on('get-csv', (event, filename) => {
-    if (fs.existsSync(`${__dirname}/currentproject/var/` + filename)) {
-      let csv = fs.readFileSync(`${__dirname}/currentproject/var/` + filename, 'utf8');
+    let p = `${__dirname}`;
+    if (process.platform === 'darwin') {
+      p = app.getPath('userData');
+    }
+
+    if (fs.existsSync(p + '/currentproject/var/' + filename)) {
+      let csv = fs.readFileSync(p + '/currentproject/var/' + filename, 'utf8');
       win.webContents.send('csv-load', { filename: filename, csv: csv });
     }
   });  
@@ -152,17 +168,22 @@ const createWindow = () => {
     });
 
     if (load_file !== undefined) {
+        let p = `${__dirname}`;
+        if (process.platform === 'darwin') {
+          p = app.getPath('userData');
+        }
+
         let fname = path.basename(load_file[0]);
 
-        if (!fs.existsSync(`${__dirname}/currentproject/`)) {
-          fs.mkdirSync(`${__dirname}/currentproject`);
+        if (!fs.existsSync(p + '/currentproject/')) {
+          fs.mkdirSync(p + '/currentproject');
         }
 
-        if (!fs.existsSync(`${__dirname}/currentproject/var/`)) {
-          fs.mkdirSync(`${__dirname}/currentproject/var`);
+        if (!fs.existsSync(p + '/currentproject/var/')) {
+          fs.mkdirSync(p + '/currentproject/var');
         }
           
-        fs.copyFileSync(load_file[0], `${__dirname}/currentproject/var/` + fname);
+        fs.copyFileSync(load_file[0], p + '/currentproject/var/' + fname);
         let csv = fs.readFileSync(load_file[0], 'utf8');
         win.webContents.send('csv-load', { filename: fname, csv: csv });
 
@@ -181,13 +202,18 @@ const createWindow = () => {
     });
 
     if (save_file !== undefined) {
+      let p = `${__dirname}`;
+      if (process.platform === 'darwin') {
+        p = app.getPath('userData');
+      }
+
       const file = new AdmZip();
       file.addFile('project.json', Buffer.from(project));
 
       let proj_obj = JSON.parse(project);
       for (v in proj_obj.variables) {
         if (proj_obj.variables[v].type == 'csv') {
-          file.addLocalFile(`${__dirname}/currentproject/var/` + proj_obj.variables[v].csvfile, 'var');
+          file.addLocalFile(p + '/currentproject/var/' + proj_obj.variables[v].csvfile, 'var');
         }
       }
       

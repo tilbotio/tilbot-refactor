@@ -10,3 +10,5 @@ node_modules
 /currentproject
 /tilbot-win32-x64
 /certs
+/tilbot-darwin-arm64
+/tilbot-darwin-x64

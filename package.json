@@ -1,6 +1,6 @@
 {
-	"name": "tilbot-server",
-	"version": "0.0.1",
+	"name": "tilbot",
+	"version": "2.0.0",
 	"private": true,
 	"main": "electron-main.cjs",
 	"scripts": {
@@ -11,7 +11,9 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64"
+		"package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64",
+		"package-mac-x64": "electron-packager . tilbot --overwrite --platform=darwin --arch=x64",
+		"package-mac-arm": "electron-packager . tilbot --overwrite --platform=darwin --arch=arm64"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "next",

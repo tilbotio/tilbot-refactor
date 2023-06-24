@@ -28,9 +28,11 @@ else {
   server = http.createServer(app);
 }
 
+let p = process.argv[2].substring(3);
+
 const io = socket(server);
 
-let project = fs.readFileSync(__dirname + '/../currentproject/electron-project.json');
+let project = fs.readFileSync(p + '/currentproject/electron-project.json');
 project = JSON.parse(project);
 console.log(project);
 
@@ -50,7 +52,7 @@ server.listen(2801, () => {
 io.on('connection', (socket) => {
     console.log('a user connected');
 
-    clients[socket.id] = new ProjectController(io, project, socket.id);
+    clients[socket.id] = new ProjectController(io, project, socket.id, p);
   
     socket.on('message sent', () => {
       clients[socket.id].message_sent_event();

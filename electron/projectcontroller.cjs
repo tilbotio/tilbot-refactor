@@ -2,19 +2,19 @@ const Logger = require('./logger.cjs');
 const CsvData = require('./csvdata.cjs');
 
 class ProjectController {
-    constructor(io, project, socket_id) {
+    constructor(io, project, socket_id, p) {
         this.io = io;
         this.project = project;
         this.socket_id = socket_id;
         this.current_block_id = this.project.starting_block_id;
-        this.logger = new Logger();
+        this.logger = new Logger(p);
         
         this.csv_datas = {};
 
         // Set up the data files
         for (let v in this.project.variables) {
           if (this.project.variables[v].type == 'csv') {
-            this.csv_datas[this.project.variables[v].name] = new CsvData(this.project.variables[v].csvfile);
+            this.csv_datas[this.project.variables[v].name] = new CsvData(this.project.variables[v].csvfile, p);
           }
         }
 
