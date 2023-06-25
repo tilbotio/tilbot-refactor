@@ -7,9 +7,6 @@ class CsvData {
     db = null;
 
     constructor(filename, p) {
-        if (p.includes(`${__dirname}`)) {
-            p += '/..';
-        }
         // Retrieve the columns from the first row of the CSV file
         let csvfile = new LineByLine(p + '/currentproject/var/' + filename);
         let firstline = csvfile.next();

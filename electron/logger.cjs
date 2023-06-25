@@ -37,6 +37,9 @@ class Logger {
     stream = null;
 
     constructor(p) {
+        if (`${__dirname}`.includes(p)) {
+          p += '/../..';
+        }
 
         if (!fs.existsSync(p + '/logs')) {
             fs.mkdirSync(p + '/logs');
