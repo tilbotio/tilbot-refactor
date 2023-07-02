@@ -138,12 +138,17 @@ const createWindow = () => {
   });  
 
   ipcMain.on('load-project-db', (event, project) => {
+    let p = `${__dirname}`;
+    if (process.platform === 'darwin') {
+      p = app.getPath('userData');
+    }
+
     csv_datas = {};
 
     // Set up the data files
     for (let v in project.variables) {
       if (project.variables[v].type == 'csv') {
-        csv_datas[project.variables[v].name] = new CsvData(project.variables[v].csvfile);
+        csv_datas[project.variables[v].name] = new CsvData(project.variables[v].csvfile, p);
       }
     }
     
