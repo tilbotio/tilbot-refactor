@@ -155,7 +155,16 @@ const createWindow = () => {
   });
 
   ipcMain.handle('query-db', async (event, params) => {
+    if (Object.keys(csv_datas).indexOf(params.db) == -1) {
+      return null;
+    }
+
     let res = await csv_datas[params.db].get(params.col, params.val);    
+    return res;
+  });
+
+  ipcMain.handle('query-db-random', async (event, params) => {
+    let res = await csv_datas[params.db].get_random_line();    
     return res;
   });
 

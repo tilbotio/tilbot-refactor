@@ -32,6 +32,17 @@ class CsvData {
         }
     }
 
+    async get_random_line() {
+        if (this.db !== null) {
+            let res = await this.db.get();
+            let linenr = Math.floor(Math.random() * res.length);
+            return res[linenr];
+        }
+        else {
+            return null;
+        }
+    }
+
 }
 
 module.exports = CsvData;

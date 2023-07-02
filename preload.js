@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld(
             }
         },
         invoke: async (channel, data) => {
-            let validChannels = ["query-db"];
+            let validChannels = ["query-db", "query-db-random"];
             if (validChannels.includes(channel)) {
                 let res = await ipcRenderer.invoke(channel, data);
                 return res;

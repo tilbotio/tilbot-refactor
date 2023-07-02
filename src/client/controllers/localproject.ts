@@ -4,6 +4,7 @@ class LocalProjectController extends BasicProjectController {
 
     private current_block_id: number;
     private chatbot_message_callback: Function;
+    private client_vars: any;
 
     constructor(json_str: string, chatbot_message_callback: Function) {
         super();
@@ -11,9 +12,38 @@ class LocalProjectController extends BasicProjectController {
         this.chatbot_message_callback = chatbot_message_callback;
         this.project = JSON.parse(json_str);
         this.current_block_id = this.project.starting_block_id;
+        this.client_vars = {};
 
         this.send_message(this.project.blocks[this.project.starting_block_id.toString()]);
     }
+
+    async send_events(connector: any, input_str: string) {
+        if (connector.events !== undefined) {
+          for (let c = 0; c < connector.events.length; c++) {
+            if (connector.events[c].type == 'message') {
+                // Do nothing for now (simulator)  
+            }
+            else if (connector.events[c].type == 'variable') {
+                let regExp = /\[([^\]]+)\]/g;
+                let matches = regExp.exec(connector.events[c].var_value);
+    
+                if (matches !== null) {
+                    // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
+                    if (matches[1].toLowerCase().startsWith('random')) {
+                        let db = matches[1].substring(7, matches[1].indexOf(')'));
+                        let res = await window.parent.api.invoke('query-db-random', {db: db});
+                        if (res !== null) {
+                            this.client_vars[connector.events[c].var_name] = res;
+                        }
+                    }
+                }
+                else {
+                    this.client_vars[connector.events[c].var_name] = connector.events[c].var_value;
+                }
+            }
+          }
+        }
+      }    
 
     send_message(block: any, input: string = '') {
         let params: any = {};
@@ -134,120 +164,170 @@ class LocalProjectController extends BasicProjectController {
         }, block.delay * 1000);
     }
 
-    async check_labeled_connector(connector: any, str: string) : Promise<boolean> {
-        let found = false;
+    async check_labeled_connector(connector: string, str: string) : Promise<any> {
+        // Check for tags / special commands
+        let regExp = /\[([^\]]+)\]/g;
+        let matches = regExp.exec(connector);
 
-        if (connector.method !== undefined && (connector.method !== 'barcode' || str.startsWith('barcode:'))) {
-            // Check for tags / special commands
-            let regExp = /\[([^\]]+)\]/g;
-            let matches = regExp.exec(connector.label);
+        if (matches !== null) {
+            let should_match = true;
+            // @TODO: do something in case of multiple matches, and support [and] or [or]
+            //let match = matches[0];
 
-            if (matches !== null) {
-              let should_match = true;
-              // @TODO: do something in case of multiple matches, and support [and] or [or]
-              //let match = matches[0];
+            // If it's a column from a CSV table, there should be a period.
+            // Element 1 of the match contains the string without the brackets.
+            let csv_parts = matches[1].split('.');
 
-              // If it's a column from a CSV table, there should be a period.
-              // Element 1 of the match contains the string without the brackets.
-              let csv_parts = matches[1].split('.');
-
-              if (csv_parts.length == 2) {
+            if (csv_parts.length == 2) {
                 let db = csv_parts[0];
                 let col = csv_parts[1];
 
                 if (db.startsWith('!')) {
-                  should_match = false;
-                  db = db.substring(1);
+                    should_match = false;
+                    db = db.substring(1);
                 }
 
-                //let res = await this.csv_datas[db].get(col, str.replace('barcode:', ''));
-                // Check if we're in Electron
-                // @TODO: if not, query the socket for the db
-                let res = await window.parent.api.invoke('query-db', {db: db, col: col, val: str.replace('barcode:', '')});
-              
-                if (res.length > 0 && should_match) {
-                  found = true;
-                  this.current_block_id = connector.targets[0];
-                  this._send_current_message(res[0]);
+                let parts = str.split(' ');
+
+                for (let part in parts) {
+
+                    // Check if local variable
+                    if (db in this.client_vars) {
+                        let var_options = this.client_vars[db][col].split('|');
+                        
+                        for (var o in var_options) {
+                            if (var_options[o] == parts[part].replace('?', '').replace('!', '') && should_match) {
+                        
+                                return var_options[o];
+                            }
+                        }
+
+                        if (!should_match) {
+                            return '';
+                        }
+                    }
+                    else {
+
+                        let res = await window.parent.api.invoke('query-db', {db: db, col: col, val: parts[part].replace('barcode:', '').replace('?', '').replace('!', '')});
+                    
+                        if (res.length > 0 && should_match) {
+                            return parts[part].replace('barcode:', '').replace('?', '').replace('!', '');
+                        }
+                        else if (res.length == 0 && !should_match) {
+                            return parts[part].replace('barcode:', '').replace('?', '').replace('!', '');
+                        }
+                    }
                 }
-                else if (res.length == 0 && !should_match) {
-                  found = true;
-                  this.current_block_id = connector.targets[0];
-                  this._send_current_message();
-                }
-              }
             }
-
-            else {
-              if (str.replace('barcode:', '').toLowerCase().includes(connector.label.toLowerCase())) {
-                found = true;
-                this.current_block_id = connector.targets[0];
-                this._send_current_message(str);
-              }                  
-            }            
-        }                
-        else if (str.toLowerCase().includes(connector.label.toLowerCase())) {
-            found = true;
-            this.current_block_id = connector.targets[0];
-            this._send_current_message(str);
         }
 
-        return found;
+        else {
+            if (str.replace('barcode:', '').toLowerCase().includes(connector.toLowerCase())) {
+                return str;
+            }                  
+        }
+
+        return null;
     }
 
     async receive_message(str: string) {
-        // Check if we need to fire a trigger -- prioritize these over continuing the flow of the interaction?
-        for (var b in this.project.blocks) {
-            if (this.project.blocks[b].type == 'Trigger') {
-                for (var c in this.project.blocks[b].connectors) {
-                    // @TODO: distinguish between contains / exact match options
-                    let parts = str.split(' ');
+        let found = false;
 
-                    for (let part in parts) {
-                        if (await this.check_labeled_connector(this.project.blocks[b].connectors[c], parts[part])) {
-                            break;
+        if (this.current_block_id !== undefined) {
+            var block = this.project.blocks[this.current_block_id.toString()];
+
+            // @TODO: improve processing of message
+            if (block.type == 'MC') {
+                found = true;
+                for (var c in block.connectors) {
+                    if (block.connectors[c].label == str) {
+                        this.current_block_id = block.connectors[c].targets[0];
+                        this.send_events(block.connectors[c], str);
+                        this._send_current_message();
+                    }
+                }
+            }
+            else if (block.type == 'Text' || block.type == 'List') {
+                let else_connector_id = '-1';
+
+                for (var c in block.connectors) {
+                    if (block.connectors[c].label == '[else]') {
+                        else_connector_id = c;
+                    }
+
+                    else {
+                        // @TODO: distinguish between contains / exact match options                       
+                        let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
+                        let num_match = 0;
+                        let last_found_output = null;
+
+                        for (let and in ands) {
+                            //for (let part in parts) {
+                                let output = await this.check_labeled_connector(ands[and], str);
+                                if (output !== null) {
+                                    num_match += 1;
+                                    last_found_output = output;
+                                }
+                            //}
                         }
-                    }
-                }                
-            }
-        }
 
-        var block = this.project.blocks[this.current_block_id.toString()];
-
-        // @TODO: improve processing of message
-        if (block.type == 'MC') {
-            for (var c in block.connectors) {
-                if (block.connectors[c].label == str) {
-                    this.current_block_id = block.connectors[c].targets[0];
-                    this._send_current_message();
-                }
-            }
-        }
-        else if (block.type == 'Text' || block.type == 'List') {
-            let found = false;
-            let else_connector_id = '-1';
-
-            for (var c in block.connectors) {
-                if (block.connectors[c].label == '[else]') {
-                    else_connector_id = c;
-                }
-
-                else {
-                    // @TODO: distinguish between contains / exact match options
-                    let parts = str.split(' ');
-
-                    for (let part in parts) {
-                        found = await this.check_labeled_connector(block.connectors[c], parts[part]);                    
-                        if (found) {
+                        if (num_match == ands.length) {
+                            this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
+                            this.send_events(this.project.blocks[b].connectors[c], last_found_output);
+                            this._send_current_message(last_found_output);                
                             break;
-                        }    
+                        }                            
                     }
+                }
+
+                if (!found && else_connector_id !== '-1') {
+                    this.current_block_id = block.connectors[else_connector_id].targets[0];
+                    this.send_events(block.connectors[else_connector_id], str);
+                    this._send_current_message(str);
+                }
+            }            
+        }
+
+        if (!found) {
+            let else_connector = null;
+            // Check if we need to fire a trigger -- after checking responses to query by the bot!
+            for (var b in this.project.blocks) {
+                if (this.project.blocks[b].type == 'Trigger') {
+                    for (var c in this.project.blocks[b].connectors) {
+                        if (this.project.blocks[b].connectors[c].label == '[else]') {
+                            else_connector = this.project.blocks[b].connectors[c];
+                        }
+                        // @TODO: distinguish between contains / exact match options
+                        //let parts = str.split(' ');
+                        let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
+                        let num_match = 0;
+                        let last_found_output = null;
+
+                        for (let and in ands) {
+                            //for (let part in parts) {
+                                let output = await this.check_labeled_connector(ands[and], str);//parts[part].replace('?', ''));
+
+                                if (output !== null) {
+                                    num_match += 1;
+                                    last_found_output = output;
+                                }
+                            //}
+                        }
+
+                        if (num_match == ands.length) {
+                            this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
+                            this.send_events(this.project.blocks[b].connectors[c], last_found_output);
+                            this._send_current_message(last_found_output);                
+                            break;
+                        }                            
+                    }                
                 }
             }
 
-            if (!found && else_connector_id !== '-1') {
-                this.current_block_id = block.connectors[else_connector_id].targets[0];
-                this._send_current_message(str);
+            if (else_connector !== null) {
+                this.current_block_id = else_connector.targets[0];
+                this.send_events(else_connector, '');
+                this._send_current_message('');                
             }
         }
     }

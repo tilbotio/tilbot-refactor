@@ -8,6 +8,7 @@ class ProjectController {
         this.socket_id = socket_id;
         this.current_block_id = this.project.starting_block_id;
         this.logger = new Logger(p);
+        this.client_vars = {};
         
         this.csv_datas = {};
 
@@ -241,7 +242,7 @@ class ProjectController {
                   let parts = str.split(' ');
 
                   for (let part in parts) {
-                    if (await this.check_labeled_connector(this.project.blocks[b].connectors[c], parts[part])) {
+                    if (await this.check_labeled_connector(this.project.blocks[b].connectors[c], parts[part].replace('?', ''))) {
                         break;
                     }
                   }
@@ -276,7 +277,7 @@ class ProjectController {
                   let parts = str.split(' ');
 
                   for (let part in parts) {
-                      found = await this.check_labeled_connector(block.connectors[c], parts[part]);                    
+                      found = await this.check_labeled_connector(block.connectors[c], parts[part].replace('?', ''));                    
                       if (found) {
                           break;
                       }

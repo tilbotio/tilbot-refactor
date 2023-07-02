@@ -22,7 +22,6 @@
         </thead>
         <tbody>
             {#each Object.entries(copy.connectors) as [id, connector]}
-            {#if connector.label !== '[else]'}
             <tr>
                 <td>
                     <select bind:value={connector.method} class="select select-bordered w-full max-w-xs">
@@ -39,7 +38,6 @@
                     </button>
                 </td>
             </tr>
-            {/if}
             {/each}
         </tbody>
       </table>
