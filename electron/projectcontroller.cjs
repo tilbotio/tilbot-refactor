@@ -237,8 +237,13 @@ class ProjectController {
         for (var b in this.project.blocks) {
           if (this.project.blocks[b].type == 'Trigger') {
               for (var c in this.project.blocks[b].connectors) {
-                  if (await this.check_labeled_connector(this.project.blocks[b].connectors[c], str)) {
-                      break;
+                  // @TODO: distinguish between contains / exact match options
+                  let parts = str.split(' ');
+
+                  for (let part in parts) {
+                    if (await this.check_labeled_connector(this.project.blocks[b].connectors[c], parts[part])) {
+                        break;
+                    }
                   }
               }                
           }
@@ -267,10 +272,15 @@ class ProjectController {
               }
 
               else {
-                found = await this.check_labeled_connector(block.connectors[c], str);                    
-                if (found) {
-                    break;
-                }
+                  // @TODO: distinguish between contains / exact match options
+                  let parts = str.split(' ');
+
+                  for (let part in parts) {
+                      found = await this.check_labeled_connector(block.connectors[c], parts[part]);                    
+                      if (found) {
+                          break;
+                      }
+                  }
               }
           }
 
