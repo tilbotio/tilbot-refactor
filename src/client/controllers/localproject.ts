@@ -187,26 +187,25 @@ class LocalProjectController extends BasicProjectController {
                     db = db.substring(1);
                 }
 
-                let parts = str.split(' ');
-
-                for (let part in parts) {
-
-                    // Check if local variable
-                    if (db in this.client_vars) {
-                        let var_options = this.client_vars[db][col].split('|');
-                        
-                        for (var o in var_options) {
-                            if (var_options[o] == parts[part].replace('?', '').replace('!', '') && should_match) {
-                        
-                                return var_options[o];
-                            }
-                        }
-
-                        if (!should_match) {
-                            return '';
+                // Check if local variable
+                if (db in this.client_vars) {
+                    let var_options = this.client_vars[db][col].split('|');
+                    
+                    for (var o in var_options) {
+                        if (str.includes(var_options[o]) && should_match) {
+                    
+                            return var_options[o];
                         }
                     }
-                    else {
+
+                    if (!should_match) {
+                        return '';
+                    }
+                }
+                else {
+                    let parts = str.split(' ');
+
+                    for (let part in parts) {
 
                         let res = await window.parent.api.invoke('query-db', {db: db, col: col, val: parts[part].replace('barcode:', '').replace('?', '').replace('!', '')});
                     
