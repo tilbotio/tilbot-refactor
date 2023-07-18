@@ -94,7 +94,7 @@
 
             window.api.receive('csv-load', (param: any) => {
                 variables[selected_variable].csvfile = param.filename;
-                current_csv = Papa.parse(param.csv).data;
+                current_csv = Papa.parse(param.csv, {delimiter: ';'}).data;
             });
         }
     });
