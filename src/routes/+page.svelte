@@ -184,6 +184,7 @@ function chatbot_message(msg: any) {
     console.log(msg);
       // Send the message
       show_typing_indicator = true;
+      setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
 
       setTimeout(function() {
         show_typing_indicator = false;
