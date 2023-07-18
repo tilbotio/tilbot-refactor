@@ -14,6 +14,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     show: false, 
     title: "Tilbot",
+    icon: path.join(__dirname, "src/icon/png/64x64.png"),
     nodeIntegration: false,
     webPreferences: {
       enableRemoteModule: false,

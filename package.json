@@ -11,9 +11,9 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64",
-		"package-mac-x64": "electron-packager . tilbot --overwrite --platform=darwin --arch=x64",
-		"package-mac-arm": "electron-packager . tilbot --overwrite --platform=darwin --arch=arm64"
+		"package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64 --icon=src/icon/win/icon.ico",
+		"package-mac-x64": "electron-packager . tilbot --overwrite --platform=darwin --arch=x64 --icon=src/icon/mac/icon.icns",
+		"package-mac-arm": "electron-packager . tilbot --overwrite --platform=darwin --arch=arm64 --icon=src/icon/mac/icon.icns"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "next",
