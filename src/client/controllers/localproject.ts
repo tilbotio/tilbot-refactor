@@ -252,12 +252,14 @@ class LocalProjectController extends BasicProjectController {
 
             // @TODO: improve processing of message
             if (block.type == 'MC') {
-                found = true;
                 for (var c in block.connectors) {
                     if (block.connectors[c].label == str) {
-                        this.current_block_id = block.connectors[c].targets[0];
-                        this.send_events(block.connectors[c], str);
-                        this._send_current_message();
+                        if (block.connectors[c].targets.length > 0) {
+                            found = true;
+                            this.current_block_id = block.connectors[c].targets[0];
+                            this.send_events(block.connectors[c], str);
+                            this._send_current_message();
+                        }
                     }
                 }
             }
