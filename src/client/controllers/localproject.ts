@@ -207,8 +207,8 @@ class LocalProjectController extends BasicProjectController {
                     let var_options = this.client_vars[db][col].split('|');
                     
                     for (var o in var_options) {
-                        if (str.includes(var_options[o]) && should_match) {
-                    
+                        let opt = var_options[o].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                        if (str.match(new RegExp("\\b"+opt+"\\b", "i")) != null && should_match) {                    
                             return var_options[o];
                         }
                     }
