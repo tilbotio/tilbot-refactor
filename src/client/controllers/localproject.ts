@@ -52,14 +52,29 @@ class LocalProjectController extends BasicProjectController {
 
         let regExp = /\[([^\]]+)\]/g;
         let matches = regExp.exec(content);
-  
+
         if (matches !== null) {
           if (typeof input === 'object' && input !== null) {
             content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
           }
-          else if (input !== null) {
+          else if (input !== '') {
             content = content.replace('[input]', input);
           }  
+          else {
+            // If it's a column from a CSV table, there should be a period.
+            // Element 1 of the match contains the string without the brackets.
+            let csv_parts = matches[1].split('.');
+
+            if (csv_parts.length == 2) {
+                let db = csv_parts[0];
+                let col = csv_parts[1];
+
+                // Check if local variable
+                if (db in this.client_vars) {
+                    content = content.replace('[' + matches[1] + ']', this.client_vars[db][col]);
+                }
+            }
+          }
         }  
 
         if (block.type == 'MC') {
