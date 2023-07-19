@@ -37,7 +37,7 @@ class Logger {
     stream = null;
 
     constructor(p) {
-        if (`${__dirname}`.includes(p)) {
+        if (p.includes('resources')) {
           p += '/../..';
         }
 
