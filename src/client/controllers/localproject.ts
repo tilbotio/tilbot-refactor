@@ -4,16 +4,19 @@ class LocalProjectController extends BasicProjectController {
 
     private current_block_id: number;
     private chatbot_message_callback: Function;
+    private chatbot_settings_callback: Function;
     private client_vars: any;
 
-    constructor(json_str: string, chatbot_message_callback: Function) {
+    constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function) {
         super();
 
         this.chatbot_message_callback = chatbot_message_callback;
+        this.chatbot_settings_callback = chatbot_settings_callback;
         this.project = JSON.parse(json_str);
         this.current_block_id = this.project.starting_block_id;
         this.client_vars = {};
 
+        this.chatbot_settings_callback(this.project.settings);
         this.send_message(this.project.blocks[this.project.starting_block_id.toString()]);
     }
 

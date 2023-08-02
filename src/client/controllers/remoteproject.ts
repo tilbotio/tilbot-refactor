@@ -3,19 +3,26 @@ import {BasicProjectController} from '../../shared/controllers/basicproject';
 class RemoteProjectController extends BasicProjectController {
 
     private chatbot_message_callback: Function;
+    private chatbot_settings_callback: Function;
     private socket: any;
 
-    constructor(socket: any, chatbot_message_callback: Function) {
+    constructor(socket: any, chatbot_message_callback: Function, chatbot_settings_callback: Function) {
         super();
 
         this.chatbot_message_callback = chatbot_message_callback;
+        this.chatbot_settings_callback = chatbot_settings_callback;
         this.socket = socket;
         socket.on('bot message', this.send_message.bind(this)); 
         socket.on('window message', this.window_message.bind(this));
+        socket.on('settings', this.send_settings.bind(this));
     }
 
     send_message(block: any) {
         this.chatbot_message_callback(block);
+    }
+
+    send_settings(settings: any) {
+        this.chatbot_settings_callback(settings);
     }
 
     window_message(msg: any) {

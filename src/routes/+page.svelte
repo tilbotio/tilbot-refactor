@@ -116,6 +116,8 @@ let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let iframe = true;
 
+let settings: any = {};
+
 onMount(() => {
     // Check if we're in the editor
     if (window.self === window.top || window.parent.isTilbotEditor === undefined) {
@@ -133,7 +135,7 @@ onMount(() => {
 function socket_script_loaded(event: Event) {
   let socket = io();
   import("../client/controllers/remoteproject").then(function(m: any) {
-    controller = new m.RemoteProjectController(socket, chatbot_message)  
+    controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings)  
   });
   
 }
@@ -177,7 +179,11 @@ function project_received(project: any) {
         clearTimeout(i);
     }
 
-    controller = new LocalProjectController(project, chatbot_message);
+    controller = new LocalProjectController(project, chatbot_message, chatbot_settings);
+}
+
+function chatbot_settings(s: any) {
+    settings = s;
 }
 
 function chatbot_message(msg: any) {
@@ -186,11 +192,20 @@ function chatbot_message(msg: any) {
       show_typing_indicator = true;
       setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
 
+      let timeout = msg.content.length / 40 * 1000;
+      
+      if (settings.typing_style !== undefined && settings.typing_style == 'variable') {
+        timeout = msg.content.length / settings.typing_charpsec * 1000;
+      }
+      else if (settings.typing_style !== undefined && settings.typing_style == 'fixed') {
+        timeout = settings.typing_time * 1000;
+      }
+
       setTimeout(function() {
         show_typing_indicator = false;
         show_message(msg.type, msg.content, msg.params);
         controller.message_sent_event();
-      }, 2000);//msg.content.length / 15 * 500);    
+      }, timeout);
 }
 
 function input_key_down(event: KeyboardEvent) {  

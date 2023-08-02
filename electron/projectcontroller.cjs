@@ -19,6 +19,8 @@ class ProjectController {
           }
         }
 
+        this.io.to(this.socket_id).emit('settings', this.project.settings);
+
         this._send_current_message();
     }
 
