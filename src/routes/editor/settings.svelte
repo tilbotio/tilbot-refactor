@@ -3,7 +3,7 @@
     <div class="modal-box relative w-11/12 max-w-full h-5/6 max-h-full">
         <label for="my-modal-settings" class="btn btn-sm btn-circle absolute right-2 top-2" on:click={reset}>✕</label>
         <div class="flex w-full h-full flex-col">
-            <div class="flex w-full flex-1">
+            <div class="flex w-full" style="height: calc(100% - 6rem)">
                 <div class="w-64">
                     <!-- List of settings -->
                     <div class="overflow-x-auto">
@@ -17,10 +17,13 @@
                             <tr class="hover">
                                 <td data-setting-id="1" class="cursor-pointer {selected_setting == 1 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Typing behavior</td>
                             </tr>
+                            <tr class="hover">
+                                <td data-setting-id="2" class="cursor-pointer {selected_setting == 2 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT prompts</td>
+                            </tr>
                         </tbody>
                         </table>    
 
-                        <!--<table class="table w-full mt-16">
+                        <table class="table w-full mt-16">
                         <thead>
                             <tr>
                             <th class="sticky top-0">General settings</th>
@@ -28,18 +31,17 @@
                         </thead>
                         <tbody>
                             <tr class="hover">
-                                <td data-setting-id="2" class="cursor-pointer {selected_setting == 2 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT</td>
+                                <td data-setting-id="3" class="cursor-pointer {selected_setting == 3 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT API key</td>
                             </tr>
                         </tbody>
-                        </table>                    -->            
+                        </table>          
                     </div>     
                 </div>
-                <div class="flex-1 px-4">
+                <div class="flex-1 px-4" style="width: calc(100% - 16rem)">
                     <!-- Typing behavior -->
                     {#if selected_setting == 1}
                     <div class="w-full text-xl text-center font-bold">Typing behavior</div>
                     <div class="p-8">
-                        <span class="font-bold">Typing speed</span><br />
                         <table class="table w-full">
                             <thead>
                                 <th colspan="2">Typing speed</th>
@@ -69,10 +71,71 @@
                         </table>
                     </div>
                     {/if}
-                    <!-- ChatGPT integration -->
+
+                    <!-- ChatGPT prompts -->
                     {#if selected_setting == 2}
-                    <div class="w-full text-xl text-center font-bold">ChatGPT integration</div>
-                    Note: These settings are stored on this device, and not included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.
+                    <div class="h-full flex flex-col w-full">
+                        <div class="w-full text-xl text-center font-bold">ChatGPT prompts</div>
+                        <div class="p-8 flex-1 overflow-y-auto">
+                            <table class="table w-full">
+                                <thead>
+                                    <th>Use of data or scenario</th>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <span class="italic">(Optional) Add something here to instruct the bot to take certain contextual information into account, or pass variables/data to it.</span><br /><br />
+                                            <textarea class="textarea textarea-bordered w-full" placeholder="[Characters]" bind:value="{copy.llm_prompt_data}"></textarea>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>                        
+
+                            <table class="table w-full mt-8">
+                                <thead>
+                                    <th>Regular user prompt ('sunny day')</th>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <span class="italic">It is <span class="font-bold">not</span> recommended to make any (major) changes to this prompt.</span><br /><br />
+                                            <textarea class="textarea textarea-bordered w-full h-64" bind:value="{copy.llm_prompt_sunny}"></textarea>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>                        
+
+                            <table class="table w-full mt-8">
+                                <thead>
+                                    <th>Evil user prompt ('rainy day')</th>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <span class="italic">It is <span class="font-bold">not</span> recommended to make any (major) changes to this prompt.</span><br /><br />
+                                            <textarea class="textarea textarea-bordered w-full h-64" bind:value="{copy.llm_prompt_rainy}"></textarea>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>                        
+                        </div>
+                    </div>
+                    {/if}
+
+                    <!-- ChatGPT integration -->
+                    {#if selected_setting == 3}
+                    <div class="w-full text-xl text-center font-bold">ChatGPT API key</div>
+                    <div class="p-8">
+                        <span class="italic">Note: This setting is stored on this device, and will not be included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.</span><br /><br />
+                        <table class="table w-full">
+                            <thead>
+                                <th>ChatGPT API key</th>
+                            </thead>
+                            <tbody>
+                                    <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_settings.chatgpt_api_key}" />
+                            </tbody>
+                        </table>                        
+                    </div>
                     {/if}
                 </div>
             </div>
@@ -85,14 +148,35 @@
 </div>
 
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import { onMount, createEventDispatcher } from "svelte";
     let toggle: HTMLElement;
     let selected_setting: number = 1;
+    let gen_settings: any;
     export let settings: any;
 
     const dispatch = createEventDispatcher();
 
     let copy = {};
+
+    let default_prompt_sunny = `Please pretend you are a user of my chatbot. 
+I will send you the output from the chatbot and then you respond with a message as a user. 
+If the message ends with curly brackets {}, these are your answer options, separated by a semicolon ;
+In this case, you can *only* reply with the answer option you choose, no other text.
+For example, if my message ends with {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
+You are only supposed to give your reply, acting as a user, and let me provide the chatbot’s reply. You cannot provide answer options for the chatbot.
+
+First message of the chatbot to you:
+`;
+    let default_prompt_rainy = `Please pretend you are a user of my chatbot. The goal is to really test the chatbot’s dialogue, so please try to come up with ways to confuse it or force it to make mistakes. Try using synonyms or rephrasing your responses to confuse the chatbot, unless there are fixed answer options. However, you are not allowed to lie.
+I will send you the output from the chatbot and then you respond with a message as a user. 
+If the message ends with curly brackets {}, these are your answer options, separated by a semicolon ;
+In this case, you can *only* reply with the answer option you choose, no other text.
+For example, if my message ends with {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
+You are only supposed to give your reply, acting as a user, and let me provide the chatbot’s reply. You cannot provide answer options for the chatbot.
+
+First message of the chatbot to you:
+`;
+
 
     export const settingswindow = {
         show() {
@@ -100,7 +184,10 @@
                 copy = {
                     'typing_style': 'variable',
                     'typing_time': 2,
-                    'typing_charpsec': 40
+                    'typing_charpsec': 40,
+                    'llm_prompt_sunny': default_prompt_sunny,
+                    'llm_prompt_rainy': default_prompt_rainy,
+                    'llm_prompt_data': ''
                 }
             }
 
@@ -117,13 +204,32 @@
                 if (copy.typing_charpsec == undefined) {
                     copy.typing_charpsec = 40;
                 }
+                if (copy.llm_prompt_sunny == undefined) {
+                    copy.llm_prompt_sunny = default_prompt_sunny;
+                }
+                if (copy.llm_prompt_rainy == undefined) {
+                    copy.llm_prompt_rainy = default_prompt_rainy;
+                }
+                if (copy.llm_prompt_data == undefined) {
+                    copy.llm_prompt_data = '';
+                }
             }
 
-
+            window.api.send('get-settings');
 
             toggle.click();
         }
     }
+
+    onMount(() => {
+        // Only works in Electron for now. @TODO: implement for online version of Tilbot.
+        if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
+
+            window.api.receive('settings-load', (param: any) => {
+                gen_settings = param.settings;
+            });
+        }
+    });    
 
     function typing_style_change() {
         copy.typing_style = event.currentTarget.value;
@@ -142,6 +248,8 @@
     }
 
     function save() {
+        window.api.send('save-settings', {settings: gen_settings});
+
         dispatch('message', {
             event: 'save_settings',
             settings: copy

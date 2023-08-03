@@ -12,3 +12,4 @@ node_modules
 /certs
 /tilbot-darwin-arm64
 /tilbot-darwin-x64
+settings.json

@@ -169,6 +169,34 @@ const createWindow = () => {
     return res;
   });
 
+  ipcMain.on('get-settings', (event, params) => {
+    let p = `${__dirname}`;
+    if (process.platform === 'darwin') {
+      p = app.getPath('userData');
+    }
+
+    if (!fs.existsSync(p + '/settings.json')) {
+      let settings = {
+        chatgpt_api_key: ''
+      }
+
+      fs.writeFileSync(p + '/settings.json', JSON.stringify(settings));
+      win.webContents.send('settings-load', { settings: settings });
+    }
+    else {
+      win.webContents.send('settings-load', { settings: JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'))});
+    }
+  });
+
+  ipcMain.on('save-settings', (event, params) => {
+    let p = `${__dirname}`;
+    if (process.platform === 'darwin') {
+      p = app.getPath('userData');
+    }
+
+    fs.writeFileSync(p + '/settings.json', JSON.stringify(params.settings));
+  });
+
   ipcMain.on('do-load-csv-data', (event) => {
     let load_file = dialog.showOpenDialogSync({
         properties: [
