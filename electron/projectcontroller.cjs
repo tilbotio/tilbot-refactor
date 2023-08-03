@@ -19,6 +19,15 @@ class ProjectController {
           }
         }
 
+
+        if (this.project.settings === undefined) {
+            this.project.settings = {
+                'typing_style': 'variable',
+                'typing_time': 2,
+                'typing_charpsec': 40
+            }            
+        }
+                
         this.io.to(this.socket_id).emit('settings', this.project.settings);
 
         this._send_current_message();

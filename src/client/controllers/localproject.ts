@@ -16,6 +16,14 @@ class LocalProjectController extends BasicProjectController {
         this.current_block_id = this.project.starting_block_id;
         this.client_vars = {};
 
+        if (this.project.settings === undefined) {
+            this.project.settings = {
+                'typing_style': 'variable',
+                'typing_time': 2,
+                'typing_charpsec': 40
+            }            
+        }
+
         this.chatbot_settings_callback(this.project.settings);
         this.send_message(this.project.blocks[this.project.starting_block_id.toString()]);
     }
