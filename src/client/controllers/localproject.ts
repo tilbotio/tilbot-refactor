@@ -109,7 +109,13 @@ class LocalProjectController extends BasicProjectController {
             this.send_message(block.blocks[block.starting_block_id]);
         }
         else {
-            this.chatbot_message_callback({type: block.type, content: content, params: params});
+            let targets = true;
+
+            if (block.connectors[0].targets.length == 0) {
+                targets = false;
+            }
+
+            this.chatbot_message_callback({type: block.type, content: content, params: params, has_targets: targets});
         }
     }
 
@@ -233,13 +239,13 @@ class LocalProjectController extends BasicProjectController {
 
                     for (let part in parts) {
 
-                        let res = await window.parent.api.invoke('query-db', {db: db, col: col, val: parts[part].replace('barcode:', '').replace('?', '').replace('!', '')});
+                        let res = await window.parent.api.invoke('query-db', {db: db, col: col, val: parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '')});
                     
                         if (res.length > 0 && should_match) {
-                            return parts[part].replace('barcode:', '').replace('?', '').replace('!', '');
+                            return parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
                         }
                         else if (res.length == 0 && !should_match) {
-                            return parts[part].replace('barcode:', '').replace('?', '').replace('!', '');
+                            return parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
                         }
                     }
                 }
@@ -247,9 +253,10 @@ class LocalProjectController extends BasicProjectController {
         }
 
         else {
-            if (str.replace('barcode:', '').toLowerCase().includes(connector.toLowerCase())) {
+            let candidate = connector.toLowerCase().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            if (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b"+candidate+"\\b", "i")) != null) {
                 return str;
-            }                  
+            }                    
         }
 
         return null;

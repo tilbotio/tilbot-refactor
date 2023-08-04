@@ -285,13 +285,13 @@ class ProjectController {
 
                   for (let part in parts) {
 
-                      let res = await this.csv_datas[db].get(col, parts[part].replace('barcode:', '').replace('?', '').replace('!', ''));
+                      let res = await this.csv_datas[db].get(col, parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', ''));
                   
                       if (res.length > 0 && should_match) {
-                          return parts[part].replace('barcode:', '').replace('?', '').replace('!', '');
+                          return parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
                       }
                       else if (res.length == 0 && !should_match) {
-                          return parts[part].replace('barcode:', '').replace('?', '').replace('!', '');
+                          return parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
                       }
                   }
               }
@@ -299,7 +299,8 @@ class ProjectController {
       }
 
       else {
-          if (str.replace('barcode:', '').toLowerCase().includes(connector.toLowerCase())) {
+          let candidate = connector.toLowerCase().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          if (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b"+candidate+"\\b", "i")) != null) {
               return str;
           }                  
       }
