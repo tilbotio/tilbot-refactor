@@ -4,7 +4,7 @@
     <!--</a>-->
 
     <Variables bind:variablewindow={variables_window} variables={project.variables}></Variables>
-    <Settings bind:settingswindow={settings_window} settings={project.settings} on:message={handleSettingsMessage}></Settings>
+    <Settings bind:settingswindow={settings_window} settings={project.settings} gensettings={gen_settings} on:message={handleSettingsMessage}></Settings>
 
     <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
     <div class="modal">
@@ -274,15 +274,17 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                     </svg>         
                     Run all
-                </button>
+                </button> 
     
-                <button class="btn gap-2 {selected_id === 0 ? 'btn-disabled' : ''}" on:click={run_selected}>
+                <!--<button class="btn gap-2 {selected_id === 0 ? 'btn-disabled' : ''}" on:click={run_selected}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
                     </svg>          
                     From selected
-                </button>
+                </button>-->
+
+                <ChatGPT is_running={chatgpt_running} settings={project.settings} gensettings={gen_settings} variables={project.variables} on:message={handleChatGPTMessage}></ChatGPT>
             </div>
     
             <div id="simulator" class="mockup-phone w-full my-1.5 h-full">
@@ -331,6 +333,7 @@
     import { onMount, SvelteComponent } from "svelte";    
     import Variables from './variables.svelte';
     import Settings from './settings.svelte';
+    import ChatGPT from './chatgpt.svelte';
     import Draggable from './draggable.svelte';
     import Start from './start.svelte';
     import AutoBlock from './blocks/auto.svelte';
@@ -393,6 +396,9 @@
     // For creating lines
     let dragging_connector = {};
 
+    let gen_settings = {};
+    let chatgpt_running = false;
+
     onMount(() => {
         // Set a property on the window so that the simulator knows it's part of the editor.
         window.isTilbotEditor = true;
@@ -421,7 +427,13 @@
                 setTimeout(function() {
                     document.getElementById('alert')?.classList.add('invisible');
                 }, 3000);
-            });            
+            });   
+
+            window.api.receive('settings-load', (param: any) => {
+                gen_settings = param.settings;
+            });
+
+            window.api.send('get-settings');
         }
 
         project.canvas_width = screen.width * 1.5;
@@ -667,6 +679,20 @@
     function handleSettingsMessage(e: Event) {
         if (e.detail.event == 'save_settings') {
             project.settings = e.detail.settings;
+            gen_settings = e.detail.gen_settings;
+            window.api.send('save-settings', {settings: e.detail.gen_settings});
+        }
+    }
+
+    function handleChatGPTMessage(e: Event) {
+        if (e.detail.event == 'run_all') {
+            run_all();
+            chatgpt_running = true;
+        }
+        else if (e.detail.event == 'send_chatgpt_message') {
+            setTimeout(function() {
+                send_chatgpt_message(e.detail.msg);
+            }, 500);            
         }
     }
 
@@ -897,9 +923,16 @@
     }
 
     function run_all() {
+        chatgpt_running = false;
         if (simulator.contentWindow !== null) {
             window.api.send('load-project-db', project);
             simulator.contentWindow.postMessage(JSON.stringify(project), "*");
+        }        
+    }
+
+    function send_chatgpt_message(msg: string) {
+        if (simulator.contentWindow !== null) {
+            simulator.contentWindow.postMessage('chatgpt|' + msg, "*");
         }        
     }
 

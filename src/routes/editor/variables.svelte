@@ -80,6 +80,8 @@
     let selected_variable: number = -1;
     let current_csv: any = undefined;
 
+    let is_loading_csv: boolean = false;
+
     // @TODO: sort variables by name alphabetically
 
     export const variablewindow = {
@@ -93,8 +95,11 @@
         if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
 
             window.api.receive('csv-load', (param: any) => {
-                variables[selected_variable].csvfile = param.filename;
-                current_csv = Papa.parse(param.csv, {delimiter: ';'}).data;
+                if (is_loading_csv) {
+                    variables[selected_variable].csvfile = param.filename;
+                    current_csv = Papa.parse(param.csv, {delimiter: ';'}).data;
+                    is_loading_csv = false;                    
+                }
             });
         }
     });
@@ -142,6 +147,7 @@
         selected_variable = this.dataset.variableId;
 
         if (variables[selected_variable].type == 'csv' && variables[selected_variable].csvfile !== undefined) {
+            is_loading_csv = true;
             window.api.send('get-csv', variables[selected_variable].csvfile);
         }
     }

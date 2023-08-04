@@ -132,7 +132,7 @@
                                 <th>ChatGPT API key</th>
                             </thead>
                             <tbody>
-                                    <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_settings.chatgpt_api_key}" />
+                                    <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.chatgpt_api_key}" />
                             </tbody>
                         </table>                        
                     </div>
@@ -151,12 +151,13 @@
     import { onMount, createEventDispatcher } from "svelte";
     let toggle: HTMLElement;
     let selected_setting: number = 1;
-    let gen_settings: any;
     export let settings: any;
+    export let gensettings: any;
 
     const dispatch = createEventDispatcher();
 
     let copy = {};
+    let gen_copy = {};
 
     let default_prompt_sunny = `Please pretend you are a user of my chatbot. 
 I will send you the output from the chatbot and then you respond with a message as a user. 
@@ -215,21 +216,11 @@ First message of the chatbot to you:
                 }
             }
 
-            window.api.send('get-settings');
+            gen_copy = JSON.parse(JSON.stringify(gensettings));
 
             toggle.click();
         }
     }
-
-    onMount(() => {
-        // Only works in Electron for now. @TODO: implement for online version of Tilbot.
-        if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
-
-            window.api.receive('settings-load', (param: any) => {
-                gen_settings = param.settings;
-            });
-        }
-    });    
 
     function typing_style_change() {
         copy.typing_style = event.currentTarget.value;
@@ -248,11 +239,10 @@ First message of the chatbot to you:
     }
 
     function save() {
-        window.api.send('save-settings', {settings: gen_settings});
-
         dispatch('message', {
             event: 'save_settings',
-            settings: copy
+            settings: copy,
+            gen_settings: gen_copy
         });
 
         reset();

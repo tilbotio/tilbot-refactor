@@ -25,6 +25,12 @@
       {@html message.content}
     </div>
   </div>
+  {:else if message.from == 'chatgpt'}
+  <div class="chat chat-end">
+    <div class="chat-bubble chat-bubble-secondary bg-[#FFC500]">
+      {@html message.content}
+    </div>
+  </div>
   {:else}
   <div class="chat chat-end">
     <div class="chat-bubble chat-bubble-secondary bg-tilbot-secondary-hardpink">
@@ -130,6 +136,8 @@ onMount(() => {
     }    
 
     window.addEventListener('message', message_received, false);
+
+    window.api.send('get-settings');
 });
 
 function socket_script_loaded(event: Event) {
@@ -148,6 +156,9 @@ async function message_received(event: MessageEvent) {
   catch (e: any) {
     if (event.data.startsWith('log:')) {
       controller.log(event.data.substring(5));
+    }
+    else if (event.data.startsWith('chatgpt|')) {
+      chatgpt_message(event.data.substring(8));
     }
     else {
       current_message_type = 'Text';
@@ -187,13 +198,14 @@ function chatbot_settings(s: any) {
 }
 
 function chatbot_message(msg: any) {
-    console.log(msg);
+      console.log(msg);
+
       // Send the message
       show_typing_indicator = true;
       setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
 
       let timeout = msg.content.length / 40 * 1000;
-      
+     
       if (settings.typing_style !== undefined && settings.typing_style == 'variable') {
         timeout = msg.content.length / settings.typing_charpsec * 1000;
       }
@@ -203,7 +215,12 @@ function chatbot_message(msg: any) {
 
       setTimeout(function() {
         show_typing_indicator = false;
-        show_message(msg.type, msg.content, msg.params);
+
+        if (msg.has_targets === undefined) {
+          msg.has_targets = true;
+        }
+        
+        show_message(msg.type, msg.content, msg.params, msg.has_targets);
         controller.message_sent_event();
       }, timeout);
 }
@@ -320,7 +337,37 @@ function user_message(content: string) {
     controller.receive_message(content);
 }
 
-function show_message(type: string, content: string, params: any) {
+function chatgpt_message(content: string) {
+    if (content == '') {
+      return;
+    }
+
+    messages.push({from: 'chatgpt', content: content});
+    messages = messages;
+
+    setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
+
+    controller.receive_message(content);
+}
+
+function show_message(type: string, content: string, params: any, has_targets: boolean) {   
+
+    if (window.parent.isTilbotEditor !== undefined) {
+      let gpttype = type;
+
+      if (!has_targets) {
+        gpttype = 'Text';
+      }
+
+      let windowmsg = gpttype + '|' + content.replace(/<br\s*[\/]?>/gi, "\r\n").replace(/<\/?[^>]+(>|$)/g, "");        
+
+      if (type == 'MC') {
+        windowmsg += "\r\n\r\n" + '{' + params.options.join(';') + '}';
+      }
+
+      window.parent.postMessage(windowmsg);
+    }
+
     messages.push({from: 'bot', content: content});
     messages = messages;
     setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);    
