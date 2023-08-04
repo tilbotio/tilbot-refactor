@@ -153,6 +153,7 @@
     }
 
     function import_csv() {
+        is_loading_csv = true;
         window.api.send('do-load-csv-data');
     }
 
