@@ -47,6 +47,9 @@ class LocalProjectController extends BasicProjectController {
                             this.client_vars[connector.events[c].var_name] = res;
                         }
                     }
+                    else if (matches[1] == 'input') {
+                        this.client_vars[connector.events[c].var_name] = connector.events[c].var_value.replace('[input]', input_str);
+                    }
                 }
                 else {
                     this.client_vars[connector.events[c].var_name] = connector.events[c].var_value;
@@ -276,7 +279,7 @@ class LocalProjectController extends BasicProjectController {
                             found = true;
                             this.current_block_id = block.connectors[c].targets[0];
                             this.send_events(block.connectors[c], str);
-                            this._send_current_message();
+                            this._send_current_message(str);
                         }
                     }
                 }
@@ -289,9 +292,9 @@ class LocalProjectController extends BasicProjectController {
                         else_connector_id = c;
                     }
 
-                    else {
+                    else if ((block.connectors[c].method == 'barcode' && str.startsWith('barcode:')) || block.connectors[c].method !== 'barcode') {
                         // @TODO: distinguish between contains / exact match options                       
-                        let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
+                        let ands = block.connectors[c].label.split(' [and] ');
                         let num_match = 0;
                         let last_found_output = null;
 
@@ -306,8 +309,8 @@ class LocalProjectController extends BasicProjectController {
                         }
 
                         if (num_match == ands.length) {
-                            this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
-                            this.send_events(this.project.blocks[b].connectors[c], last_found_output);
+                            this.current_block_id = block.connectors[c].targets[0];
+                            this.send_events(block.connectors[c], last_found_output);
                             this._send_current_message(last_found_output);                
                             break;
                         }                            
@@ -331,29 +334,32 @@ class LocalProjectController extends BasicProjectController {
                         if (this.project.blocks[b].connectors[c].label == '[else]') {
                             else_connector = this.project.blocks[b].connectors[c];
                         }
-                        // @TODO: distinguish between contains / exact match options
-                        //let parts = str.split(' ');
-                        let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
-                        let num_match = 0;
-                        let last_found_output = null;
 
-                        for (let and in ands) {
-                            //for (let part in parts) {
-                                let output = await this.check_labeled_connector(ands[and], str);//parts[part].replace('?', ''));
+                        else if ((this.project.blocks[b].connectors[c].method == 'barcode' && str.startsWith('barcode:')) || this.project.blocks[b].connectors[c].method !== 'barcode') {
+                            // @TODO: distinguish between contains / exact match options
+                            //let parts = str.split(' ');
+                            let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
+                            let num_match = 0;
+                            let last_found_output = null;
 
-                                if (output !== null) {
-                                    num_match += 1;
-                                    last_found_output = output;
-                                }
-                            //}
+                            for (let and in ands) {
+                                //for (let part in parts) {
+                                    let output = await this.check_labeled_connector(ands[and], str);//parts[part].replace('?', ''));
+
+                                    if (output !== null) {
+                                        num_match += 1;
+                                        last_found_output = output;
+                                    }
+                                //}
+                            }
+
+                            if (num_match == ands.length) {
+                                this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
+                                this.send_events(this.project.blocks[b].connectors[c], last_found_output);
+                                this._send_current_message(last_found_output);                
+                                break;
+                            }                            
                         }
-
-                        if (num_match == ands.length) {
-                            this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
-                            this.send_events(this.project.blocks[b].connectors[c], last_found_output);
-                            this._send_current_message(last_found_output);                
-                            break;
-                        }                            
                     }                
                 }
             }
