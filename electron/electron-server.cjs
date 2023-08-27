@@ -4,6 +4,7 @@ const express = require('express');
 const socket = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const ChatGPT = require('./chatgpt.cjs');
 const ProjectController = require('./projectcontroller.cjs');
 
 const app = express();
@@ -35,6 +36,17 @@ const io = socket(server);
 let project = fs.readFileSync(p + '/currentproject/electron-project.json');
 project = JSON.parse(project);
 console.log(project);
+
+// Init ChatGPT
+let settings = {
+  chatgpt_api_key: ''
+}
+if (fs.existsSync(p + '/settings.json')) {
+  settings = JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'));
+}
+
+ChatGPT.init(settings.chatgpt_api_key);
+
 
 let clients = {};
 

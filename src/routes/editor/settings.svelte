@@ -93,27 +93,13 @@
 
                             <table class="table w-full mt-8">
                                 <thead>
-                                    <th>Regular user prompt ('sunny day')</th>
+                                    <th>Simulated user prompt</th>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td>
                                             <span class="italic">It is <span class="font-bold">not</span> recommended to make any (major) changes to this prompt.</span><br /><br />
-                                            <textarea class="textarea textarea-bordered w-full h-64" bind:value="{copy.llm_prompt_sunny}"></textarea>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>                        
-
-                            <table class="table w-full mt-8">
-                                <thead>
-                                    <th>Evil user prompt ('rainy day')</th>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <span class="italic">It is <span class="font-bold">not</span> recommended to make any (major) changes to this prompt.</span><br /><br />
-                                            <textarea class="textarea textarea-bordered w-full h-64" bind:value="{copy.llm_prompt_rainy}"></textarea>
+                                            <textarea class="textarea textarea-bordered w-full h-64" bind:value="{copy.llm_prompt}"></textarea>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -159,25 +145,12 @@
     let copy = {};
     let gen_copy = {};
 
-    let default_prompt_sunny = `Please pretend you are a user of my chatbot. 
-I will send you the output from the chatbot and then you respond with a message as a user. 
-If the message ends with curly brackets {}, these are your answer options, separated by a semicolon ;
-In this case, you can *only* reply with the answer option you choose, no other text.
-For example, if my message ends with {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
-You are only supposed to give your reply, acting as a user, and let me provide the chatbot’s reply. You cannot provide answer options for the chatbot.
+    let default_prompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create. 
+    You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
 
-First message of the chatbot to you:
-`;
-    let default_prompt_rainy = `Please pretend you are a user of my chatbot. The goal is to really test the chatbot’s dialogue, so please try to come up with ways to confuse it or force it to make mistakes. Try using synonyms or rephrasing your responses to confuse the chatbot, unless there are fixed answer options. However, you are not allowed to lie.
-I will send you the output from the chatbot and then you respond with a message as a user. 
-If the message ends with curly brackets {}, these are your answer options, separated by a semicolon ;
-In this case, you can *only* reply with the answer option you choose, no other text.
-For example, if my message ends with {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
-You are only supposed to give your reply, acting as a user, and let me provide the chatbot’s reply. You cannot provide answer options for the chatbot.
-
-First message of the chatbot to you:
-`;
-
+    Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text. 
+    For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words. 
+    You cannot provide answer options with curly brackets for the chatbot.`;
 
     export const settingswindow = {
         show() {
@@ -186,8 +159,7 @@ First message of the chatbot to you:
                     'typing_style': 'variable',
                     'typing_time': 2,
                     'typing_charpsec': 40,
-                    'llm_prompt_sunny': default_prompt_sunny,
-                    'llm_prompt_rainy': default_prompt_rainy,
+                    'llm_prompt': default_prompt,
                     'llm_prompt_data': ''
                 }
             }
@@ -205,11 +177,8 @@ First message of the chatbot to you:
                 if (copy.typing_charpsec == undefined) {
                     copy.typing_charpsec = 40;
                 }
-                if (copy.llm_prompt_sunny == undefined) {
-                    copy.llm_prompt_sunny = default_prompt_sunny;
-                }
-                if (copy.llm_prompt_rainy == undefined) {
-                    copy.llm_prompt_rainy = default_prompt_rainy;
+                if (copy.llm_prompt == undefined) {
+                    copy.llm_prompt = default_prompt;
                 }
                 if (copy.llm_prompt_data == undefined) {
                     copy.llm_prompt_data = '';

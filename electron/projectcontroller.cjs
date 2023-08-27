@@ -1,5 +1,6 @@
 const Logger = require('./logger.cjs');
 const CsvData = require('./csvdata.cjs');
+const ChatGPT = require('./chatgpt.cjs');
 
 class ProjectController {
     constructor(io, project, socket_id, p) {
@@ -30,7 +31,7 @@ class ProjectController {
                 
         this.io.to(this.socket_id).emit('settings', this.project.settings);
 
-        this._send_current_message();
+        this._send_current_message();        
     }
 
     get_path() {
@@ -43,7 +44,7 @@ class ProjectController {
       return path;
     }
     
-    _send_current_message(input = '') {
+    async _send_current_message(input = '') {
         if (this.current_block_id == undefined) {
           return;
         }
@@ -61,12 +62,67 @@ class ProjectController {
         }       
         
         block = block.blocks[this.current_block_id.toString()];  
+
+        if (block.chatgpt_variation !== undefined && block.chatgpt_variation) {
+          let content = this.check_variables(block.content);   
+          let prompt = this.check_variables(block.variation_prompt);
+
+          let resp = await ChatGPT.get_variation(content, prompt);
           
-        setTimeout(function() {
-          self.send_message(block, input);
-        }, block.delay * 1000);  
+          let block_copy = JSON.parse(JSON.stringify(block));
+          block_copy.content = resp;
   
+          setTimeout(function() {
+              self.send_message(block_copy);
+          }, block_copy.delay * 1000);             
+        }
+        else {
+          setTimeout(function() {
+              self.send_message(block, input);
+          }, block.delay * 1000);    
+        }  
     }    
+
+    check_variables(content, input = '') {
+
+      let regExp = /\[([^\]]+)\]/g;
+      let matches = regExp.exec(content);
+
+      if (matches !== null) {
+        if (typeof input === 'object' && input !== null) {
+          content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
+        }
+        else if (input !== '') {
+          content = content.replace('[input]', input);
+        }  
+        else {
+          // If it's a column from a CSV table, there should be a period.
+          // Element 1 of the match contains the string without the brackets.
+          let csv_parts = matches[1].split('.');
+
+          if (csv_parts.length == 2) {
+              let db = csv_parts[0];
+              let col = csv_parts[1];
+
+              // The column can be yet another variable
+              if (col.startsWith('[')) {
+                  col = this.client_vars[col.substring(1)];
+                  matches[1] += ']';
+              }
+
+              // Check if local variable
+              if (db in this.client_vars) {
+                  content = content.replace('[' + matches[1] + ']', this.client_vars[db][col]);
+              }
+          }
+          else {
+              content = content.replace('[' + matches[1] + ']', this.client_vars[matches[1]]);
+          }
+        }
+      }  
+
+      return content;
+  }    
 
     async send_events(connector, input_str) {
       if (connector.events !== undefined) {
@@ -152,34 +208,7 @@ class ProjectController {
 
       var params = {};
 
-      let content = block.content;
-
-      let regExp = /\[([^\]]+)\]/g;
-      let matches = regExp.exec(content);
-
-      if (matches !== null) {
-        if (typeof input === 'object' && input !== null) {
-          content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
-        }
-        else if (input !== '') {
-          content = content.replace('[input]', input);
-        }
-        else {
-          // If it's a column from a CSV table, there should be a period.
-          // Element 1 of the match contains the string without the brackets.
-          let csv_parts = matches[1].split('.');
-
-          if (csv_parts.length == 2) {
-              let db = csv_parts[0];
-              let col = csv_parts[1];
-
-              // Check if local variable
-              if (db in this.client_vars) {
-                  content = content.replace('[' + matches[1] + ']', this.client_vars[db][col]);
-              }
-          }
-        }
-      }
+      let content = this.check_variables(block.content, input);
 
       if (block.type == 'MC') {
         params.options = [];

@@ -5,13 +5,15 @@ class LocalProjectController extends BasicProjectController {
     private current_block_id: number;
     private chatbot_message_callback: Function;
     private chatbot_settings_callback: Function;
+    private variation_request_callback: Function;
     private client_vars: any;
 
-    constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function) {
+    constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function, variation_request_callback: Function) {
         super();
 
         this.chatbot_message_callback = chatbot_message_callback;
         this.chatbot_settings_callback = chatbot_settings_callback;
+        this.variation_request_callback = variation_request_callback;
         this.project = JSON.parse(json_str);
         this.current_block_id = this.project.starting_block_id;
         this.client_vars = {};
@@ -62,34 +64,7 @@ class LocalProjectController extends BasicProjectController {
     send_message(block: any, input: string = '') {
         let params: any = {};
 
-        let content = block.content;
-
-        let regExp = /\[([^\]]+)\]/g;
-        let matches = regExp.exec(content);
-
-        if (matches !== null) {
-          if (typeof input === 'object' && input !== null) {
-            content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
-          }
-          else if (input !== '') {
-            content = content.replace('[input]', input);
-          }  
-          else {
-            // If it's a column from a CSV table, there should be a period.
-            // Element 1 of the match contains the string without the brackets.
-            let csv_parts = matches[1].split('.');
-
-            if (csv_parts.length == 2) {
-                let db = csv_parts[0];
-                let col = csv_parts[1];
-
-                // Check if local variable
-                if (db in this.client_vars) {
-                    content = content.replace('[' + matches[1] + ']', this.client_vars[db][col]);
-                }
-            }
-          }
-        }  
+        let content = this.check_variables(block.content, input);
 
         if (block.type == 'MC') {
             params.options = [];
@@ -188,15 +163,65 @@ class LocalProjectController extends BasicProjectController {
             block = this.project.blocks[path[0]];
 
             for (var i = 1; i < path.length; i++) {
-            block = block.blocks[path[i]];
+                block = block.blocks[path[i]];
             }
         }       
         
         block = block.blocks[this.current_block_id.toString()];
 
-        setTimeout(function() {
-            self.send_message(block, input);
-        }, block.delay * 1000);
+        if (block.chatgpt_variation !== undefined && block.chatgpt_variation) {
+            let content = this.check_variables(block.content);   
+            let prompt = this.check_variables(block.variation_prompt);
+
+            this.variation_request_callback(content, prompt);
+        }
+        else {
+            setTimeout(function() {
+                self.send_message(block, input);
+            }, block.delay * 1000);    
+        }
+
+    }
+
+    check_variables(content: string, input: string = '') {
+
+        let regExp = /\[([^\]]+)\]/g;
+        let matches = regExp.exec(content);
+
+        if (matches !== null) {
+          if (typeof input === 'object' && input !== null) {
+            content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
+          }
+          else if (input !== '') {
+            content = content.replace('[input]', input);
+          }  
+          else {
+            // If it's a column from a CSV table, there should be a period.
+            // Element 1 of the match contains the string without the brackets.
+            let csv_parts = matches[1].split('.');
+
+            if (csv_parts.length == 2) {
+                let db = csv_parts[0];
+                let col = csv_parts[1];
+
+                // The column can be yet another variable
+                if (col.startsWith('[')) {
+                    col = this.client_vars[col.substring(1)];
+                    matches[1] += ']';
+                }
+
+                // Check if local variable
+                if (db in this.client_vars) {
+                    content = content.replace('[' + matches[1] + ']', this.client_vars[db][col]);
+                }
+            }
+            else {
+                content = content.replace('[' + matches[1] + ']', this.client_vars[matches[1]]);
+            }
+          }
+        }  
+
+        return content;
     }
 
     async check_labeled_connector(connector: string, str: string) : Promise<any> {
@@ -263,6 +288,28 @@ class LocalProjectController extends BasicProjectController {
         }
 
         return null;
+    }
+
+    receive_variation(str: string) {
+        // @TODO: handle error messages in requesting variation from ChatGPT
+        var self = this;
+        var path = this.get_path();
+        var block = this.project;
+
+        if (path.length > 0) {
+            block = this.project.blocks[path[0]];
+
+            for (var i = 1; i < path.length; i++) {
+                block = block.blocks[path[i]];
+            }
+        }       
+        
+        block = JSON.parse(JSON.stringify(block.blocks[this.current_block_id.toString()]));
+        block.content = str;
+
+        setTimeout(function() {
+            self.send_message(block);
+        }, block.delay * 1000);    
     }
 
     async receive_message(str: string) {

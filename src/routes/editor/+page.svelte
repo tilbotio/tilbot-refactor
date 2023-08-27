@@ -694,6 +694,9 @@
                 send_chatgpt_message(e.detail.msg);
             }, 500);            
         }
+        else if (e.detail.event == 'send_chatgpt_variation') {
+            send_chatgpt_variation(e.detail.msg);
+        }
     }
 
     function handleEditBlockMessage(e: Event) {
@@ -934,6 +937,12 @@
         if (simulator.contentWindow !== null) {
             simulator.contentWindow.postMessage('chatgpt|' + msg, "*");
         }        
+    }
+
+    function send_chatgpt_variation(msg: string) {
+        if (simulator.contentWindow !== null) {
+            simulator.contentWindow.postMessage('variation|' + msg, "*");
+        }
     }
 
     function run_selected() {

@@ -11,18 +11,35 @@
 
 <br />
 
+<div class="form-control">
+    <label class="label cursor-pointer">
+      <span class="label-text">Use ChatGPT to add variation</span> 
+      <input type="checkbox" class="toggle" bind:checked="{copy.chatgpt_variation}" />
+    </label>
+
+    {#if copy.chatgpt_variation}
+    <textarea class="textarea textarea-bordered w-full" bind:value="{copy.variation_prompt}"></textarea>
+    {/if}
+  </div>
+
 <div class="divider"></div> 
 <p><button class="btn btn-active" on:click={save}>Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline" on:click={cancel}>Cancel</button></p>
 
 <script type="ts">
     import { onMount, createEventDispatcher } from "svelte";
     export let objAttributes = {};
-    let copy = {};
+    let copy: any = {};
 
     const dispatch = createEventDispatcher();
 
     onMount(() => {
         copy = JSON.parse(JSON.stringify(objAttributes));
+        if (copy.chatgpt_variation === undefined) {
+            copy.chatgpt_variation = false;
+        }
+        if (copy.variation_prompt === undefined) {
+            copy.variation_prompt = 'Please generate a variation of the message the user sends, while preserving its original meaning. Try to be somewhat concise.';
+        }
     });
 
     function name_keypress(e: KeyboardEvent) {

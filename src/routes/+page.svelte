@@ -160,6 +160,10 @@ async function message_received(event: MessageEvent) {
     else if (event.data.startsWith('chatgpt|')) {
       chatgpt_message(event.data.substring(8));
     }
+    else if (event.data.startsWith('variation|')) {
+      variation_message(event.data.substring(10));
+
+    }
     else {
       current_message_type = 'Text';
       await tick();
@@ -190,7 +194,7 @@ function project_received(project: any) {
         clearTimeout(i);
     }
 
-    controller = new LocalProjectController(project, chatbot_message, chatbot_settings);
+    controller = new LocalProjectController(project, chatbot_message, chatbot_settings, variation_request);
 }
 
 function chatbot_settings(s: any) {
@@ -350,6 +354,23 @@ function chatgpt_message(content: string) {
     controller.receive_message(content);
 }
 
+function variation_request(content: string, prompt:string) {
+    show_typing_indicator = true;
+    
+    let windowmsg = {
+          msg: "variation",
+          content: content,
+          prompt: prompt
+    }
+
+    window.parent.postMessage(windowmsg);  
+}
+
+function variation_message(content: string) {
+    // @TODO: check for invalid message
+    controller.receive_variation(content);
+}
+
 function show_message(type: string, content: string, params: any, has_targets: boolean) {   
 
     if (window.parent.isTilbotEditor !== undefined) {
@@ -359,10 +380,16 @@ function show_message(type: string, content: string, params: any, has_targets: b
         gpttype = 'Text';
       }
 
-      let windowmsg = gpttype + '|' + content.replace(/<br\s*[\/]?>/gi, "\r\n").replace(/<\/?[^>]+(>|$)/g, "");        
+      let c = content.replace(/<br\s*[\/]?>/gi, "\r\n").replace(/<\/?[^>]+(>|$)/g, "");
 
       if (type == 'MC') {
-        windowmsg += "\r\n\r\n" + '{' + params.options.join(';') + '}';
+        c += "\r\n\r\n" + '{' + params.options.join(';') + '}';
+      }
+
+      let windowmsg = {
+        msg: "chatgptsim",
+        type: gpttype,
+        content: c
       }
 
       window.parent.postMessage(windowmsg);
