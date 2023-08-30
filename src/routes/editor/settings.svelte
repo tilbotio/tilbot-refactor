@@ -77,6 +77,22 @@
                     <div class="h-full flex flex-col w-full">
                         <div class="w-full text-xl text-center font-bold">ChatGPT prompts</div>
                         <div class="p-8 flex-1 overflow-y-auto">
+
+                            <table class="table w-full">
+                                <thead>
+                                    <th>Temperature</th>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <span class="italic">A higher temperature means ChatGPT is given more freedom to formulate its replies, it will be more random and less deterministic.</span><br /><br />
+                                            <input type="range" min="0.1" max="0.9" bind:value="{copy.temperature}" class="range w-1/2" step="0.1" /> <br/>
+                                            {copy.temperature}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>  
+
                             <table class="table w-full">
                                 <thead>
                                     <th>Use of data or scenario</th>
@@ -160,7 +176,8 @@
                     'typing_time': 2,
                     'typing_charpsec': 40,
                     'llm_prompt': default_prompt,
-                    'llm_prompt_data': ''
+                    'llm_prompt_data': '',
+                    'temperature': 0.5
                 }
             }
 
@@ -182,6 +199,9 @@
                 }
                 if (copy.llm_prompt_data == undefined) {
                     copy.llm_prompt_data = '';
+                }
+                if (copy.temperature == undefined) {
+                    copy.temperature = 0.5;
                 }
             }
 

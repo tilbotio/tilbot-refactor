@@ -82,7 +82,7 @@
                 const completion = await openai.createChatCompletion({
                     model: "gpt-3.5-turbo",
                     messages: msgs,
-                    temperature: 0.1
+                    temperature: settings.temperature
                 });
 
                 console.log(completion);
