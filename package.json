@@ -4,7 +4,9 @@
 	"private": true,
 	"main": "electron-main.cjs",
 	"scripts": {
-		"dev": "node server.js & vite dev",
+		"dev": "concurrently \"npm run dev-server\" \"npm run dev-vite\"",
+		"dev-server": "node server.js",
+		"dev-vite": "vite dev",
 		"dev-noserver": "vite dev",
 		"electron": "vite build && electron .",
 		"build": "vite build",
@@ -36,6 +38,7 @@
 	"type": "module",
 	"dependencies": {
 		"adm-zip": "^0.5.10",
+		"concurrently": "^8.2.2",
 		"cors": "^2.8.5",
 		"csv-database": "^0.9.2",
 		"daisyui": "^2.46.0",

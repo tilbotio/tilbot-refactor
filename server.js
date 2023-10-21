@@ -24,7 +24,9 @@ app.use(cors({
 }));
 
 // Set up the MongoDB connection
-var dbPath = 'mongodb://localhost/tilbot';
+var dbPath = 'mongodb://127.0.0.1:27017/tilbot';
+
+console.log(dbPath);
 
 if (process.env.MONGO_USERNAME != undefined) {
   dbPath = 'mongodb://' + process.env.MONGO_USERNAME + ':' + process.env.MONGO_PASSWORD + '@mongo:' + process.env.MONGO_PORT + '/' + process.env.MONGO_DB;
@@ -89,6 +91,23 @@ mongo.then(() => {
     });
   });
 
+  app.get('/api/admin_account_exists', (req, res) => {
+    res.status(200);
+
+    UserApiController.get_admin_user().then(function(admin) {
+      console.log(admin);
+
+      if (admin === null) {
+        UserApiController.create_account('admin', 'admin', 99);
+        res.send('CREATED');
+      }
+      else {
+        res.send('EXISTS');
+      }
+    });
+
+  });
+
   app.post('/api/logout', (req, res) => {
     res.status(200);
 
@@ -136,8 +155,6 @@ mongo.then(() => {
 
   app.get('/api/get_dashboard', (req, res) => {
     res.status(200);
-
-    console.log(req.session);
 
     // Return error message if not logged in
     if (req.session.username === undefined) {

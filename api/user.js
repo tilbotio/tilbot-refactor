@@ -27,6 +27,19 @@ export class UserApiController {
     }
 
     /**
+     * Retrieve the user with admin rights
+     *
+     * @return {UserSchema} The user object from database if found, otherwise null.
+     */
+    static get_admin_user() {
+        return new Promise(resolve => {
+            this.UserDetails.findOne({ role: 99, active: true }).then(function(user) {
+                resolve(user);
+            });
+        });
+    }    
+
+    /**
      * Retrieve all users from database (role 1, not admin).
      *
      * @return {string[]} Array of usernames present in database.
@@ -90,11 +103,11 @@ export class UserApiController {
      */
     static create_account(user, pass, role) {
         return new Promise(resolve => {
-            var schema = new UserSchema();
-            schema.username = user;
-            schema.password = pass;
-            schema.role = role;
-            schema.save().then(function(e) {
+            var u = new this.UserDetails();
+            u.username = user;
+            u.password = pass;
+            u.role = role;
+            u.save().then(function(e) {
                 resolve(e);
             }).catch(function(error) {
                 resolve(error);

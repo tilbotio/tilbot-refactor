@@ -1,7 +1,7 @@
 {#if loaded}
 <div>
     <div class="w-1/4 h-24 float-left">
-        <img class="h-full" src="/images/tilbot_logo.svg" alt="Tilbot logo" />
+        <img class="w-48 mt-2" src="/images/tilbot_logo.svg" alt="Tilbot logo" />
     </div>
 
     <div class="h-24 mt-6 float-left text-lg">
@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<div class="flex flex-col gap-y-4 justify-center w-screen">
+<div class="flex flex-col gap-y-4 justify-center w-screen overflow-y-auto">
     <div class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
         <input type="checkbox" />
         <div class="collapse-title text-xl font-medium">
@@ -69,7 +69,7 @@
                     <input name="newpass2" id="txt_new_pass2" type="password" placeholder="New password (again)" class="input input-bordered" />
                 </div>
                 <div class="form-control mt-6">
-                    <button type="submit" class="btn btn-primary">Update password</button>
+                    <button type="submit" class="btn bg-tilbot-primary-400 hover:bg-tilbot-primary-500">Update password</button>
                 </div>
 
               </form>

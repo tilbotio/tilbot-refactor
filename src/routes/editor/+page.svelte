@@ -1,4 +1,4 @@
-<div id="editor">
+<div id="editor" class="overflow-hidden">
     <!--<a href="/dashboard">-->
         <img src="images/tilbot_logo.svg" class="ml-1 mt-2 w-48" />
     <!--</a>-->
