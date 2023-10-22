@@ -131,7 +131,50 @@
         Projects
         </div>
         <div class="collapse-content"> 
-        To do
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                  <!-- head -->
+                  <thead>
+                    <tr>
+                      <th>Project name</th>
+                      <th>Running</th>
+                      <th>View</th>
+                      <th>Logs</th>
+                      <th>Edit</th>
+                      <th>Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+
+                    {#if data.projects.length == 0}
+                      <tr>
+                        <td colspan="6" class="text-center">No projects yet.</td>
+                      </tr>
+                    {/if}
+ 
+                    {#each data.projects as p, index}
+                      <tr>
+                        <th>{p.name}</th>
+                        <td><input type="checkbox" class="toggle" data-id="{p.id}" bind:checked={p.status} on:change={toggle_project_running}/></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <a href="/editor?project={p.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                    <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32L19.513 8.2z" />
+                                </svg>                                  
+                            </a>
+                        </td>
+                        <td></td>
+                      </tr>
+                    {/each}                   
+                  </tbody>                 
+                </table>
+
+                <div class="mt-6 w-full text-center">
+                    <button type="submit" class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500" on:click={new_project}>+ New project</button>
+                </div>                
+              </div>        
         </div>
     </div>    
     {/if}
@@ -282,6 +325,33 @@ import { SvelteComponent, onMount } from 'svelte';
         if (e.detail.event == 'load_data') {
             load_data();
         }
+    }
+
+    function new_project() {
+        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/create_project", {
+            method: 'post',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            response.text().then(txt => {
+                if (txt == 'OK') {
+                    alert('project created!');
+                }
+                else {
+
+                }
+            });            
+        })
+        .catch(err => {
+            console.log(err);
+        });         
+    }
+
+    function toggle_project_running() {
+        // @TODO
     }
 
 </script>

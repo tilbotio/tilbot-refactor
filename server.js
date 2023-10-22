@@ -122,11 +122,24 @@ mongo.then(() => {
   });
 
   app.post('/api/create_user_account', (req, res) => {
-    UserApiController.create_account(req.body.username, req.body.password, 1).then(function(success) {
-      console.log(success);
-      res.send(success);
-    });    
-  });  
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 99) { // admin
+          UserApiController.create_account(req.body.username, req.body.password, 1).then(function(success) {
+            console.log(success);
+            res.send(success);
+          });    
+        }
+
+        else {
+          res.send('USER_NOT_ADMIN');
+        }
+      }
+      else {
+        res.send('USER_NOT_FOUND');
+      }
+    });  
+  });
 
   app.post('/api/set_user_active', (req, res) => {
     res.status(200);
@@ -199,6 +212,12 @@ mongo.then(() => {
       });
     }
   });  
+
+  app.post('/api/create_project', (req, res) => {
+    ProjectApiController.create_project(req.session.username).then(function(response) {
+      res.send(response);
+    });
+  });
 
   app.get('/api/sesh', (req, res) => {
     res.status(200);

@@ -1,5 +1,6 @@
 import { ProjectSchema } from '../db/project.js';
 import { mongoose } from 'mongoose';
+import crypto from 'crypto-js';
 
 export class ProjectApiController {
 
@@ -122,15 +123,15 @@ export class ProjectApiController {
      */
     static create_project(user) {
         return new Promise(resolve => {
-            var schema = new ProjectSchema();
+            var p = new this.ProjectDetails();
 
             // Generate a unique id
-            schema.id = MD5('tb' + user + Date.now());
-            schema.user_id = user;
-            schema.status = 0; // paused by default
+            p.id = crypto.MD5('tb' + user + Date.now());
+            p.user_id = user;
+            p.status = 0; // paused by default
 
-            schema.save().then(function(e) {
-                resolve(e);
+            p.save().then(function(e) {
+                resolve('OK');
             }).catch(function(error) {
                 resolve(error);
             });

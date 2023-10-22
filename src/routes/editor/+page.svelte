@@ -330,7 +330,8 @@
 
 
 <script lang="ts">
-    import { onMount, SvelteComponent } from "svelte";    
+    import { onMount, SvelteComponent } from "svelte";   
+    import { page } from '$app/stores'; 
     import Variables from './variables.svelte';
     import Settings from './settings.svelte';
     import ChatGPT from './chatgpt.svelte';
@@ -345,6 +346,9 @@
     import TextBlockPopup from './block_popups/text.svelte';
     import TriggerBlockPopup from './block_popups/trigger.svelte';
 
+    const url = $page.url;
+    console.log(url.searchParams.get('project'));
+ 
     let block_components: {[key: string]: any} = {
         'Auto': AutoBlock,
         'MC': MCBlock,
