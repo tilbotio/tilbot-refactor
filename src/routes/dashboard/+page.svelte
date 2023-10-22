@@ -1,3 +1,4 @@
+<NewUser bind:newuserwindow={newuser_window} on:message={handleNewUserMessage}></NewUser>
 {#if loaded}
 <div>
     <div class="w-1/4 h-24 float-left">
@@ -79,7 +80,7 @@
 
     {#if data.users}
     <div class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
-        <input type="checkbox" />
+        <input type="checkbox" bind:this={toggle_users} />
         <div class="collapse-title text-xl font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 float-left mt-1 mr-4">
                 <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 18a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z" />
@@ -106,10 +107,13 @@
                         <td>{u.running_projects}</td>
                         <td><input type="checkbox" class="toggle" data-username="{u.username}" bind:checked={u.active} on:change={set_user_active}/></td>
                       </tr>
-                    {/each}
-                    
-                  </tbody>
+                    {/each}                   
+                  </tbody>                 
                 </table>
+
+                <div class="mt-6 w-full text-center">
+                    <button type="submit" class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500" on:click={newuser_window.show()}>+ Add new user</button>
+                </div>                
               </div>            
         </div>
     </div>  
@@ -117,7 +121,7 @@
     
     {#if data.projects}
     <div class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
-        <input type="checkbox" />
+        <input type="checkbox" bind:this={toggle_projects} />
         <div class="collapse-title text-xl font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 float-left mt-1 mr-4">
                 <path fill-rule="evenodd" d="M4.606 12.97a.75.75 0 01-.134 1.051 2.494 2.494 0 00-.93 2.437 2.494 2.494 0 002.437-.93.75.75 0 111.186.918 3.995 3.995 0 01-4.482 1.332.75.75 0 01-.461-.461 3.994 3.994 0 011.332-4.482.75.75 0 011.052.134z" clip-rule="evenodd" />
@@ -136,7 +140,8 @@
 {/if}
 
 <script lang="ts">
-import { onMount } from 'svelte';
+import NewUser from './newuser.svelte';
+import { SvelteComponent, onMount } from 'svelte';
 
     let data = {};
     let loaded = false;
@@ -144,8 +149,17 @@ import { onMount } from 'svelte';
     let pass_error_txt = '';
     let pass_success = false;
 
+    let newuser_window: SvelteComponent;
+    let toggle_users: HTMLInputElement;
+    let toggle_projects: HTMLInputElement;
+
     // Load dashboard data
     onMount(async () => {
+        load_data();
+    });
+
+    function load_data() {
+        alert('loading data...');
         fetch(location.protocol + '//' + window.location.hostname + ':3001/api/get_dashboard', {
             method: 'get',
             credentials: 'include'
@@ -160,14 +174,25 @@ import { onMount } from 'svelte';
                     data = json;
                     console.log(json);
                     loaded = true;
+
+
+                    setTimeout(function() {
+                        if (data.users !== undefined && !toggle_users.checked) {
+                            toggle_users.click();
+                        }
+                        else if (data.projects !== undefined && !toggle_projects.checked) {
+                            toggle_projects.click();
+                        }
+                    }, 20);
+
                 }
                 
             });
         })
         .catch(err => {
             console.log(err);
-        });
-    });
+        });        
+    }
 
     function logout(e: any) {
         fetch(location.protocol + '//' + window.location.hostname + ":3001/api/logout", {
@@ -253,4 +278,11 @@ import { onMount } from 'svelte';
             console.log(err);
         });            
     }
+
+    function handleNewUserMessage(e: Event) {
+        if (e.detail.event == 'load_data') {
+            load_data();
+        }
+    }
+
 </script>

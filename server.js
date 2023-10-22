@@ -121,6 +121,13 @@ mongo.then(() => {
     });    
   });
 
+  app.post('/api/create_user_account', (req, res) => {
+    UserApiController.create_account(req.body.username, req.body.password, 1).then(function(success) {
+      console.log(success);
+      res.send(success);
+    });    
+  });  
+
   app.post('/api/set_user_active', (req, res) => {
     res.status(200);
 
@@ -169,7 +176,6 @@ mongo.then(() => {
           if (user.role == 99) { // admin, retrieve user accounts
             UserApiController.get_users().then(async function(users) {
 
-              var promises = [];
               for (var u in users) {
                 var projects = await ProjectApiController.get_running_projects_user(users[u].username);
                 users[u].running_projects = projects.length;

@@ -110,6 +110,9 @@ export class UserApiController {
             u.save().then(function(e) {
                 resolve(e);
             }).catch(function(error) {
+                if (error.toString().includes('duplicate key')) {
+                    resolve('USER_EXISTS');
+                }
                 resolve(error);
             });
         });
