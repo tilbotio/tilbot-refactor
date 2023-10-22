@@ -68,6 +68,7 @@
                     dispatch('message', {
                         event: 'load_data'
                     });           
+                    toggle.click();
                 }
                 else if (txt == 'NOT_LOGGED_IN') {
                     location.replace('/login');                    

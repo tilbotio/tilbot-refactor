@@ -159,7 +159,6 @@ import { SvelteComponent, onMount } from 'svelte';
     });
 
     function load_data() {
-        alert('loading data...');
         fetch(location.protocol + '//' + window.location.hostname + ':3001/api/get_dashboard', {
             method: 'get',
             credentials: 'include'

@@ -108,7 +108,7 @@ export class UserApiController {
             u.password = pass;
             u.role = role;
             u.save().then(function(e) {
-                resolve(e);
+                resolve('OK');
             }).catch(function(error) {
                 if (error.toString().includes('duplicate key')) {
                     resolve('USER_EXISTS');
