@@ -346,9 +346,6 @@
     import TextBlockPopup from './block_popups/text.svelte';
     import TriggerBlockPopup from './block_popups/trigger.svelte';
 
-    const url = $page.url;
-    console.log(url.searchParams.get('project'));
- 
     let block_components: {[key: string]: any} = {
         'Auto': AutoBlock,
         'MC': MCBlock,
@@ -438,6 +435,11 @@
             });
 
             window.api.send('get-settings');
+        }
+
+        if (!is_electron) {
+            const url = $page.url;
+            console.log(url.searchParams.get('project'));
         }
 
         project.canvas_width = screen.width * 1.5;
