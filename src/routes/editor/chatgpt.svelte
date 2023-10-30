@@ -80,7 +80,7 @@
                 console.log('=====');
 
                 const completion = await openai.createChatCompletion({
-                    model: "gpt-3.5-turbo",
+                    model: gensettings.chatgpt_sim_version,
                     messages: msgs,
                     temperature: settings.temperature
                 });
@@ -106,10 +106,21 @@
                             });
 
 
-                            dispatch('message', {
-                                event: 'send_chatgpt_message',
-                                msg: mc_options[i]
-                            });                        
+                            if (gensettings.chatgpt_sim_version == "gpt-4") {
+                                // Since the GPT-4 API call frequency seems to be very limited, add artificial delay.
+                                setTimeout(function() {
+                                    dispatch('message', {
+                                        event: 'send_chatgpt_message',
+                                        msg: mc_options[i]
+                                    });                        
+                                }, 20000);
+                            }
+                            else {
+                                dispatch('message', {
+                                    event: 'send_chatgpt_message',
+                                    msg: mc_options[i]
+                                });                        
+                            }
 
                             break;
                         }
@@ -133,10 +144,20 @@
                         content: resp
                     });
 
-                    dispatch('message', {
-                        event: 'send_chatgpt_message',
-                        msg: resp
-                    });                
+                    if (gensettings.chatgpt_sim_version == "gpt-4") {
+                        setTimeout(function() {
+                            dispatch('message', {
+                                event: 'send_chatgpt_message',
+                                msg: resp
+                            });                
+                        }, 20000);
+                    }
+                    else {
+                        dispatch('message', {
+                            event: 'send_chatgpt_message',
+                            msg: resp
+                        });                
+                    }
                 }
 
 

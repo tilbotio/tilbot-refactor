@@ -432,6 +432,10 @@
 
             window.api.receive('settings-load', (param: any) => {
                 gen_settings = param.settings;
+
+                if (gen_settings.chatgpt_sim_version === undefined) {
+                    gen_settings.chatgpt_sim_version = "gpt-3.5-turbo";
+                }
             });
 
             window.api.send('get-settings');

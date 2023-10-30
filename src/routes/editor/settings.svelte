@@ -31,7 +31,7 @@
                         </thead>
                         <tbody>
                             <tr class="hover">
-                                <td data-setting-id="3" class="cursor-pointer {selected_setting == 3 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT API key</td>
+                                <td data-setting-id="3" class="cursor-pointer {selected_setting == 3 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT integration</td>
                             </tr>
                         </tbody>
                         </table>          
@@ -93,7 +93,7 @@
                                 </tbody>
                             </table>  
 
-                            <table class="table w-full">
+                            <table class="table w-full mt-6">
                                 <thead>
                                     <th>Use of data or scenario</th>
                                 </thead>
@@ -126,9 +126,9 @@
 
                     <!-- ChatGPT integration -->
                     {#if selected_setting == 3}
-                    <div class="w-full text-xl text-center font-bold">ChatGPT API key</div>
+                    <div class="w-full text-xl text-center font-bold">ChatGPT Integration</div>
                     <div class="p-8">
-                        <span class="italic">Note: This setting is stored on this device, and will not be included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.</span><br /><br />
+                        <span class="italic">Note: These settings are stored on this device, and will not be included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.</span><br /><br />
                         <table class="table w-full">
                             <thead>
                                 <th>ChatGPT API key</th>
@@ -136,7 +136,23 @@
                             <tbody>
                                     <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.chatgpt_api_key}" />
                             </tbody>
-                        </table>                        
+                        </table>          
+                        
+                        <table class="table w-full mt-8">
+                            <thead>
+                                <th colspan="2">ChatGPT version for simulated user</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>3.5</td>
+                                    <td><input type="radio" name="gpt-sim-version" class="radio" bind:group="{gen_copy.chatgpt_sim_version}" value="gpt-3.5-turbo" /></td>
+                                </tr>
+                                <tr>
+                                    <td>4.0</td>
+                                    <td><input type="radio" name="gpt-sim-version" class="radio" bind:group="{gen_copy.chatgpt_sim_version}" value="gpt-4" /></td>
+                                </tr>
+                            </tbody>
+                        </table>                         
                     </div>
                     {/if}
                 </div>
