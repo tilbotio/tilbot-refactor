@@ -170,7 +170,7 @@ class LocalProjectController extends BasicProjectController {
         block = block.blocks[this.current_block_id.toString()];
 
         if (block.chatgpt_variation !== undefined && block.chatgpt_variation) {
-            let content = this.check_variables(block.content);   
+            let content = this.check_variables(block.content, input);   
             let prompt = this.check_variables(block.variation_prompt);
 
             this.variation_request_callback(content, prompt);
