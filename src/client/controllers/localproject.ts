@@ -20,7 +20,7 @@ class LocalProjectController extends BasicProjectController {
 
         if (this.project.settings === undefined) {
             this.project.settings = {
-                'typing_style': 'variable',
+                'typing_style': 'fixed',
                 'typing_time': 2,
                 'typing_charpsec': 40
             }            
@@ -365,6 +365,7 @@ class LocalProjectController extends BasicProjectController {
                 }
 
                 if (!found && else_connector_id !== '-1') {
+                    found = true;
                     this.current_block_id = block.connectors[else_connector_id].targets[0];
                     this.send_events(block.connectors[else_connector_id], str);
                     this._send_current_message(str);

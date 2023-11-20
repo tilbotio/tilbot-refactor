@@ -208,7 +208,7 @@ function chatbot_message(msg: any) {
       show_typing_indicator = true;
       setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
 
-      let timeout = msg.content.length / 40 * 1000;
+      let timeout = 2000;
      
       if (settings.typing_style !== undefined && settings.typing_style == 'variable') {
         timeout = msg.content.length / settings.typing_charpsec * 1000;

@@ -188,7 +188,7 @@
         show() {
             if (settings == undefined) {
                 copy = {
-                    'typing_style': 'variable',
+                    'typing_style': 'fixed',
                     'typing_time': 2,
                     'typing_charpsec': 40,
                     'llm_prompt': default_prompt,
@@ -202,7 +202,7 @@
 
                 // Defaults
                 if (copy.typing_style == undefined) {
-                    copy.typing_style = 'variable';
+                    copy.typing_style = 'fixed';
                 }
                 if (copy.typing_time == undefined) {
                     copy.typing_time = 2;
