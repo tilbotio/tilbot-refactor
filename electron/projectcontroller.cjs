@@ -13,6 +13,8 @@ class ProjectController {
         
         this.csv_datas = {};
 
+        this.chatgpt_var_mem = undefined;
+
         // Set up the data files
         for (let v in this.project.variables) {
           if (this.project.variables[v].type == 'csv') {
@@ -69,7 +71,9 @@ class ProjectController {
           let content = this.check_variables(block.content, input);   
           let prompt = this.check_variables(block.variation_prompt);
 
-          let resp = await ChatGPT.get_variation(content, prompt);
+          let resp = await ChatGPT.get_variation(content, prompt, block.chatgpt_memory, this.chatgpt_var_mem);
+          this.chatgpt_var_mem = resp[0];
+          resp = resp[1];
           
           let block_copy = JSON.parse(JSON.stringify(block));
           block_copy.content = resp;
@@ -348,6 +352,7 @@ class ProjectController {
       console.log('receive!' + str);
 
       let found = false;
+      let else_connector_id = '-1';
 
       if (this.current_block_id !== undefined) {
         var block = this.project.blocks[this.current_block_id.toString()];
@@ -369,8 +374,6 @@ class ProjectController {
         }
 
         else if (block.type == 'Text' || block.type == 'List') {
-          let else_connector_id = '-1';
-
           for (var c in block.connectors) {
               if (block.connectors[c].label == '[else]') {
                   else_connector_id = c;
@@ -393,19 +396,13 @@ class ProjectController {
                   }
 
                   if (num_match == ands.length) {
+                      found = true;
                       this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
                       this.send_events(this.project.blocks[b].connectors[c], last_found_output);
                       this._send_current_message(last_found_output);                
                       break;
                   }
               }
-          }
-
-          if (!found && else_connector_id !== '-1') {
-              found = true;
-              this.current_block_id = block.connectors[else_connector_id].targets[0];
-              this.send_events(block.connectors[else_connector_id], str);
-              this._send_current_message(str);
           }
 
         }
@@ -441,6 +438,7 @@ class ProjectController {
                       }
 
                       if (num_match == ands.length) {
+                          found = true;
                           this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
                           this.send_events(this.project.blocks[b].connectors[c], last_found_output);
                           this._send_current_message(last_found_output);                
@@ -450,13 +448,22 @@ class ProjectController {
                 }                
             }
         }
+        
 
         if (else_connector !== null) {
+            found = true;
             this.current_block_id = else_connector.targets[0];
             this.send_events(else_connector, '');
             this._send_current_message('');                
         }
       }
+
+      if (!found && else_connector_id !== '-1') {
+        found = true;
+        this.current_block_id = block.connectors[else_connector_id].targets[0];
+        this.send_events(block.connectors[else_connector_id], str);
+        this._send_current_message(str);
+      }      
     }
     
     disconnected() {

@@ -203,6 +203,12 @@ function project_received(project: any) {
     }
 
     controller = new LocalProjectController(project, chatbot_message, chatbot_settings, variation_request);
+
+    let windowmsg = {
+          msg: "reset_var_mem"
+    }
+
+    window.parent.postMessage(windowmsg);      
 }
 
 function chatbot_settings(s: any) {
@@ -362,13 +368,14 @@ function chatgpt_message(content: string) {
     controller.receive_message(content);
 }
 
-function variation_request(content: string, prompt:string) {
+function variation_request(content: string, prompt:string, memory:boolean) {
     show_typing_indicator = true;
     
     let windowmsg = {
           msg: "variation",
           content: content,
-          prompt: prompt
+          prompt: prompt,
+          memory: memory
     }
 
     window.parent.postMessage(windowmsg);  

@@ -175,7 +175,7 @@ class LocalProjectController extends BasicProjectController {
             let content = this.check_variables(block.content, input);   
             let prompt = this.check_variables(block.variation_prompt);
 
-            this.variation_request_callback(content, prompt);
+            this.variation_request_callback(content, prompt, block.chatgpt_memory);
         }
         else {
             setTimeout(function() {
@@ -316,6 +316,7 @@ class LocalProjectController extends BasicProjectController {
 
     async receive_message(str: string) {
         let found = false;
+        let else_connector_id = '-1';
 
         if (this.current_block_id !== undefined) {
             var block = this.project.blocks[this.current_block_id.toString()];
@@ -334,8 +335,6 @@ class LocalProjectController extends BasicProjectController {
                 }
             }
             else if (block.type == 'Text' || block.type == 'List') {
-                let else_connector_id = '-1';
-
                 for (var c in block.connectors) {
                     if (block.connectors[c].label == '[else]') {
                         else_connector_id = c;
@@ -364,13 +363,6 @@ class LocalProjectController extends BasicProjectController {
                             break;
                         }                            
                     }
-                }
-
-                if (!found && else_connector_id !== '-1') {
-                    found = true;
-                    this.current_block_id = block.connectors[else_connector_id].targets[0];
-                    this.send_events(block.connectors[else_connector_id], str);
-                    this._send_current_message(str);
                 }
             }            
         }
@@ -404,6 +396,7 @@ class LocalProjectController extends BasicProjectController {
                             }
 
                             if (num_match == ands.length) {
+                                found = true;
                                 this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
                                 this.send_events(this.project.blocks[b].connectors[c], last_found_output);
                                 this._send_current_message(last_found_output);                
@@ -415,11 +408,19 @@ class LocalProjectController extends BasicProjectController {
             }
 
             if (else_connector !== null) {
+                found = true;
                 this.current_block_id = else_connector.targets[0];
                 this.send_events(else_connector, '');
                 this._send_current_message('');                
             }
         }
+
+        if (!found && else_connector_id !== '-1') {
+            found = true;
+            this.current_block_id = block.connectors[else_connector_id].targets[0];
+            this.send_events(block.connectors[else_connector_id], str);
+            this._send_current_message(str);
+        }        
     }
 
 }

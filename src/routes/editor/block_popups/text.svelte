@@ -92,6 +92,11 @@
     
         {#if copy.chatgpt_variation}
         <textarea class="textarea textarea-bordered w-full" bind:value="{copy.variation_prompt}"></textarea>
+
+        <label class="label cursor-pointer">
+            <span class="label-text">Keep memory of previous interactions</span> 
+            <input type="checkbox" class="toggle" bind:checked="{copy.chatgpt_memory}" />
+        </label>        
         {/if}
     </div>
 

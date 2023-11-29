@@ -12,12 +12,29 @@ class ChatGPT {
         ChatGPT.openai = new OpenAIApi(configuration);
     }
 
-    static async get_variation(content, prompt) {
+    static async get_variation(content, prompt, is_mem = false, mem = undefined) {
+        let var_msgs = mem;
 
-        let var_msgs = [{
-            role: "system",
-            content: prompt
-        }];
+        if (is_mem) {
+            if (var_msgs === undefined || var_msgs.length == 0) {
+                var_msgs = [{
+                    role: "system",
+                    content: prompt
+                }];                
+            }
+            else {
+                var_msgs[0] = {
+                    role: "system",
+                    content: prompt
+                };    
+            }
+        }
+        else {
+            var_msgs = [{
+                role: "system",
+                content: prompt
+            }];             
+        }
         
         var_msgs.push({
             role: "user",
@@ -33,11 +50,23 @@ class ChatGPT {
         });
         
         console.log(completion);
-        // @TODO: clean up older messages if we're nearing the token limit.            
-        // completion.data.usage.total_tokens
-        // @TODO: stop in case ChatGPT keeps generating the same text
+
+        console.log(completion.data.usage.total_tokens);
+
+        if (completion.data.usage.total_tokens >= 3500) {
+            var_msgs.splice(1, 2);
+        }        
+
+        let resp = completion.data.choices[0].message.content;
+
+        if (is_mem) {
+            var_msgs.push({
+                role: "assistant",
+                content: resp
+            });
+        }
         
-        return completion.data.choices[0].message.content;        
+        return [var_msgs, resp];        
     }
 }
 

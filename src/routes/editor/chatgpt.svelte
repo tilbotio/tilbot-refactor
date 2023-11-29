@@ -26,10 +26,11 @@
     let chatgpt_str:string = '';
     let data_str:string = '';
     let loaded_var:string = '';
-    let is_loading_csv:bool = false;
+    let is_loading_csv:boolean = false;
     let openai: any;
     let msgs: Array<any>;
     let var_msgs: Array<any>;
+    let is_var_mem:boolean = false;
     
     onMount(() => {
         window.addEventListener('message', message_received, false);
@@ -172,10 +173,19 @@
 
             let openai = new OpenAIApi(configuration);
 
-            var_msgs = [{
-                role: "system",
-                content: event.data.prompt
-            }];
+            if (event.data.memory === undefined || !event.data.memory || var_msgs === undefined || var_msgs.length == 0) {
+                var_msgs = [{
+                    role: "system",
+                    content: event.data.prompt
+                }];
+            }
+
+            else {
+                var_msgs[0] = {
+                    role: "system",
+                    content: event.data.prompt
+                };
+            }
 
             var_msgs.push({
                 role: "user",
@@ -191,17 +201,29 @@
             });
 
             console.log(completion);
-            // @TODO: clean up older messages if we're nearing the token limit.            
-            // completion.data.usage.total_tokens
-            // @TODO: stop in case ChatGPT keeps generating the same text
+            
+            if (completion.data.usage.total_tokens >= 3500) {
+                var_msgs.splice(1, 2);
+            }
 
             let resp = completion.data.choices[0].message.content;
+
+            if (event.data.memory !== undefined && event.data.memory) {
+                var_msgs.push({
+                    role: "assistant",
+                    content: resp
+                });                
+            }
 
             dispatch('message', {
                 event: 'send_chatgpt_variation',
                 msg: resp
             });                        
 
+        }
+
+        else if (event.data.msg == 'reset_var_mem') {
+            var_msgs = [];
         }
     }
 
