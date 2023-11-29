@@ -15,6 +15,9 @@
                         </thead>
                         <tbody>
                             <tr class="hover">
+                                <td data-setting-id="0" class="cursor-pointer {selected_setting == 0 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Appearance</td>
+                            </tr>
+                            <tr class="hover">
                                 <td data-setting-id="1" class="cursor-pointer {selected_setting == 1 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Typing behavior</td>
                             </tr>
                             <tr class="hover">
@@ -38,6 +41,40 @@
                     </div>     
                 </div>
                 <div class="flex-1 px-4" style="width: calc(100% - 16rem)">
+                    <!-- Appearance -->
+                    {#if selected_setting == 0}
+                    <div class="w-full text-xl text-center font-bold">Appearance</div>
+                    <div class="p-8">
+                        <table class="table w-full">
+                            <thead>
+                                <th colspan="2">Avatar</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="w-48">Show avatar</td>
+                                    <td><input type="radio" name="radio-1" class="radio" bind:group="{copy.show_avatar}" value="yes" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="w-48">Hide avatar</td>
+                                    <td><input type="radio" name="radio-1" class="radio" bind:group="{copy.show_avatar}" value="no" /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <table class="table w-full mt-8">
+                            <thead>
+                                <th colspan="2">Name</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="w-48">Bot name:</td>
+                                    <td><input type="text" bind:value="{copy.name}" class="input input-sm input-bordered w-48" /></td>
+                                </tr>
+                            </tbody>
+                        </table>                        
+                    </div>
+                    {/if}
+
                     <!-- Typing behavior -->
                     {#if selected_setting == 1}
                     <div class="w-full text-xl text-center font-bold">Typing behavior</div>
@@ -168,7 +205,7 @@
 <script lang="ts">
     import { onMount, createEventDispatcher } from "svelte";
     let toggle: HTMLElement;
-    let selected_setting: number = 1;
+    let selected_setting: number = 0;
     export let settings: any;
     export let gensettings: any;
 
@@ -193,7 +230,9 @@
                     'typing_charpsec': 40,
                     'llm_prompt': default_prompt,
                     'llm_prompt_data': '',
-                    'temperature': 0.5
+                    'temperature': 0.5,
+                    'show_avatar': 1,
+                    'name': 'Tilbot'
                 }
             }
 
@@ -219,6 +258,12 @@
                 if (copy.temperature == undefined) {
                     copy.temperature = 0.5;
                 }
+                if (copy.show_avatar == undefined) {
+                    copy.show_avatar = 'yes';
+                }
+                if (copy.name == undefined) {
+                    copy.name = 'Tilbot';
+                }
             }
 
             gen_copy = JSON.parse(JSON.stringify(gensettings));
@@ -228,7 +273,7 @@
     }
 
     function typing_style_change() {
-        copy.typing_style = event.currentTarget.value;
+        //copy.typing_style = event.currentTarget.value;
     }
 
     function settings_row_clicked() {

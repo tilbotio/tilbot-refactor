@@ -9,12 +9,14 @@
 
 <div class="flex flex-col w-full h-full">
 <div class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow" bind:this={header}>
-    <div class="avatar online placeholder mt-4 ml-4">
+    {#if settings.show_avatar == 'yes'}
+    <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
         <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
           <span>TB</span>
         </div>
     </div> 
-    <span class="text-lg font-medium ml-4">Tilbot</span>
+    {/if}
+    <div class="text-lg font-medium mt-6 ml-4 float-left">{settings.name}</div>
 </div>
 
 <div class="w-full h-full flex-1 overflow-y-scroll py-2" bind:this={message_container}>
@@ -122,7 +124,13 @@ let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let iframe = true;
 
-let settings: any = {};
+let settings: any = {
+                'typing_style': 'fixed',
+                'typing_time': 2,
+                'typing_charpsec': 40,
+                'show_avatar': 'yes',
+                'name': 'Tilbot'  
+};
 
 onMount(() => {
     // Check if we're in the editor

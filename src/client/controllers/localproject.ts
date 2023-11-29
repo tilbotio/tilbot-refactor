@@ -22,7 +22,9 @@ class LocalProjectController extends BasicProjectController {
             this.project.settings = {
                 'typing_style': 'fixed',
                 'typing_time': 2,
-                'typing_charpsec': 40
+                'typing_charpsec': 40,
+                'show_avatar': 'yes',
+                'name': 'Tilbot'
             }            
         }
 
