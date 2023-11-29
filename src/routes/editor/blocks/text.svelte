@@ -28,7 +28,13 @@
             </div>     
         </div>  
         <div class="text-sm min-h-6 max-h-16 line-clamp-3">
-            {@html objAttributes.content}
+            {#if objAttributes.chatgpt_variation == true}
+            <mark>
+                {@html objAttributes.content}                
+            </mark>
+            {:else}
+            {@html objAttributes.content}                
+            {/if}
         </div>
         {#if objAttributes.connectors !== undefined && objAttributes.connectors.length > 0}
             <div class="divider m-0"></div>
