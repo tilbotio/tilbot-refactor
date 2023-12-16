@@ -44,9 +44,10 @@ class ChatGPT {
         console.log(var_msgs);
        
         const completion = await ChatGPT.openai.createChatCompletion({
-                model: "gpt-3.5-turbo",
+                //model: "gpt-3.5-turbo",
+                model: "gpt-4-1106-preview",
                 messages: var_msgs,
-                temperature: 0.9
+                temperature: 0.5
         });
         
         console.log(completion);
