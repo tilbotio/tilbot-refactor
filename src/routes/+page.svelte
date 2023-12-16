@@ -12,7 +12,7 @@
     {#if settings.show_avatar == 'yes'}
     <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
         <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
-          <span>TB</span>
+          <span>{firstletter(settings.name)}</span>
         </div>
     </div> 
     {/if}
@@ -148,6 +148,10 @@ onMount(() => {
     window.api.send('get-settings');
 });
 
+function firstletter(str: string) {
+  return str.charAt(0).toUpperCase();
+}
+
 function socket_script_loaded(event: Event) {
   let socket = io();
   import("../client/controllers/remoteproject").then(function(m: any) {
@@ -212,6 +216,13 @@ function project_received(project: any) {
 }
 
 function chatbot_settings(s: any) {
+    if (s.show_avatar === undefined) {
+      s.show_avatar = 'yes';
+    }
+    if (s.name === undefined) {
+      s.name = 'Tilbot';
+    }
+
     settings = s;
 }
 
