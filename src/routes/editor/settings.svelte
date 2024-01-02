@@ -186,7 +186,7 @@
                                 </tr>
                                 <tr>
                                     <td>4.0</td>
-                                    <td><input type="radio" name="gpt-sim-version" class="radio" bind:group="{gen_copy.chatgpt_sim_version}" value="gpt-4" /></td>
+                                    <td><input type="radio" name="gpt-sim-version" class="radio" bind:group="{gen_copy.chatgpt_sim_version}" value="gpt-4-1106-preview" /></td>
                                 </tr>
                             </tbody>
                         </table>                         

@@ -106,7 +106,7 @@
                                 content: mc_options[i]
                             });
 
-
+                            // Deprecated, new turbo version does not need this delay (and won't get it)
                             if (gensettings.chatgpt_sim_version == "gpt-4") {
                                 // Since the GPT-4 API call frequency seems to be very limited, add artificial delay.
                                 setTimeout(function() {
