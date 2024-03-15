@@ -113,6 +113,9 @@ const createWindow = () => {
             else if (zipEntry.entryName.startsWith('var/')) {
               zip.extractEntryTo(zipEntry, p + '/currentproject');              
             }
+            else {
+              zip.extractEntryTo(zipEntry, p + '/currentproject');
+            }
         });          
       }
 
@@ -181,10 +184,10 @@ const createWindow = () => {
       }
 
       fs.writeFileSync(p + '/settings.json', JSON.stringify(settings));
-      win.webContents.send('settings-load', { settings: settings });
+      win.webContents.send('settings-load', { settings: settings, path: p + '/currentproject/' });
     }
     else {
-      win.webContents.send('settings-load', { settings: JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'))});
+      win.webContents.send('settings-load', { settings: JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8')), path: p + '/currentproject/' });
     }
   });
 
@@ -232,7 +235,60 @@ const createWindow = () => {
 
         // @TODO: load into csvdb for use
     }
-  });    
+  });   
+
+  ipcMain.on('do-load-avatar', (event, prev_name) => {
+
+    let load_file = dialog.showOpenDialogSync({
+      properties: [
+        'openFile'
+      ],
+      filters: [{
+          name: 'Avatar image',
+          extensions: [
+              'png',
+              'jpg',
+              'jpeg',
+              'svg'
+          ]
+      }]
+    });
+
+    if (load_file !== undefined) {
+        let p = `${__dirname}`;
+        if (process.platform === 'darwin') {
+          p = app.getPath('userData');
+        }
+
+        // Delete previous avatar
+        if (prev_name !== '' && fs.existsSync(p + '/currentproject/' + prev_name)) {
+          fs.rmSync(p + '/currentproject/' + prev_name);
+        }
+
+        let fname = path.basename(load_file[0]);
+
+        if (!fs.existsSync(p + '/currentproject/')) {
+          fs.mkdirSync(p + '/currentproject');
+        }
+          
+        fs.copyFileSync(load_file[0], p + '/currentproject/' + fname);
+        win.webContents.send('avatar-load', { filename: fname });
+    }
+  });
+
+  ipcMain.on('do-delete-avatar', (event, fname) => {
+    let p = `${__dirname}`;
+    if (process.platform === 'darwin') {
+      p = app.getPath('userData');
+    }
+
+    // Delete avatar
+    if (fname !== '' && fs.existsSync(p + '/currentproject/' + fname)) {
+      fs.rmSync(p + '/currentproject/' + fname);
+    }    
+
+    // @TODO: Should we send confirmation that it has been deleted?
+  });
   
   ipcMain.on('do-save', (event, project) => {
     let save_file = dialog.showSaveDialogSync({
@@ -259,12 +315,14 @@ const createWindow = () => {
           file.addLocalFile(p + '/currentproject/var/' + proj_obj.variables[v].csvfile, 'var');
         }
       }
+
+      if (proj_obj.settings.avatar_file !== undefined && proj_obj.settings.avatar_file !== '') {
+        file.addLocalFile(p + '/currentproject/' + proj_obj.settings.avatar_file);
+      }
       
       fs.writeFileSync(save_file, file.toBuffer());
       win.webContents.send('project-saved');
     }
-
-    // @TODO: save related files (avatar image, data files, etc.)
   });
 
   // @TODO: For the online version, this will have to be integrated with the editorsocket, I think.

@@ -4,7 +4,7 @@
     <!--</a>-->
 
     <Variables bind:variablewindow={variables_window} variables={project.variables}></Variables>
-    <Settings bind:settingswindow={settings_window} settings={project.settings} gensettings={gen_settings} on:message={handleSettingsMessage}></Settings>
+    <Settings bind:settingswindow={settings_window} settings={project.settings} gensettings={gen_settings} path={path} on:message={handleSettingsMessage}></Settings>
 
     <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
     <div class="modal">
@@ -398,6 +398,7 @@
     let dragging_connector = {};
 
     let gen_settings = {};
+    let path = '';
     let chatgpt_running = false;
 
     onMount(() => {
@@ -432,6 +433,7 @@
 
             window.api.receive('settings-load', (param: any) => {
                 gen_settings = param.settings;
+                path = param.path;
 
                 if (gen_settings.chatgpt_sim_version === undefined) {
                     gen_settings.chatgpt_sim_version = "gpt-3.5-turbo";
@@ -939,7 +941,7 @@
         chatgpt_running = false;
         if (simulator.contentWindow !== null) {
             window.api.send('load-project-db', project);
-            simulator.contentWindow.postMessage(JSON.stringify(project), "*");
+            simulator.contentWindow.postMessage({project: JSON.stringify(project), path: path}, "*");
         }        
     }
 

@@ -11,9 +11,15 @@
 <div class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow" bind:this={header}>
     {#if settings.show_avatar == 'yes'}
     <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
+        {#if settings.avatar_file == ''}
         <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
           <span>{firstletter(settings.name)}</span>
         </div>
+        {:else}
+        <div class="rounded-full w-12">
+          <img src="{path + settings.avatar_file}" />
+        </div>
+        {/if}
     </div> 
     {/if}
     <div class="text-lg font-medium mt-6 ml-4 float-left">{settings.name}</div>
@@ -124,11 +130,14 @@ let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let iframe = true;
 
+let path: string = '';
+
 let settings: any = {
                 'typing_style': 'fixed',
                 'typing_time': 2,
                 'typing_charpsec': 40,
                 'show_avatar': 'yes',
+                'avatar_file': '',
                 'name': 'Tilbot'  
 };
 
@@ -162,10 +171,10 @@ function socket_script_loaded(event: Event) {
 
 async function message_received(event: MessageEvent) {
   // A message could either be a project file (simulator) or a text message from a parent window.
-  try {
-    JSON.parse(event.data);
+  if (event.data.project !== undefined) {
+    project_received(event.data);
   }
-  catch (e: any) {
+  else {
     if (event.data.startsWith('log:')) {
       controller.log(event.data.substring(5));
     }
@@ -188,16 +197,12 @@ async function message_received(event: MessageEvent) {
         input_text.value = '';
       }    
     }
-
-    return;    
   }
-
-  project_received(event.data);
-
 }
 
-function project_received(project: any) {
+function project_received(data: any) {
     messages = [];
+    path = data.path;
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)
     // Set a fake timeout to get the highest timeout id
@@ -206,7 +211,7 @@ function project_received(project: any) {
         clearTimeout(i);
     }
 
-    controller = new LocalProjectController(project, chatbot_message, chatbot_settings, variation_request);
+    controller = new LocalProjectController(data.project, chatbot_message, chatbot_settings, variation_request);
 
     let windowmsg = {
           msg: "reset_var_mem"
@@ -215,12 +220,16 @@ function project_received(project: any) {
     window.parent.postMessage(windowmsg);      
 }
 
-function chatbot_settings(s: any) {
+function chatbot_settings(s: any, p: string = '') {
     if (s.show_avatar === undefined) {
       s.show_avatar = 'yes';
     }
     if (s.name === undefined) {
       s.name = 'Tilbot';
+    }
+
+    if (p !== '') {
+      path = p;
     }
 
     settings = s;

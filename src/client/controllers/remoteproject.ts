@@ -21,8 +21,8 @@ class RemoteProjectController extends BasicProjectController {
         this.chatbot_message_callback(block);
     }
 
-    send_settings(settings: any) {
-        this.chatbot_settings_callback(settings);
+    send_settings(settings: any, path: string) {
+        this.chatbot_settings_callback(settings, path);
     }
 
     window_message(msg: any) {

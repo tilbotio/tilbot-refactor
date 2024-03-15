@@ -29,6 +29,7 @@ class ProjectController {
               'typing_time': 2,
               'typing_charpsec': 40,
               'show_avatar': 'yes',
+              'avatar_file': '',
               'name': 'Tilbot'              
             }            
         }
