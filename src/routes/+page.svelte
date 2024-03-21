@@ -227,6 +227,9 @@ function chatbot_settings(s: any, p: string = '') {
     if (s.name === undefined) {
       s.name = 'Tilbot';
     }
+    if (s.avatar_file === undefined) {
+      s.avatar_file = '';
+    }
 
     if (p !== '') {
       path = p;
