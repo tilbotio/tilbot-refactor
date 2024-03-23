@@ -446,6 +446,9 @@
         if (!is_electron) {
             const url = $page.url;
             console.log(url.searchParams.get('project'));
+            
+            // For now, since editor online is not yet working, we send the user back to the dashboard.
+            window.location.href = '/dashboard/';
         }
 
         project.canvas_width = screen.width * 1.5;
