@@ -2,14 +2,14 @@
 {#if loaded}
 <div>
     <div class="w-1/4 h-24 float-left">
-        <img class="w-48 mt-2" src="/images/tilbot_logo.svg" alt="Tilbot logo" />
+        <img class="w-48 mt-4 ml-8" src="/images/tilbot_logo.svg" alt="Tilbot logo" />
     </div>
 
-    <div class="h-24 mt-6 float-left text-lg">
+    <div class="h-24 mt-8 float-left text-lg">
         Welcome, {data.username}!
     </div>
 
-    <div class="h-24 mt-4 mr-6 float-right">
+    <div class="h-24 mt-6 mr-12 float-right">
         <button class="btn gap-2" on:click="{logout}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 float-left">
                 <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />
@@ -137,11 +137,11 @@
                   <thead>
                     <tr>
                       <th>Project name</th>
-                      <th>Running</th>
-                      <th>View</th>
-                      <th>Logs</th>
-                      <th>Edit</th>
-                      <th>Delete</th>
+                      <th class="text-center">Running</th>
+                      <th class="text-center">Import</th>
+                      <th class="text-center">Logs</th>
+                      <!--<th>Edit</th>-->
+                      <th class="text-center">Delete</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -155,17 +155,23 @@
                     {#each data.projects as p, index}
                       <tr>
                         <th>{p.name}</th>
-                        <td><input type="checkbox" class="toggle" data-id="{p.id}" bind:checked={p.status} on:change={toggle_project_running}/></td>
-                        <td></td>
-                        <td></td>
-                        <td>
+                        <td class="text-center">
+                            <input type="checkbox" class="toggle" data-id="{p.id}" bind:checked={p.status} on:change={toggle_project_running}/>
+                        </td>
+                        <td class="text-center"></td>
+                        <td class="text-center"></td>
+                        <!--<td>
                             <a href="/editor?project={p.id}">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                                     <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-12.15 12.15a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32L19.513 8.2z" />
                                 </svg>                                  
                             </a>
+                        </td>-->
+                        <td class="text-center">
+                            <svg on:click={set_project_inactive} data-id="{p.id}" data-name="{p.name}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block cursor-pointer">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>                              
                         </td>
-                        <td></td>
                       </tr>
                     {/each}                   
                   </tbody>                 
@@ -348,6 +354,31 @@ import { SvelteComponent, onMount } from 'svelte';
         .catch(err => {
             console.log(err);
         });         
+    }
+
+    function set_project_inactive(e: any) {
+        if (confirm("Are you sure you wish to delete the project \"" + e.target.dataset['name'] + "\"?")) {
+            fetch(location.protocol + '//' + window.location.hostname + ":3001/api/set_project_active", {
+                method: 'post',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    active: false,
+                    projectid: e.target.dataset['id']
+                })
+            })
+            .then(response => {
+                response.text().then(txt => {
+                    console.log(txt);
+                    load_data();
+                });            
+            })
+            .catch(err => {
+                console.log(err);
+            });     
+        }      
     }
 
     function toggle_project_running() {

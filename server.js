@@ -219,6 +219,65 @@ mongo.then(() => {
     });
   });
 
+  /**
+   * API call: change a project's status (active/inactive)
+   */
+  app.post('/api/set_project_active', async (req, res) => {
+    res.status(200);
+
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 1) {
+          ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {
+            if (response != null) {
+              if (response.status == 1) {
+                // Stop project from running first.
+                  //stop_bot(req.body.projectid);
+              }
+
+              if (!req.body.active) {
+                // Make the project inactive
+                ProjectApiController.set_project_active(req.body.projectid, req.body.active).then(function(response) {
+                  res.send('OK');
+                });                  
+              }
+              else {
+                // @TODO: maybe at some point also make it possible to set the project back to active.
+                res.send('NOK');
+              }
+            }
+            else {
+              res.send('NOK');
+            }
+          });
+        }
+        else {
+          res.send('NOK');
+        }
+      }
+      else {
+        res.send('USER_NOT_FOUND');
+      }
+    });
+  }); 
+
+  
+  const stop_bot = function(projectid) {
+    console.log('stopping ' + projectid);
+    // Check whether we are running in Docker or not
+    if (process.env.TILBOT_PORT != undefined) {
+      this.botlauncher.write('stop ' + projectid);
+    }
+    else {
+      if (this.running_bots[projectid] !== undefined) {
+        this.running_bots[projectid].send('exit');
+      }
+    }
+
+    ProjectApiController.set_project_status(req.body.projectid, 0).then(function(response) {
+    });
+  }
+
   app.get('/api/sesh', (req, res) => {
     res.status(200);
     console.log(req.session);
