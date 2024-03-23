@@ -13,3 +13,4 @@ node_modules
 /tilbot-darwin-arm64
 /tilbot-darwin-x64
 settings.json
+tmp_upload/

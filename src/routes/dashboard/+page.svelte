@@ -158,7 +158,11 @@
                         <td class="text-center">
                             <input type="checkbox" class="toggle" data-id="{p.id}" bind:checked={p.status} on:change={toggle_project_running}/>
                         </td>
-                        <td class="text-center"></td>
+                        <td class="text-center">
+                            <svg on:click={import_project} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block cursor-pointer">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>                              
+                        </td>
                         <td class="text-center"></td>
                         <!--<td>
                             <a href="/editor?project={p.id}">
@@ -183,6 +187,8 @@
               </div>        
         </div>
     </div>
+
+    <input accept=".tilbot" bind:this={import_file_upload} bind:files={import_file} type="file" name="projectfile" class="hidden" />
     {/if}
 
     {#if data.settings}
@@ -272,6 +278,36 @@ import { SvelteComponent, onMount } from 'svelte';
     let toggle_users: HTMLInputElement;
     let toggle_projects: HTMLInputElement;
     let toggle_settings: HTMLInputElement;
+    let import_file_upload: HTMLInputElement;
+    let import_file: any;
+
+    $: {
+        if (import_file && import_file[0]) {
+            let data = new FormData();
+            data.append('file', import_file[0], import_file[0].name);
+
+            fetch(location.protocol + '//' + window.location.hostname + ':3001/api/import_project', {
+                method: 'post',
+                credentials: 'include',
+                body: data
+            })
+            .then(response => {
+                response.text().then(txt => {
+                    if (txt == 'NOT_LOGGED_IN') {
+                        location.replace('/login');                    
+                    }
+                    else {
+
+
+                    }
+                    
+                });
+            })
+            .catch(err => {
+                console.log(err);
+            });        
+        }
+    }
 
     // Load dashboard data
     onMount(async () => {
@@ -450,6 +486,10 @@ import { SvelteComponent, onMount } from 'svelte';
                 console.log(err);
             });     
         }      
+    }
+
+    function import_project() {
+        import_file_upload.click();
     }
 
     function toggle_project_running() {

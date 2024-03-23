@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import mongodbsession from 'express-mongodb-session';
 import session from 'express-session';
 import cors from 'cors';
+import multer from 'multer';
+const upload = multer({ dest: 'tmp_upload/' });
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
@@ -265,6 +267,19 @@ mongo.then(() => {
       }
     });
   }); 
+
+  /**
+   * API call: change a project's status (active/inactive)
+   */
+  app.post('/api/import_project', upload.single('file'), async (req, res) => {
+    // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97 
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+          console.log('=== IMPORT PROJECT ===');
+          console.log(req.file);
+      }
+    });    
+  });
 
   /**
    * API call: save a user's settings
