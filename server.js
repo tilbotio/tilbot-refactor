@@ -6,6 +6,7 @@ import session from 'express-session';
 import cors from 'cors';
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
+import { SettingsApiController } from './api/settings.js';
 
 const app = express();
 
@@ -198,10 +199,14 @@ mongo.then(() => {
               res.send(JSON.stringify(data));
             });
           }
-          else { // regular user, retrieve projects
+          else { // regular user, retrieve projects and settings
             ProjectApiController.get_projects(req.session.username).then(function(projects) {
               data.projects = projects;
-              res.send(JSON.stringify(data));
+
+              SettingsApiController.get_settings(req.session.username).then(function(settings) {
+                data.settings = settings;
+                res.send(JSON.stringify(data));
+              });
             });
           }
         }
@@ -260,6 +265,29 @@ mongo.then(() => {
       }
     });
   }); 
+
+  /**
+   * API call: save a user's settings
+   */
+  app.post('/api/save_settings', async (req, res) => {
+    res.status(200);
+
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 1) {
+          SettingsApiController.update_settings(req.session.username, req.body.settings).then(function(response) {
+            res.send(response);
+          });
+        }
+        else {
+          res.send('NOK');
+        }
+      }
+      else {
+        res.send('USER_NOT_FOUND');
+      }
+    });
+  });   
 
   
   const stop_bot = function(projectid) {

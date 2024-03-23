@@ -182,8 +182,74 @@
                 </div>                
               </div>        
         </div>
-    </div>    
+    </div>
     {/if}
+
+    {#if data.settings}
+    <div class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box">
+        <input type="checkbox" bind:this={toggle_settings} />
+        <div class="collapse-title text-xl font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 float-left mt-1 mr-4">
+                <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" clip-rule="evenodd" />
+            </svg>
+                                
+        Settings
+        </div>
+        <div class="collapse-content"> 
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>ChatGPT API key</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                            <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{data.settings.chatgpt_api_key}" />
+                    </tbody>
+                </table>          
+                
+                <table class="table w-full mt-8">
+                    <thead>
+                        <tr>
+                            <th colspan="2">ChatGPT version</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>3.5</td>
+                            <td><input type="radio" name="gpt-version" class="radio" bind:group="{data.settings.chatgpt_version}" value="3.5" /></td>
+                        </tr>
+                        <tr>
+                            <td>4.0</td>
+                            <td><input type="radio" name="gpt-version" class="radio" bind:group="{data.settings.chatgpt_version}" value="4.0" /></td>
+                        </tr>
+                    </tbody>
+                </table> 
+
+                {#if settings_error}
+                <div class="mt-4 alert alert-error shadow-lg justify-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  {settings_error_txt}
+                </div>
+                {/if}     
+                
+                {#if settings_success}
+                <div class="mt-4 alert alert-success shadow-lg">
+                    <div>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span>Your settings have been saved!</span>
+                    </div>
+                </div>
+                {/if}                    
+
+                <div class="mt-6 w-full text-center">
+                    <button type="submit" class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500" on:click={save_settings}>Save settings</button>
+                </div>                                               
+              </div>        
+        </div>
+    </div>
+    {/if}
+
 </div>
 
 {/if}
@@ -198,9 +264,14 @@ import { SvelteComponent, onMount } from 'svelte';
     let pass_error_txt = '';
     let pass_success = false;
 
+    let settings_error = false;
+    let settings_error_txt = '';
+    let settings_success = false;
+
     let newuser_window: SvelteComponent;
     let toggle_users: HTMLInputElement;
     let toggle_projects: HTMLInputElement;
+    let toggle_settings: HTMLInputElement;
 
     // Load dashboard data
     onMount(async () => {
@@ -383,6 +454,34 @@ import { SvelteComponent, onMount } from 'svelte';
 
     function toggle_project_running() {
         // @TODO
+    }
+
+    function save_settings() {
+        settings_error = false;
+        settings_success = false;
+
+        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/save_settings", {
+                method: 'post',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    settings: JSON.stringify(data.settings)
+                })
+            })
+            .then(response => {
+                response.text().then(txt => {
+                    console.log(txt);
+                    load_data();
+                    settings_success = true;
+                });            
+            })
+            .catch(err => {
+                settings_error_txt = 'An unknown error occurred, please contact your administrator.';
+                settings_error = true;
+                console.log(err);
+            }); 
     }
 
 </script>
