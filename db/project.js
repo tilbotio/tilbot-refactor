@@ -10,6 +10,9 @@ let ProjectSchema = new Schema({
     starting_block_id: {type: Number, default: -1},
     canvas_width: {type: Number, default: -1},
     canvas_height: {type: Number, default: -1},
+    bot_name: {type: String, default: 'Tilbot'},
+    variables: {type: [String], default: []},
+    settings: {type: Schema.Types.Mixed, default: {}},
     user_id: {type: String, required: true},
     socket: {type: Number},
     active: {type: Boolean, default: true}
@@ -23,7 +26,10 @@ ProjectSchema.statics.fromModel = function(model) {
     schema.starting_block_id = model.starting_block_id;
     schema.canvas_width = model.canvas_width;
     schema.canvas_height = model.canvas_height;
-    schema.blocks = {};
+    schema.bot_name = model.bot_name;
+    schema.variables = model.variables;
+    schema.settings = model.settings;
+    schema.blocks = {};    
   
     for (const [key, value] of Object.entries(model.blocks)) {
         //schema.blocks[key] = JSON.stringify(value.toJSON());

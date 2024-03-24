@@ -14,3 +14,4 @@ node_modules
 /tilbot-darwin-x64
 settings.json
 tmp_upload/
+projects/

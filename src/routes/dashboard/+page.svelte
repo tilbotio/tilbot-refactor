@@ -159,7 +159,7 @@
                             <input type="checkbox" class="toggle" data-id="{p.id}" bind:checked={p.status} on:change={toggle_project_running}/>
                         </td>
                         <td class="text-center">
-                            <svg on:click={import_project} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block cursor-pointer">
+                            <svg on:click={import_project} data-id="{p.id}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block cursor-pointer">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>                              
                         </td>
@@ -280,11 +280,13 @@ import { SvelteComponent, onMount } from 'svelte';
     let toggle_settings: HTMLInputElement;
     let import_file_upload: HTMLInputElement;
     let import_file: any;
+    let selected_project_id: string;
 
     $: {
         if (import_file && import_file[0]) {
             let data = new FormData();
             data.append('file', import_file[0], import_file[0].name);
+            data.append('project_id', selected_project_id);
 
             fetch(location.protocol + '//' + window.location.hostname + ':3001/api/import_project', {
                 method: 'post',
@@ -488,7 +490,8 @@ import { SvelteComponent, onMount } from 'svelte';
         }      
     }
 
-    function import_project() {
+    function import_project(e: any) {
+        selected_project_id = e.target.dataset['id'];
         import_file_upload.click();
     }
 

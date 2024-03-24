@@ -374,7 +374,6 @@
         'canvas_width': 2240,
         'canvas_height': 1480,
         'bot_name': 'Tilbot',
-        'avatar_image': '/client/img/default_profile.svg',
         'variables': [],
         'settings': {}
     };
@@ -927,7 +926,6 @@
         'canvas_width': 2240,
         'canvas_height': 1480,
         'bot_name': 'Tilbot',
-        'avatar_image': '/client/img/default_profile.svg',
         'variables': [],
         'settings': {}
         };        

@@ -5,6 +5,8 @@ import mongodbsession from 'express-mongodb-session';
 import session from 'express-session';
 import cors from 'cors';
 import multer from 'multer';
+import AdmZip from 'adm-zip';
+import fs from 'fs';
 const upload = multer({ dest: 'tmp_upload/' });
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
@@ -75,7 +77,6 @@ mongo.then(() => {
     httpOnly: true,
     sameSite: 'none'
   }));
-
 
   // add a route that lives separately from the SvelteKit app
   app.post('/api/login', (req, res) => {
@@ -276,7 +277,38 @@ mongo.then(() => {
     UserApiController.get_user(req.session.username).then(function(user) {
       if (user !== null) {
           console.log('=== IMPORT PROJECT ===');
-          console.log(req.file);
+          console.log(req.body);
+
+          // Check if the project file directory exists
+          if (!fs.existsSync('projects')) {
+            fs.mkdirSync('projects');
+          }
+
+          // Remove the old project files
+          let dir = 'projects/' + req.body.project_id;
+          if (fs.existsSync(dir)) {
+            fs.rmSync(dir, { recursive: true });
+          }
+          fs.mkdirSync(dir);
+
+          const zip = new AdmZip(req.file.path);
+          var zipEntries = zip.getEntries(); // an array of ZipEntry records
+
+          console.log(zipEntries);
+    
+          zipEntries.forEach(function (zipEntry) {
+              if (zipEntry.entryName == "project.json") {
+                  console.log('project file found');
+                  // @TODO: import project file into database
+                  //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
+              }
+              else {
+                zip.extractEntryTo(zipEntry, dir);
+              }
+          });  
+
+          // Remove the temporary file
+          fs.rmSync(req.file.path);
       }
     });    
   });
