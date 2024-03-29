@@ -367,7 +367,6 @@
     let settings_window: SvelteComponent;
 
     let project: any = {
-        'name': 'New project',
         'current_block_id': 1,
         'blocks': {},
         'starting_block_id': -1,
@@ -375,7 +374,9 @@
         'canvas_height': 1480,
         'bot_name': 'Tilbot',
         'variables': [],
-        'settings': {}
+        'settings': {
+            'project_name': 'New project'
+        }
     };
     let modal_launch: HTMLInputElement;
     let modal_edit: HTMLInputElement;
@@ -919,15 +920,16 @@
     function load_project(json_str:string) {
         // First clear everything
         project = {
-        'name': 'New project',
-        'current_block_id': 1,
-        'blocks': {},
-        'starting_block_id': 1,
-        'canvas_width': 2240,
-        'canvas_height': 1480,
-        'bot_name': 'Tilbot',
-        'variables': [],
-        'settings': {}
+            'current_block_id': 1,
+            'blocks': {},
+            'starting_block_id': 1,
+            'canvas_width': 2240,
+            'canvas_height': 1480,
+            'bot_name': 'Tilbot',
+            'variables': [],
+            'settings': {
+                'project_name': 'New project'
+            }
         };        
         line_locations = {};
         add_start_location();

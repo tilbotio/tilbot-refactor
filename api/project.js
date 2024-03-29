@@ -76,7 +76,7 @@ export class ProjectApiController {
                 for (var p in projects) {
                     projects_return.push({
                         id: projects[p].id,
-                        name: projects[p].name,
+                        name: projects[p].settings.project_name,
                         status: projects[p].status
                     });
                 }
@@ -128,6 +128,7 @@ export class ProjectApiController {
             p.id = crypto.MD5('tb' + user + Date.now());
             p.user_id = user;
             p.status = 0; // paused by default
+            p.settings.project_name = 'New project';
 
             p.save().then(function(e) {
                 resolve('OK');

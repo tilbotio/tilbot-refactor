@@ -15,13 +15,16 @@
                         </thead>
                         <tbody>
                             <tr class="hover">
-                                <td data-setting-id="0" class="cursor-pointer {selected_setting == 0 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Appearance</td>
+                                <td data-setting-id="0" class="cursor-pointer {selected_setting == 0 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Information</td>
                             </tr>
                             <tr class="hover">
-                                <td data-setting-id="1" class="cursor-pointer {selected_setting == 1 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Typing behavior</td>
+                                <td data-setting-id="1" class="cursor-pointer {selected_setting == 1 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Appearance</td>
                             </tr>
                             <tr class="hover">
-                                <td data-setting-id="2" class="cursor-pointer {selected_setting == 2 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT prompts</td>
+                                <td data-setting-id="2" class="cursor-pointer {selected_setting == 2 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>Typing behavior</td>
+                            </tr>
+                            <tr class="hover">
+                                <td data-setting-id="3" class="cursor-pointer {selected_setting == 3 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT prompts</td>
                             </tr>
                         </tbody>
                         </table>    
@@ -34,15 +37,36 @@
                         </thead>
                         <tbody>
                             <tr class="hover">
-                                <td data-setting-id="3" class="cursor-pointer {selected_setting == 3 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT integration</td>
+                                <td data-setting-id="4" class="cursor-pointer {selected_setting == 4 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT integration</td>
                             </tr>
                         </tbody>
                         </table>          
                     </div>     
                 </div>
                 <div class="flex-1 px-4" style="width: calc(100% - 16rem)">
-                    <!-- Appearance -->
+
+                    <!-- Information -->
                     {#if selected_setting == 0}
+                    <div class="w-full text-xl text-center font-bold">Information</div>
+                    <div class="p-8">
+                        <table class="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Project name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" bind:value="{copy.project_name}" class="input input-sm input-bordered w-96" /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    {/if}
+
+                    <!-- Appearance -->
+                    {#if selected_setting == 1}
                     <div class="w-full text-xl text-center font-bold">Appearance</div>
                     <div class="p-8">
                         <table class="table w-full">
@@ -104,7 +128,7 @@
                     {/if}
 
                     <!-- Typing behavior -->
-                    {#if selected_setting == 1}
+                    {#if selected_setting == 2}
                     <div class="w-full text-xl text-center font-bold">Typing behavior</div>
                     <div class="p-8">
                         <table class="table w-full">
@@ -138,7 +162,7 @@
                     {/if}
 
                     <!-- ChatGPT prompts -->
-                    {#if selected_setting == 2}
+                    {#if selected_setting == 3}
                     <div class="h-full flex flex-col w-full">
                         <div class="w-full text-xl text-center font-bold">ChatGPT prompts</div>
                         <div class="p-8 flex-1 overflow-y-auto">
@@ -190,7 +214,7 @@
                     {/if}
 
                     <!-- ChatGPT integration -->
-                    {#if selected_setting == 3}
+                    {#if selected_setting == 4}
                     <div class="w-full text-xl text-center font-bold">ChatGPT Integration</div>
                     <div class="p-8">
                         <span class="italic">Note: These settings are stored on this device, and will not be included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.</span><br /><br />
@@ -261,6 +285,7 @@
         show() {
             if (settings == undefined) {
                 copy = {
+                    'project_name': 'New project',
                     'typing_style': 'fixed',
                     'typing_time': 2,
                     'typing_charpsec': 40,
@@ -277,6 +302,9 @@
                 copy = JSON.parse(JSON.stringify(settings));
 
                 // Defaults
+                if (copy.project_name == undefined) {
+                    copy.project_name = 'New project';
+                }
                 if (copy.typing_style == undefined) {
                     copy.typing_style = 'fixed';
                 }
