@@ -29,14 +29,7 @@ ProjectSchema.statics.fromModel = function(model) {
     schema.bot_name = model.bot_name;
     schema.variables = model.variables;
     schema.settings = model.settings;
-    schema.blocks = {};    
-  
-    for (const [key, value] of Object.entries(model.blocks)) {
-        //schema.blocks[key] = JSON.stringify(value.toJSON());
-        console.log(key);
-        //schema.blocks.set(key, JSON.stringify(value.toJSON()));
-        schema.blocks[key] = value.toJSON();
-    }
+    schema.blocks = model.blocks;    
   
     return schema;
 }

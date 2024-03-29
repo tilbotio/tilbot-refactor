@@ -32,32 +32,31 @@ export class ProjectApiController {
     /**
      * Import a project, replacing the existing one
      *
-     * @param {ProjectSchema} project - The project to import.
+     * @param {string} project - The project to import (JSON string).
      * @param {string} username - The username that owns the project.
      * @return {boolean} True if success, false if failed.
      */
     static import_project(project, project_id, username) {
+        let self = this;
+
         return new Promise(resolve => {
-            ProjectSchema.deleteOne({ id: project_id, user_id: username }).then(function(res) {
+            this.ProjectDetails.deleteOne({ id: project_id, user_id: username }).then(function(res) {
 
                 if (res.deletedCount == 0) {
                     resolve(false);
                 }
                 else {
                     // Add new project
-                    Project.fromJSON(JSON.parse(project)).then(function(p) {
-                        var newschema = ProjectSchema.fromModel(p);
-                        newschema.id = project_id;
-                        newschema.user_id = username;
+                    let newschema = self.ProjectDetails.fromModel(JSON.parse(project));
+                    newschema.id = project_id;
+                    newschema.user_id = username;
 
-                        newschema.save().then(function(e) {
-                            resolve(true);
-                        }).catch(function(error) {
-                            console.log(error);
-                            resolve(false);
-                        });
-    
-                    });
+                    newschema.save().then(function(e) {
+                        resolve(true);
+                    }).catch(function(error) {
+                        console.log(error);
+                        resolve(false);
+                    });    
                 }
             });
         });

@@ -295,10 +295,19 @@ mongo.then(() => {
           var zipEntries = zip.getEntries(); // an array of ZipEntry records
 
           console.log(zipEntries);
+
+          let found_projectfile = false;
+          let api_promise = null;
     
           zipEntries.forEach(function (zipEntry) {
               if (zipEntry.entryName == "project.json") {
+                  found_projectfile = true;
                   console.log('project file found');
+                  api_promise = ProjectApiController.import_project(
+                    zipEntry.getData().toString("utf8"),
+                    req.body.project_id,
+                    req.session.username
+                  );
                   // @TODO: import project file into database
                   //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
               }
@@ -307,8 +316,25 @@ mongo.then(() => {
               }
           });  
 
-          // Remove the temporary file
-          fs.rmSync(req.file.path);
+          if (found_projectfile) {
+            api_promise.then(function(response) {
+              // Remove the temporary file
+              fs.rmSync(req.file.path);
+
+              if (response) {
+                res.send('OK');
+              }
+              else {
+                res.send('NOK');
+              }
+            });
+          }
+
+          else {
+            fs.rmSync(req.file.path);
+            res.send('NO_PROJECT_FILE');
+          }
+
       }
     });    
   });

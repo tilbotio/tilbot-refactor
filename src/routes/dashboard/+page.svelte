@@ -299,8 +299,7 @@ import { SvelteComponent, onMount } from 'svelte';
                         location.replace('/login');                    
                     }
                     else {
-
-
+                        load_data();
                     }
                     
                 });
@@ -453,7 +452,7 @@ import { SvelteComponent, onMount } from 'svelte';
         .then(response => {
             response.text().then(txt => {
                 if (txt == 'OK') {
-                    alert('project created!');
+                    load_data();
                 }
                 else {
 
