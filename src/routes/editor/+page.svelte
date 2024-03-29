@@ -4,7 +4,7 @@
     <!--</a>-->
 
     <Variables bind:variablewindow={variables_window} variables={project.variables}></Variables>
-    <Settings bind:settingswindow={settings_window} settings={project.settings} gensettings={gen_settings} path={path} on:message={handleSettingsMessage}></Settings>
+    <Settings bind:settingswindow={settings_window} settings={project.settings} gensettings={gen_settings} path={path + 'avatar/'} on:message={handleSettingsMessage}></Settings>
 
     <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
     <div class="modal">

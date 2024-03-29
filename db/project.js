@@ -11,7 +11,7 @@ let ProjectSchema = new Schema({
     canvas_width: {type: Number, default: -1},
     canvas_height: {type: Number, default: -1},
     bot_name: {type: String, default: 'Tilbot'},
-    variables: {type: [String], default: []},
+    variables: {type: [Schema.Types.Mixed], default: []},
     settings: {type: Schema.Types.Mixed, default: {}},
     user_id: {type: String, required: true},
     socket: {type: Number},

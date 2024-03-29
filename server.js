@@ -279,17 +279,29 @@ mongo.then(() => {
           console.log('=== IMPORT PROJECT ===');
           console.log(req.body);
 
-          // Check if the project file directory exists
+          // Check if the private project file directory exists
           if (!fs.existsSync('projects')) {
             fs.mkdirSync('projects');
           }
 
-          // Remove the old project files
-          let dir = 'projects/' + req.body.project_id;
-          if (fs.existsSync(dir)) {
-            fs.rmSync(dir, { recursive: true });
+          // Check if the public project file directory exists
+          if (!fs.existsSync('proj_pub')) {
+            fs.mkdirSync('proj_pub');
           }
-          fs.mkdirSync(dir);
+
+          // Remove the old project files
+          let priv_dir = 'projects/' + req.body.project_id;
+          let pub_dir = 'proj_pub/' + req.body.project_id;
+
+          if (fs.existsSync(priv_dir)) {
+            fs.rmSync(priv_dir, { recursive: true });
+          }
+          fs.mkdirSync(priv_dir);
+
+          if (fs.existsSync(pub_dir)) {
+            fs.rmSync(pub_dir, { recursive: true });
+          }
+          fs.mkdirSync(pub_dir);
 
           const zip = new AdmZip(req.file.path);
           var zipEntries = zip.getEntries(); // an array of ZipEntry records
@@ -311,8 +323,11 @@ mongo.then(() => {
                   // @TODO: import project file into database
                   //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
               }
+              else if (zipEntry.entryName.startsWith('var/')) {
+                zip.extractEntryTo(zipEntry, priv_dir)
+              }
               else {
-                zip.extractEntryTo(zipEntry, dir);
+                zip.extractEntryTo(zipEntry, pub_dir);
               }
           });  
 

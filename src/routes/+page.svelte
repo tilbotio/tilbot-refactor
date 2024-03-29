@@ -202,7 +202,7 @@ async function message_received(event: MessageEvent) {
 
 function project_received(data: any) {
     messages = [];
-    path = data.path;
+    path = data.path + 'avatar/';
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)
     // Set a fake timeout to get the highest timeout id

@@ -260,18 +260,22 @@ const createWindow = () => {
           p = app.getPath('userData');
         }
 
-        // Delete previous avatar
-        if (prev_name !== '' && fs.existsSync(p + '/currentproject/' + prev_name)) {
-          fs.rmSync(p + '/currentproject/' + prev_name);
-        }
-
-        let fname = path.basename(load_file[0]);
-
         if (!fs.existsSync(p + '/currentproject/')) {
           fs.mkdirSync(p + '/currentproject');
         }
+
+        if (!fs.existsSync(p + '/currentproject/avatar')) {
+          fs.mkdirSync(p + '/currentproject/avatar');
+        }
+
+        // Delete previous avatar
+        if (prev_name !== '' && fs.existsSync(p + '/currentproject/avatar/' + prev_name)) {
+          fs.rmSync(p + '/currentproject/avatar/' + prev_name);
+        }
+
+        let fname = path.basename(load_file[0]);
           
-        fs.copyFileSync(load_file[0], p + '/currentproject/' + fname);
+        fs.copyFileSync(load_file[0], p + '/currentproject/avatar/' + fname);
         win.webContents.send('avatar-load', { filename: fname });
     }
   });
@@ -317,7 +321,7 @@ const createWindow = () => {
       }
 
       if (proj_obj.settings.avatar_file !== undefined && proj_obj.settings.avatar_file !== '') {
-        file.addLocalFile(p + '/currentproject/' + proj_obj.settings.avatar_file);
+        file.addLocalFile(p + '/currentproject/avatar/' + proj_obj.settings.avatar_file);
       }
       
       fs.writeFileSync(save_file, file.toBuffer());

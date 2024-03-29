@@ -15,3 +15,4 @@ node_modules
 settings.json
 tmp_upload/
 projects/
+proj_pub/
