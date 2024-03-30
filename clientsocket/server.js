@@ -90,8 +90,8 @@ mongo.then(() => {
         
         io.on('connection', (socket) => {
             console.log('a user connected');
-        
-            clients[socket.id] = new ProjectController(io, project, socket.id, p);
+                    
+            clients[socket.id] = new ProjectController(io, project, socket.id, __dirname + '/../projects/' + project.id);
             
             socket.on('message sent', () => {
                 clients[socket.id].message_sent_event();

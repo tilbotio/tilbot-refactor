@@ -146,7 +146,6 @@ export class ProjectApiController {
      */        
     static get_socket(project_id) {
         return new Promise(resolve => {
-            // @TODO: active projects only
             this.ProjectDetails.findOne({ id: project_id, status: 1, active: true }).then(function(project) {
                 if (project === null) {
                     resolve('-1');

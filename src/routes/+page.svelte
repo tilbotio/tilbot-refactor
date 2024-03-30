@@ -106,11 +106,17 @@
 </div>
 
 {#if !iframe}
-<script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
+{socket_addr}
+  {#if socket_addr !== null && socket_addr != ''}
+  <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
+  {:else if socket_addr !== null && socket_addr == ''}
+  <script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
+  {/if}
 {/if}
 
 <script lang="ts">
 import { onMount, tick } from "svelte";
+import { page } from '$app/stores'; 
 import { LocalProjectController} from "../client/controllers/localproject";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -129,6 +135,7 @@ let current_message_type: string = 'Auto';
 let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let iframe = true;
+let socket_addr = null;
 
 let path: string = '';
 
@@ -154,7 +161,32 @@ onMount(() => {
 
     window.addEventListener('message', message_received, false);
 
-    window.api.send('get-settings');
+    //window.api.send('get-settings');
+
+    const url = $page.url;
+    console.log(url.searchParams.get('project'));
+    if (url.searchParams.get('project') !== null) {
+
+      fetch(
+        location.protocol + '//' + window.location.hostname + ':3001/api/get_socket?id=' 
+        + url.searchParams.get('project')
+      )
+      .then(response => {
+          response.text().then(socket_id => {
+              if(socket_id !== '-1') {
+                socket_addr = url.protocol + '//' + url.hostname + ':' + socket_id;
+                console.log(socket_addr);
+              }
+          })
+          .catch(err => {
+              console.log(err);
+          });
+      });
+
+    }
+    else {
+      socket_addr = '';
+    }
 });
 
 function firstletter(str: string) {
@@ -162,7 +194,14 @@ function firstletter(str: string) {
 }
 
 function socket_script_loaded(event: Event) {
-  let socket = io();
+  let socket = null;
+
+  if (socket_addr !== '') {
+    socket = io(socket_addr);
+  }
+  else {
+    socket = io();
+  }
   import("../client/controllers/remoteproject").then(function(m: any) {
     controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings)  
   });

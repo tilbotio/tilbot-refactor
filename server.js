@@ -280,6 +280,15 @@ mongo.then(() => {
     });
   }); 
 
+  // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
+  app.get('/api/get_socket', async (req, res) => {
+    res.status(200);
+
+    ProjectApiController.get_socket(req.query.id).then(function(response) {
+      res.send(response);
+    });
+  });
+
   // API call: change the status of a project (0 = paused, 1 = running)
   app.post('/api/set_project_status', async (req, res) => {
     res.status(200);
@@ -361,7 +370,11 @@ mongo.then(() => {
               if (zipEntry.entryName == "project.json") {
                   found_projectfile = true;
                   console.log('project file found');
-                  stop_bot(req.body.project_id);
+
+                  if (running_bots[req.body.project_id] !== undefined) {
+                    stop_bot(req.body.project_id);
+                  }
+            
                   api_promise = ProjectApiController.import_project(
                     zipEntry.getData().toString("utf8"),
                     req.body.project_id,
@@ -459,7 +472,9 @@ mongo.then(() => {
     }
     else {
       if (running_bots[projectid] !== undefined) {
-        running_bots[projectid].send('exit');
+        running_bots[projectid].send('exit', undefined, undefined, (e) => {
+
+        });
       }
     }
 
