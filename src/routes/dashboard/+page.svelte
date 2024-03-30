@@ -156,7 +156,7 @@
                       <tr>
                         <th>{p.name}</th>
                         <td class="text-center">
-                            <input type="checkbox" class="toggle" data-id="{p.id}" bind:checked={p.status} on:change={toggle_project_running}/>
+                            <input type="checkbox" class="toggle" data-id="{p.id}" data-status="{p.status}" bind:checked={p.status} on:change={toggle_project_running}/>
                         </td>
                         <td class="text-center">
                             <svg on:click={import_project} data-id="{p.id}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 inline-block cursor-pointer">
@@ -494,8 +494,27 @@ import { SvelteComponent, onMount } from 'svelte';
         import_file_upload.click();
     }
 
-    function toggle_project_running() {
-        // @TODO
+    function toggle_project_running(e: any) {
+        fetch(location.protocol + '//' + window.location.hostname + ':3001/api/set_project_status', {
+            method: 'post',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                projectid: e.target.dataset['id'],
+                status: (e.target.dataset['status'] == 'true'?1:0)
+            })
+        })
+        .then(response => {
+            response.text().then(txt => {
+                console.log(txt);
+            })
+            .catch(err => {
+                console.log(err);
+            });
+        })
+
     }
 
     function save_settings() {

@@ -5,12 +5,16 @@ import mongodbsession from 'express-mongodb-session';
 import session from 'express-session';
 import cors from 'cors';
 import multer from 'multer';
+const upload = multer({ dest: 'tmp_upload/' });
 import AdmZip from 'adm-zip';
 import fs from 'fs';
-const upload = multer({ dest: 'tmp_upload/' });
+import child_process from 'child_process';
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
+
+// Keep track of running external processes for bots.
+let running_bots = {};
 
 const app = express();
 
@@ -77,6 +81,14 @@ mongo.then(() => {
     httpOnly: true,
     sameSite: 'none'
   }));
+
+  // Launch all running bots
+  ProjectApiController.get_running_projects().then(function(projects) {
+    for (var p in projects) {
+      start_bot(projects[p].id);
+    }
+  });
+
 
   // add a route that lives separately from the SvelteKit app
   app.post('/api/login', (req, res) => {
@@ -158,8 +170,7 @@ mongo.then(() => {
 
               for (var p in projects) {
                 ProjectApiController.set_project_status(projects[p].id, 0).then(function(response) {
-                  //this.stop_bot(projects[p].id);
-                  // @TODO
+                  this.stop_bot(projects[p].id);
                 });
               }
             }
@@ -240,7 +251,7 @@ mongo.then(() => {
             if (response != null) {
               if (response.status == 1) {
                 // Stop project from running first.
-                  //stop_bot(req.body.projectid);
+                stop_bot(req.body.projectid);
               }
 
               if (!req.body.active) {
@@ -269,8 +280,43 @@ mongo.then(() => {
     });
   }); 
 
+  // API call: change the status of a project (0 = paused, 1 = running)
+  app.post('/api/set_project_status', async (req, res) => {
+    res.status(200);
+
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 1) {
+          ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {
+            if (response != null) {
+              ProjectApiController.set_project_status(req.body.projectid, req.body.status).then(function(response) {
+                if (response) {
+                  console.log(req.body.status);
+                  if (req.body.status == 1) {
+                    start_bot(req.body.projectid);
+                  }
+                  else {                      
+                    stop_bot(req.body.projectid);
+                  }          
+                  res.send('OK');
+                }
+              });
+            }
+            else {
+              res.send('NOK');
+            }
+          });
+        }
+        else {
+          res.send('NOK');
+        }
+      }
+    });
+  });
+
+
   /**
-   * API call: change a project's status (active/inactive)
+   * API call: Import a project
    */
   app.post('/api/import_project', upload.single('file'), async (req, res) => {
     // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97 
@@ -315,6 +361,7 @@ mongo.then(() => {
               if (zipEntry.entryName == "project.json") {
                   found_projectfile = true;
                   console.log('project file found');
+                  stop_bot(req.body.project_id);
                   api_promise = ProjectApiController.import_project(
                     zipEntry.getData().toString("utf8"),
                     req.body.project_id,
@@ -377,20 +424,46 @@ mongo.then(() => {
     });
   });   
 
+
+  const start_bot = function(projectid) {
+    console.log('starting ' + projectid);
+    // Check whether we are running in Docker or not
+    if (process.env.TILBOT_PORT != undefined) {
+      // @TODO: Docker not implemented yet.
+      //this.botlauncher.write('start ' + projectid);
+    }
+    else {
+      // Stop the bot if it is currently already running (Docker does this too further down the line)
+      if (running_bots[projectid] !== undefined) {
+        stop_bot(projectid);
+      }
+
+      running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid], {
+        silent: true,
+        stdio: 'pipe'
+      });
+
+      running_bots[projectid].stdout.on('data', (data) => {
+        console.log(data.toString());
+      });
+    }
+  }
+
   
   const stop_bot = function(projectid) {
     console.log('stopping ' + projectid);
     // Check whether we are running in Docker or not
     if (process.env.TILBOT_PORT != undefined) {
-      this.botlauncher.write('stop ' + projectid);
+      // @TODO: Docker not implemented yet
+      //this.botlauncher.write('stop ' + projectid);
     }
     else {
-      if (this.running_bots[projectid] !== undefined) {
-        this.running_bots[projectid].send('exit');
+      if (running_bots[projectid] !== undefined) {
+        running_bots[projectid].send('exit');
       }
     }
 
-    ProjectApiController.set_project_status(req.body.projectid, 0).then(function(response) {
+    ProjectApiController.set_project_status(projectid, 0).then(function(response) {
     });
   }
 
