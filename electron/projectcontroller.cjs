@@ -99,7 +99,7 @@ class ProjectController {
         if (typeof input === 'object' && input !== null) {
           content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
         }
-        else if (input !== '') {
+        else if (input !== '' && content.includes('[input]')) {
           content = content.replace('[input]', input);
         }  
         else {
