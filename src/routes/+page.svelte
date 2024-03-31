@@ -164,7 +164,7 @@ onMount(() => {
 
     const url = $page.url;
     console.log(url.searchParams.get('project'));
-    if (url.searchParams.get('project') !== null) {
+    if (url.searchParams.get('project') !== null && url.searchParams.get('project') != '') {
 
       fetch(
         location.protocol + '//' + window.location.hostname + ':3001/api/get_socket?id=' 
