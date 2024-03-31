@@ -152,7 +152,7 @@ const createWindow = () => {
     // Set up the data files
     for (let v in project.variables) {
       if (project.variables[v].type == 'csv') {
-        csv_datas[project.variables[v].name] = new CsvData(project.variables[v].csvfile, p);
+        csv_datas[project.variables[v].name] = new CsvData(project.variables[v].csvfile, p + '/currentproject/');
       }
     }
     
@@ -320,7 +320,7 @@ const createWindow = () => {
         }
       }
 
-      if (proj_obj.settings.avatar_file !== undefined && proj_obj.settings.avatar_file !== '') {
+      if (proj_obj.settings !== undefined && proj_obj.settings.avatar_file !== undefined && proj_obj.settings.avatar_file !== '') {
         file.addLocalFile(p + '/currentproject/avatar/' + proj_obj.settings.avatar_file);
       }
       
