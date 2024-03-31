@@ -29,7 +29,7 @@ const app = express();
 let server = null;
 let port = 80;
 
-if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
+if (fs.existsSync(__dirname + '/certs/privkey.pem') && fs.existsSync(__dirname + '/certs/pubkey.pem')) {
 
   const key = fs.readFileSync(__dirname + '/certs/privkey.pem');
   const cert = fs.readFileSync(__dirname + '/certs/pubkey.pem');
