@@ -1,4 +1,8 @@
-//import { handler } from './build/handler.js';
+import { handler } from './build/handler.js';
+import http from 'http';
+import https from 'https';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import mongoose from 'mongoose';
 import mongodbsession from 'express-mongodb-session';
@@ -13,10 +17,34 @@ import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+
 // Keep track of running external processes for bots.
 let running_bots = {};
 
 const app = express();
+
+// Set up server for HTTP/HTTPS
+let server = null;
+let port = 80;
+
+if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
+
+  const key = fs.readFileSync(__dirname + '/certs/privkey.pem');
+  const cert = fs.readFileSync(__dirname + '/certs/pubkey.pem');
+  var ssloptions = {
+    key: key,
+    cert: cert
+  };   
+  
+  server = https.createServer(ssloptions, app);
+  port = 443;
+}
+
+else {
+  server = http.createServer(app);
+}
 
 // parse application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
@@ -489,10 +517,10 @@ mongo.then(() => {
 
 
   // let SvelteKit handle everything else, including serving prerendered pages and static assets
-  //app.use(handler);
+  app.use(handler);
 
-  app.listen(3001, () => {
-    console.log('listening on port 3001');
+  server.listen(port, () => {
+    console.log('listening on port ' + port);
   });
     
 });

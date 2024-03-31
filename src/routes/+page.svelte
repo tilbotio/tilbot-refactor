@@ -167,7 +167,7 @@ onMount(() => {
     if (url.searchParams.get('project') !== null && url.searchParams.get('project') != '') {
 
       fetch(
-        location.protocol + '//' + window.location.hostname + ':3001/api/get_socket?id=' 
+        location.protocol + '//' + window.location.hostname + '/api/get_socket?id=' 
         + url.searchParams.get('project')
       )
       .then(response => {

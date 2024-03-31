@@ -288,7 +288,7 @@ import { SvelteComponent, onMount } from 'svelte';
             data.append('file', import_file[0], import_file[0].name);
             data.append('project_id', selected_project_id);
 
-            fetch(location.protocol + '//' + window.location.hostname + ':3001/api/import_project', {
+            fetch(location.protocol + '//' + window.location.hostname + '/api/import_project', {
                 method: 'post',
                 credentials: 'include',
                 body: data
@@ -316,7 +316,7 @@ import { SvelteComponent, onMount } from 'svelte';
     });
 
     function load_data() {
-        fetch(location.protocol + '//' + window.location.hostname + ':3001/api/get_dashboard', {
+        fetch(location.protocol + '//' + window.location.hostname + '/api/get_dashboard', {
             method: 'get',
             credentials: 'include'
         })
@@ -351,7 +351,7 @@ import { SvelteComponent, onMount } from 'svelte';
     }
 
     function logout(e: any) {
-        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/logout", {
+        fetch(location.protocol + '//' + window.location.hostname + "/api/logout", {
             method: 'post',
             credentials: 'include'
         })
@@ -385,7 +385,7 @@ import { SvelteComponent, onMount } from 'svelte';
 
         else {
 
-            fetch(location.protocol + '//' + window.location.hostname + ":3001/api/change_pass", {
+            fetch(location.protocol + '//' + window.location.hostname + "/api/change_pass", {
                 method: 'post',
                 credentials: 'include',
                 headers: {
@@ -414,7 +414,7 @@ import { SvelteComponent, onMount } from 'svelte';
     }
 
     function set_user_active(e: any) {
-        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/set_user_active", {
+        fetch(location.protocol + '//' + window.location.hostname + "/api/set_user_active", {
             method: 'post',
             credentials: 'include',
             headers: {
@@ -442,7 +442,7 @@ import { SvelteComponent, onMount } from 'svelte';
     }
 
     function new_project() {
-        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/create_project", {
+        fetch(location.protocol + '//' + window.location.hostname + "/api/create_project", {
             method: 'post',
             credentials: 'include',
             headers: {
@@ -466,7 +466,7 @@ import { SvelteComponent, onMount } from 'svelte';
 
     function set_project_inactive(e: any) {
         if (confirm("Are you sure you wish to delete the project \"" + e.target.dataset['name'] + "\"?")) {
-            fetch(location.protocol + '//' + window.location.hostname + ":3001/api/set_project_active", {
+            fetch(location.protocol + '//' + window.location.hostname + "/api/set_project_active", {
                 method: 'post',
                 credentials: 'include',
                 headers: {
@@ -495,7 +495,7 @@ import { SvelteComponent, onMount } from 'svelte';
     }
 
     function toggle_project_running(e: any) {
-        fetch(location.protocol + '//' + window.location.hostname + ':3001/api/set_project_status', {
+        fetch(location.protocol + '//' + window.location.hostname + '/api/set_project_status', {
             method: 'post',
             credentials: 'include',
             headers: {
@@ -521,7 +521,7 @@ import { SvelteComponent, onMount } from 'svelte';
         settings_error = false;
         settings_success = false;
 
-        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/save_settings", {
+        fetch(location.protocol + '//' + window.location.hostname + "/api/save_settings", {
                 method: 'post',
                 credentials: 'include',
                 headers: {

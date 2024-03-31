@@ -52,7 +52,7 @@
 
     onMount(() => {
       // Check if an admin account exists, if not create one.
-      fetch(location.protocol + '//' + window.location.hostname + ":3001/api/admin_account_exists", {
+      fetch(location.protocol + '//' + window.location.hostname + "/api/admin_account_exists", {
             method: 'get',
             headers: {
                 'Content-Type': 'application/json'
@@ -85,7 +85,7 @@
             data[key] = value;
         }
 
-        fetch(location.protocol + '//' + window.location.hostname + ":3001/api/login", {
+        fetch(location.protocol + '//' + window.location.hostname + "/api/login", {
             method: 'post',
             credentials: 'include',
             headers: {

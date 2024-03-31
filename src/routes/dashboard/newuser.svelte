@@ -54,7 +54,7 @@
     }
 
     function save() {
-        fetch(location.protocol + '//' + window.location.hostname + ':3001/api/create_user_account', {
+        fetch(location.protocol + '//' + window.location.hostname + '/api/create_user_account', {
             method: 'post',
             credentials: 'include',
             headers: {
