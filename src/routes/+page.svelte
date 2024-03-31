@@ -106,7 +106,6 @@
 </div>
 
 {#if !iframe}
-{socket_addr}
   {#if socket_addr !== null && socket_addr != ''}
   <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
   {:else if socket_addr !== null && socket_addr == ''}

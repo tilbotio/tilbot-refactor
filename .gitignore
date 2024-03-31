@@ -16,3 +16,5 @@ settings.json
 tmp_upload/
 projects/
 proj_pub/
+src/routes/guesswho/
+static/guesswho/
