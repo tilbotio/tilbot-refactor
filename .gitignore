@@ -18,3 +18,5 @@ projects/
 proj_pub/
 src/routes/guesswho/
 static/guesswho/
+src/routes/gamble/
+static/gamble/
