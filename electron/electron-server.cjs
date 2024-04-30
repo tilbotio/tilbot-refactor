@@ -65,7 +65,7 @@ server.listen(2801, () => {
 io.on('connection', (socket) => {
     console.log('a user connected');
 
-    clients[socket.id] = new ProjectController(io, project, socket.id, p + '/currentproject/');
+    clients[socket.id] = new ProjectController(io, project, socket.id, p);
   
     socket.on('message sent', () => {
       clients[socket.id].message_sent_event();
