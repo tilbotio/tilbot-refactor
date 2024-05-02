@@ -463,7 +463,71 @@ mongo.then(() => {
     });
   });   
 
+  // API call: get a project's log files
+  app.get('/api/get_logs', async (req, res) => {
+    res.status(200);
 
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 1) {
+          ProjectApiController.get_project(req.query.projectid, req.session.username).then(function(response) {
+            console.log(response);
+            if (response == null) {
+              res.send('NOK')
+            }
+            else {
+              ProjectApiController.get_logs(req.query.projectid).then(function(response) {
+                if (response == null) {
+                  res.send('NOK');
+                }
+                else {
+                  res.send(response);
+                }
+              })
+            }
+          });
+        }
+        else {
+          res.send('NOK');
+        }
+      }
+      else {
+        res.send('NOK');
+      }
+    });
+
+  });    
+
+  // API call: delete a project's log files
+  app.post('/api/delete_logs', async (req, res) => {
+    res.status(200);
+
+    UserApiController.get_user(req.session.username).then(function(user) {
+      if (user !== null) {
+        if (user.role == 1) {
+          ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {              
+            if (response == null) {
+              res.send('NOK')
+            }
+            else {
+              ProjectApiController.delete_logs(req.body.projectid).then(function(response) {
+                console.log('deleted logs: ' + response);
+                  res.send(response);
+              })
+            }
+          });
+        }
+        else {
+          res.send('NOK');
+        }
+      }
+      else {
+        res.send('NOK');
+      }
+    });
+
+  });    
+  
   const start_bot = function(projectid) {
     console.log('starting ' + projectid);
     // Check whether we are running in Docker or not

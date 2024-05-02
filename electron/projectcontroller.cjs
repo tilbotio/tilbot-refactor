@@ -1,4 +1,3 @@
-const Logger = require('./logger.cjs');
 const CsvData = require('./csvdata.cjs');
 const ChatGPT = require('./chatgpt.cjs');
 
@@ -8,7 +7,20 @@ class ProjectController {
         this.project = project;
         this.socket_id = socket_id;
         this.current_block_id = this.project.starting_block_id;
-        this.logger = new Logger(p);
+        this.logger = undefined;
+
+        if (process.versions.hasOwnProperty('electron')) {
+          let Logger = require('./logger.cjs');
+          this.logger = new Logger(p);
+          this._send_current_message();        
+        }
+        else {
+          import('../clientsocket/logger.js').then((mod) => {
+            this.logger = new mod.Logger(project.id);
+            this._send_current_message();        
+          });
+        }        
+
         this.client_vars = {};
         
         this.csv_datas = {};
@@ -36,7 +48,6 @@ class ProjectController {
                 
         this.io.to(this.socket_id).emit('settings', this.project.settings);
 
-        this._send_current_message();        
     }
 
     get_path() {
