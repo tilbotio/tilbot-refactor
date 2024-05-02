@@ -166,6 +166,8 @@ onMount(() => {
     console.log(url.searchParams.get('project'));
     if (url.searchParams.get('project') !== null && url.searchParams.get('project') != '') {
 
+      path = '/proj_pub/' + url.searchParams.get('project') + '/';
+
       fetch(
         location.protocol + '//' + window.location.hostname + '/api/get_socket?id=' 
         + url.searchParams.get('project')

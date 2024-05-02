@@ -4,7 +4,7 @@
 	"private": true,
 	"main": "electron-main.cjs",
 	"scripts": {
-		"dev": "(copy svelte_server.config.js svelte.config.js || cp svelte_server.config.js svelte.config.js) && concurrently \"npm run server\" \"npm run dev-vite\"",
+		"dev": "del-cli ./build && (copy svelte_server.config.js svelte.config.js || cp svelte_server.config.js svelte.config.js) && concurrently \"npm run server\" \"npm run dev-vite\"",
 		"prod": "npm run build && npm run server",
 		"server": "node server.js",
 		"dev-vite": "vite dev",
@@ -26,6 +26,7 @@
 		"@types/papaparse": "^5.3.7",
 		"autoprefixer": "^10.4.12",
 		"concurrently": "^8.2.2",
+		"del-cli": "^5.1.0",
 		"electron": "^22.0.0",
 		"electron-packager": "^17.1.1",
 		"postcss": "^8.4.18",

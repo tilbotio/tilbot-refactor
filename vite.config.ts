@@ -5,7 +5,7 @@ const config: UserConfig = {
 	plugins: [sveltekit()],
 	server: {
 		fs: {
-			allow: ['projects']
+			allow: ['proj_pub']
 		}
 	}
 };
