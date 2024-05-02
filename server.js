@@ -1,4 +1,3 @@
-import { handler } from './build/handler.js';
 import http from 'http';
 import https from 'https';
 import { dirname } from 'path';
@@ -18,7 +17,6 @@ import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 
 // Keep track of running external processes for bots.
 let running_bots = {};
@@ -516,9 +514,13 @@ mongo.then(() => {
   });
 
 
-  // let SvelteKit handle everything else, including serving prerendered pages and static assets
-  app.use(handler);
-
+  // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
+  if (fs.existsSync('./build/handler.js')) {
+    import('./build/handler.js').then((m) => {
+      app.use(m.handler);  
+    });
+  }
+  
   server.listen(port, () => {
     console.log('listening on port ' + port);
   });
