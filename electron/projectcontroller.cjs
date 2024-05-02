@@ -72,6 +72,9 @@ class ProjectController {
           let content = this.check_variables(block.content, input);   
           let prompt = this.check_variables(block.variation_prompt);
 
+          // Send a typing indicator enabling message to the client
+          this.io.to(this.socket_id).emit('typing indicator');
+
           let resp = await ChatGPT.get_variation(content, prompt, block.chatgpt_memory, this.chatgpt_var_mem);
           this.chatgpt_var_mem = resp[0];
           resp = resp[1];

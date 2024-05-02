@@ -4,17 +4,20 @@ class RemoteProjectController extends BasicProjectController {
 
     private chatbot_message_callback: Function;
     private chatbot_settings_callback: Function;
+    private typing_indicator_callback: Function;
     private socket: any;
 
-    constructor(socket: any, chatbot_message_callback: Function, chatbot_settings_callback: Function) {
+    constructor(socket: any, chatbot_message_callback: Function, chatbot_settings_callback: Function, typing_indicator_callback: Function) {
         super();
 
         this.chatbot_message_callback = chatbot_message_callback;
         this.chatbot_settings_callback = chatbot_settings_callback;
+        this.typing_indicator_callback = typing_indicator_callback;
         this.socket = socket;
         socket.on('bot message', this.send_message.bind(this)); 
         socket.on('window message', this.window_message.bind(this));
         socket.on('settings', this.send_settings.bind(this));
+        socket.on('typing indicator', this.send_typing_indicator.bind(this));
     }
 
     send_message(block: any) {
@@ -23,6 +26,10 @@ class RemoteProjectController extends BasicProjectController {
 
     send_settings(settings: any, path: string) {
         this.chatbot_settings_callback(settings, path);
+    }
+
+    send_typing_indicator() {
+        this.typing_indicator_callback();
     }
 
     window_message(msg: any) {

@@ -4,8 +4,9 @@ import {Server} from 'socket.io';
 import path from 'path';
 import fs from 'fs';
 import ProjectController from '../electron/projectcontroller.cjs';
-//import ChatGPT from '../electron/chatgpt.cjs';
+import ChatGPT from '../electron/chatgpt.cjs';
 import { ProjectSchema } from '../db/project.js';
+import { SettingsSchema } from '../db/settings.js';
 import { mongoose } from 'mongoose';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -68,17 +69,18 @@ mongo.then(() => {
     else {
         let port = 0;
 
-        // Init ChatGPT
-        /*let settings = {
-            chatgpt_api_key: ''
-        }
-        if (fs.existsSync(p + '/settings.json')) {
-            settings = JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'));
-        }
-        
-        ChatGPT.init(settings.chatgpt_api_key);*/
-        
-        
+        // Retrieve general user settings for ChatGPT API key
+        // @TODO: also retrieve ChatGPT version setting -- now forced to 4.0
+        // NOTE: ChatGPT currently is set up to be a static class, so it takes the last API that it was initiated with, not one API per user/project!
+        const SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
+
+        SettingsDetails.findOne({'user_id': project.user_id}).then(function(settings) {
+          if (settings !== null && settings.chatgpt_api_key !== '') {
+            ChatGPT.init(settings.chatgpt_api_key);
+          }
+        });
+
+
         let clients = {};
         
         

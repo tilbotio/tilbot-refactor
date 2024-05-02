@@ -204,7 +204,7 @@ function socket_script_loaded(event: Event) {
     socket = io();
   }
   import("../client/controllers/remoteproject").then(function(m: any) {
-    controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings)  
+    controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings, set_typing_indicator)  
   });
   
 }
@@ -258,6 +258,10 @@ function project_received(data: any) {
     }
 
     window.parent.postMessage(windowmsg);      
+}
+
+function set_typing_indicator() {
+  show_typing_indicator = true;
 }
 
 function chatbot_settings(s: any, p: string = '') {
