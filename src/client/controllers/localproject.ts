@@ -420,8 +420,12 @@ class LocalProjectController extends BasicProjectController {
             this.current_block_id = block.connectors[else_connector_id].targets[0];
             this.send_events(block.connectors[else_connector_id], str);
             this._send_current_message(str);
-        }        
+        }
     }
+
+    set_participant_id(pid: string) {
+        // Not used right now
+    }    
 
 }
   

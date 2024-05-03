@@ -488,6 +488,10 @@ class ProjectController {
     log(str) {
       this.logger.log(str);
     }
+
+    set_participant_id(pid) {
+      this.logger.set_participant_id(pid);
+    }
 }
 
 module.exports = ProjectController;

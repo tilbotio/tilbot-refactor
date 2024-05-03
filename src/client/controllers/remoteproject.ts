@@ -50,6 +50,10 @@ class RemoteProjectController extends BasicProjectController {
         this.socket.emit('log', str);
     }
 
+    set_participant_id(pid: string) {
+        this.socket.emit('pid', pid);
+    }
+
     /*check_group_exit(id: number) {
         var path = this.get_path();
 

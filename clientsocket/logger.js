@@ -43,6 +43,15 @@ export class Logger {
             });
         }
     }
+
+    set_participant_id(pid) {
+        this._log.participant_id = pid;
+        this._log.save((err) => {
+            if (err) {
+                console.log('Logging error participant_id');
+            }
+        });
+    }
 }
 
 //export { Logger }

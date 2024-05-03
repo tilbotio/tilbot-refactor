@@ -135,8 +135,9 @@ let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let iframe = true;
 let socket_addr = null;
+let participant_id: string | null = '';
 
-let path: string = '';
+let path: string = null;
 
 let settings: any = {
                 'typing_style': 'fixed',
@@ -163,7 +164,11 @@ onMount(() => {
     //window.api.send('get-settings');
 
     const url = $page.url;
-    console.log(url.searchParams.get('project'));
+
+    if (url.searchParams.get('pid') !== null && url.searchParams.get('pid') != '') {
+      participant_id = url.searchParams.get('pid');
+    }
+
     if (url.searchParams.get('project') !== null && url.searchParams.get('project') != '') {
 
       path = '/proj_pub/' + url.searchParams.get('project') + '/';
@@ -204,7 +209,14 @@ function socket_script_loaded(event: Event) {
     socket = io();
   }
   import("../client/controllers/remoteproject").then(function(m: any) {
-    controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings, set_typing_indicator)  
+    controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings, set_typing_indicator);
+    
+    if (participant_id !== '') {
+      // Add a delay because the socket needs time to set up.
+      setTimeout(function() {
+        controller.set_participant_id(participant_id);
+      }, 2500);
+    }
   });
   
 }

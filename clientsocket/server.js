@@ -112,6 +112,10 @@ mongo.then(() => {
             socket.on('log', (str) => {
                 clients[socket.id].log(str);
             });
+
+            socket.on('pid', (pid) => {
+              clients[socket.id].set_participant_id(pid);
+            });
         
         });        
     }

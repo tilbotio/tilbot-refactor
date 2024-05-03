@@ -6,7 +6,7 @@ let LogSchema = new Schema({
     session_started: {type: Date, default: Date.now},
     session_closed: {type: Date, default: Date.now},
     project_id: {type: String, required: true},
-    qualtrics_id: {type: String, default: ""}
+    participant_id: {type: String, default: ""}
 });
 
 export { LogSchema };
