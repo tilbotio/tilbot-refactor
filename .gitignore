@@ -20,3 +20,5 @@ src/routes/guesswho/
 static/guesswho/
 src/routes/gamble/
 static/gamble/
+src/routes/avatar/
+static/avatar/
