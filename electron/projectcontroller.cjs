@@ -30,7 +30,12 @@ class ProjectController {
         // Set up the data files
         for (let v in this.project.variables) {
           if (this.project.variables[v].type == 'csv') {
-            this.csv_datas[this.project.variables[v].name] = new CsvData(this.project.variables[v].csvfile, p + '/currentproject/');
+            if (process.versions.hasOwnProperty('electron')) {
+              this.csv_datas[this.project.variables[v].name] = new CsvData(this.project.variables[v].csvfile, p + '/currentproject/');
+            }
+            else {
+              this.csv_datas[this.project.variables[v].name] = new CsvData(this.project.variables[v].csvfile, p);
+            }
           }
         }
 
