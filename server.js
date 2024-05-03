@@ -581,6 +581,7 @@ mongo.then(() => {
   // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
   if (fs.existsSync('./build/handler.js')) {
     import('./build/handler.js').then((m) => {
+      app.use('/proj_pub', express.static('./proj_pub'));
       app.use(m.handler);  
     });
   }
