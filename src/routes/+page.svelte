@@ -105,7 +105,7 @@
 {/if}
 </div>
 
-{#if !iframe}
+{#if !isTilbotEditor}
   {#if socket_addr !== null && socket_addr != ''}
   <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
   {:else if socket_addr !== null && socket_addr == ''}
@@ -133,7 +133,7 @@ let messages: Array<any> = [];
 let current_message_type: string = 'Auto';
 let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
-let iframe = true;
+let isTilbotEditor = true;
 let socket_addr = null;
 let participant_id: string | null = '';
 
@@ -150,9 +150,16 @@ let settings: any = {
 
 onMount(() => {
     // Check if we're in the editor
-    if (window.self === window.top || window.parent.isTilbotEditor === undefined) {
-      iframe = false;
-      //let socket = io();
+    try {
+      if (window.parent.isTilbotEditor === undefined) {
+        console.log('not Tilbot editor');
+        isTilbotEditor = false;
+        //let socket = io();
+        }
+    }
+    catch {
+      console.log('not Tilbot editor --- catch');
+      isTilbotEditor = false;
     }
 
     if (document.referrer == '') {
@@ -467,7 +474,7 @@ function variation_message(content: string) {
 
 function show_message(type: string, content: string, params: any, has_targets: boolean) {   
 
-    if (window.parent.isTilbotEditor !== undefined) {
+    if (isTilbotEditor) {
       let gpttype = type;
 
       if (!has_targets) {
