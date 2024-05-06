@@ -134,6 +134,7 @@ let current_message_type: string = 'Auto';
 let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let iframe = true;
+let isTilbotEditor = true;
 let socket_addr = null;
 let participant_id: string | null = '';
 
@@ -150,9 +151,16 @@ let settings: any = {
 
 onMount(() => {
     // Check if we're in the editor
-    if (window.self === window.top || window.parent.isTilbotEditor === undefined) {
-      iframe = false;
-      //let socket = io();
+    try {
+      if (window.self === window.top || window.parent.isTilbotEditor === undefined) {
+        isTilbotEditor = false;
+        iframe = false;
+        //let socket = io();
+        }
+    }
+    catch {
+      isTilbotEditor = false;
+      iframe = true;
     }
 
     if (document.referrer == '') {
@@ -467,7 +475,7 @@ function variation_message(content: string) {
 
 function show_message(type: string, content: string, params: any, has_targets: boolean) {   
 
-    if (window.parent.isTilbotEditor !== undefined) {
+    if (isTilbotEditor) {
       let gpttype = type;
 
       if (!has_targets) {
