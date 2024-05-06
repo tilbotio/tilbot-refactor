@@ -153,12 +153,14 @@ onMount(() => {
     // Check if we're in the editor
     try {
       if (window.self === window.top || window.parent.isTilbotEditor === undefined) {
+        console.log('not Tilbot editor');
         isTilbotEditor = false;
         iframe = false;
         //let socket = io();
         }
     }
     catch {
+      console.log('not Tilbot editor --- catch');
       isTilbotEditor = false;
       iframe = true;
     }
