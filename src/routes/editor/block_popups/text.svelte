@@ -86,7 +86,7 @@
 
     <div class="form-control">
         <label class="label cursor-pointer">
-          <span class="label-text">Use ChatGPT to add variation</span> 
+          <span class="label-text">Use large language model to add variation</span> 
           <input type="checkbox" class="toggle" bind:checked="{copy.chatgpt_variation}" />
         </label>
     

@@ -5,6 +5,7 @@ const socket = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const ChatGPT = require('./chatgpt.cjs');
+const LocalLLM = require('./localllm.cjs');
 const ProjectController = require('./projectcontroller.cjs');
 
 const app = express();
@@ -37,7 +38,7 @@ let project = fs.readFileSync(p + '/currentproject/electron-project.json');
 project = JSON.parse(project);
 console.log(project);
 
-// Init ChatGPT
+// Load settings
 let settings = {
   chatgpt_api_key: ''
 }
@@ -45,8 +46,11 @@ if (fs.existsSync(p + '/settings.json')) {
   settings = JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'));
 }
 
+// Init ChatGPT
 ChatGPT.init(settings.chatgpt_api_key);
 
+// Init Local LLM
+LocalLLM.init(settings.llm_api_address);
 
 let clients = {};
 
@@ -65,7 +69,7 @@ server.listen(2801, () => {
 io.on('connection', (socket) => {
     console.log('a user connected');
 
-    clients[socket.id] = new ProjectController(io, project, socket.id, p);
+    clients[socket.id] = new ProjectController(io, project, socket.id, p, settings.llm_setting);
   
     socket.on('message sent', () => {
       clients[socket.id].message_sent_event();

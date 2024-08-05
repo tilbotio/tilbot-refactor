@@ -167,12 +167,6 @@
         }
 
         else if (event.data.msg == 'variation') {
-            const configuration = new Configuration({
-                apiKey: gensettings.chatgpt_api_key
-            });
-
-            let openai = new OpenAIApi(configuration);
-
             if (event.data.memory === undefined || !event.data.memory || var_msgs === undefined || var_msgs.length == 0) {
                 var_msgs = [{
                     role: "system",
@@ -194,20 +188,49 @@
 
             console.log(var_msgs);
 
-            const completion = await openai.createChatCompletion({
-                    //model: "gpt-3.5-turbo",
-                    model: "gpt-4-1106-preview",
-                    messages: var_msgs,
-                    temperature: settings.temperature
-            });
+            let resp = '';
 
-            console.log(completion);
+            // Check if ChatGPT or another LLM that is triggered via API
+            if (gensettings.llm_setting == 'chatgpt') {
+
+                const configuration = new Configuration({
+                    apiKey: gensettings.chatgpt_api_key
+                });
+
+                let openai = new OpenAIApi(configuration);
+
+                const completion = await openai.createChatCompletion({
+                        //model: "gpt-3.5-turbo",
+                        model: gensettings.chatgpt_sim_version,
+                        messages: var_msgs,
+                        temperature: settings.temperature
+                });
+
+                console.log(completion);
             
-            if (completion.data.usage.total_tokens >= 3500) {
-                var_msgs.splice(1, 2);
+                if (completion.data.usage.total_tokens >= 3500) {
+                    var_msgs.splice(1, 2);
+                }
+
+                resp = completion.data.choices[0].message.content;
             }
 
-            let resp = completion.data.choices[0].message.content;
+            else {
+                let url = gensettings.llm_api_address;
+                if (gensettings.llm_api_address.indexOf('http') == -1) {
+                    url = 'http://' + url;
+                }
+                let r = await fetch(url + '/get-response?q=' + JSON.stringify({"messages": var_msgs}), {
+                    method: 'GET',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                resp = await r.json();
+                resp = resp.response;
+            }
 
             if (event.data.memory !== undefined && event.data.memory) {
                 var_msgs.push({

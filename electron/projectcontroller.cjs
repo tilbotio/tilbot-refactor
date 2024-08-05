@@ -1,11 +1,13 @@
 const CsvData = require('./csvdata.cjs');
 const ChatGPT = require('./chatgpt.cjs');
+const LocalLLM = require('./localllm.cjs');
 
 class ProjectController {
-    constructor(io, project, socket_id, p) {
+    constructor(io, project, socket_id, p, llm_setting) {
         this.io = io;
         this.project = project;
         this.socket_id = socket_id;
+        this.llm_setting = llm_setting;
         this.current_block_id = this.project.starting_block_id;
         this.logger = undefined;
 
@@ -91,16 +93,39 @@ class ProjectController {
           // Send a typing indicator enabling message to the client
           this.io.to(this.socket_id).emit('typing indicator');
 
-          let resp = await ChatGPT.get_variation(content, prompt, block.chatgpt_memory, this.chatgpt_var_mem);
+          let resp = null;
+
+          let cur_time = Date.now();
+
+          if (this.llm_setting == 'chatgpt') {
+            resp = await ChatGPT.get_variation(content, prompt, block.chatgpt_memory, this.chatgpt_var_mem);
+          }
+          else {
+            console.log('sending to local LLM');
+            resp = await LocalLLM.get_variation(content, prompt, block.chatgpt_memory, this.chatgpt_var_mem);
+            console.log(resp);
+          }
+
+          let after_time = Date.now();          
+          
           this.chatgpt_var_mem = resp[0];
           resp = resp[1];
+
+          console.log(resp);
           
           let block_copy = JSON.parse(JSON.stringify(block));
           block_copy.content = resp;
-  
-          setTimeout(function() {
+
+          let new_delay = block_copy.delay * 1000 - (after_time - cur_time);  
+
+          if (new_delay < 0) {
+            self.send_message(block_copy);
+          }
+          else {
+            setTimeout(function() {
               self.send_message(block_copy);
-          }, block_copy.delay * 1000);             
+            }, new_delay);             
+          }  
         }
         else {
           setTimeout(function() {

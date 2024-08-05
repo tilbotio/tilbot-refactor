@@ -37,7 +37,7 @@
                         </thead>
                         <tbody>
                             <tr class="hover">
-                                <td data-setting-id="4" class="cursor-pointer {selected_setting == 4 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT integration</td>
+                                <td data-setting-id="4" class="cursor-pointer {selected_setting == 4 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>LLM integration</td>
                             </tr>
                         </tbody>
                         </table>          
@@ -213,10 +213,29 @@
                     </div>
                     {/if}
 
-                    <!-- ChatGPT integration -->
+                    <!-- LLM integration -->
                     {#if selected_setting == 4}
-                    <div class="w-full text-xl text-center font-bold">ChatGPT Integration</div>
+                    <div class="w-full text-xl text-center font-bold">Large Language Model Integration</div>
                     <div class="p-8">
+                        <table class="table w-full">
+                            <thead>
+                                <th colspan="2">Choice of large language model</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Other LLM API (e.g., Llama)</td>
+                                    <td><input type="radio" name="llm-setting" class="radio" bind:group="{gen_copy.llm_setting}" value="llama" /></td>
+                                </tr>
+                                <tr>
+                                    <td>ChatGPT</td>
+                                    <td><input type="radio" name="llm-setting" class="radio" bind:group="{gen_copy.llm_setting}" value="chatgpt" /></td>
+                                </tr>                                
+                            </tbody>
+                        </table>
+
+                        <br /><br />
+
+                        {#if gen_copy.llm_setting == 'chatgpt'}
                         <span class="italic">Note: These settings are stored on this device, and will not be included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.</span><br /><br />
                         <table class="table w-full">
                             <thead>
@@ -241,7 +260,17 @@
                                     <td><input type="radio" name="gpt-sim-version" class="radio" bind:group="{gen_copy.chatgpt_sim_version}" value="gpt-4-1106-preview" /></td>
                                 </tr>
                             </tbody>
+                        </table> 
+                        {:else}                        
+                        <table class="table w-full">
+                            <thead>
+                                <th>API address</th>
+                            </thead>
+                            <tbody>
+                                    <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.llm_api_address}" />
+                            </tbody>
                         </table>                         
+                        {/if}
                     </div>
                     {/if}
                 </div>
@@ -335,6 +364,13 @@
             }
 
             gen_copy = JSON.parse(JSON.stringify(gensettings));
+
+            if (gen_copy.llm_setting == undefined) {
+                gen_copy.llm_setting = 'chatgpt';
+            }
+            if (gen_copy.llm_api_address == undefined) {
+                gen_copy.llm_api_address = '';
+            }
 
             toggle.click();
         }

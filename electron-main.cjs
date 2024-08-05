@@ -180,7 +180,9 @@ const createWindow = () => {
 
     if (!fs.existsSync(p + '/settings.json')) {
       let settings = {
-        chatgpt_api_key: ''
+        chatgpt_api_key: '',
+        llm_setting: 'chatgpt',
+        llm_api_address: ''     
       }
 
       fs.writeFileSync(p + '/settings.json', JSON.stringify(settings));

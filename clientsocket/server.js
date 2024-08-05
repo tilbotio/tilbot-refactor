@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import ProjectController from '../electron/projectcontroller.cjs';
 import ChatGPT from '../electron/chatgpt.cjs';
+import LocalLLM from '../electron/localllm.cjs';
 import { ProjectSchema } from '../db/project.js';
 import { SettingsSchema } from '../db/settings.js';
 import { mongoose } from 'mongoose';
@@ -69,14 +70,23 @@ mongo.then(() => {
     else {
         let port = 0;
 
-        // Retrieve general user settings for ChatGPT API key
+        let llm_setting = 'chatgpt';
+
+        // Retrieve general user settings for ChatGPT API key and local LLM settings
         // @TODO: also retrieve ChatGPT version setting -- now forced to 4.0
         // NOTE: ChatGPT currently is set up to be a static class, so it takes the last API that it was initiated with, not one API per user/project!
         const SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
 
         SettingsDetails.findOne({'user_id': project.user_id}).then(function(settings) {
-          if (settings !== null && settings.chatgpt_api_key !== '') {
+
+          llm_setting = settings.llm_setting;
+
+          if (settings !== null && settings.llm_setting == 'chatgpt') {
             ChatGPT.init(settings.chatgpt_api_key);
+          }
+
+          if (settings !== null && settings.llm_setting !== 'chatgpt') {
+            LocalLLM.init(settings.llm_api_address);
           }
         });
 
@@ -93,7 +103,7 @@ mongo.then(() => {
         io.on('connection', (socket) => {
             console.log('a user connected');
                     
-            clients[socket.id] = new ProjectController(io, project, socket.id, __dirname + '/../projects/' + project.id);
+            clients[socket.id] = new ProjectController(io, project, socket.id, __dirname + '/../projects/' + project.id, llm_setting);
             
             socket.on('message sent', () => {
                 clients[socket.id].message_sent_event();

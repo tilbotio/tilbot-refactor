@@ -213,6 +213,26 @@
         </div>
         <div class="collapse-content"> 
             <div class="overflow-x-auto">
+
+                <table class="table w-full">
+                    <thead>
+                        <th colspan="2">Choice of large language model</th>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Other LLM API (e.g., Llama)</td>
+                            <td><input type="radio" name="llm-setting" class="radio" bind:group="{data.settings.llm_setting}" value="llama" /></td>
+                        </tr>
+                        <tr>
+                            <td>ChatGPT</td>
+                            <td><input type="radio" name="llm-setting" class="radio" bind:group="{data.settings.llm_setting}" value="chatgpt" /></td>
+                        </tr>                                
+                    </tbody>
+                </table>
+
+                <br /><br />
+
+                {#if data.settings.llm_setting == 'chatgpt'}
                 <table class="table table-zebra w-full">
                     <thead>
                         <tr>
@@ -241,6 +261,16 @@
                         </tr>
                     </tbody>
                 </table> 
+                {:else}
+                <table class="table w-full">
+                    <thead>
+                        <th>Large language model API address</th>
+                    </thead>
+                    <tbody>
+                            <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{data.settings.llm_api_address}" />
+                    </tbody>
+                </table>  
+                {/if}                
 
                 {#if settings_error}
                 <div class="mt-4 alert alert-error shadow-lg justify-start">

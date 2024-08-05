@@ -8,6 +8,10 @@ class LocalProjectController extends BasicProjectController {
     private variation_request_callback: Function;
     private client_vars: any;
 
+    // Keep track of time because it may take the LLM time to generate a response.
+    // We subtract this response time from the (artificial) typing delay since it has already passed.
+    private cur_time: number;
+
     constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function, variation_request_callback: Function) {
         super();
 
@@ -175,6 +179,7 @@ class LocalProjectController extends BasicProjectController {
             let content = this.check_variables(block.content, input);   
             let prompt = this.check_variables(block.variation_prompt);
 
+            this.cur_time = Date.now();          
             this.variation_request_callback(content, prompt, block.chatgpt_memory);
         }
         else {
@@ -309,9 +314,18 @@ class LocalProjectController extends BasicProjectController {
         block = JSON.parse(JSON.stringify(block.blocks[this.current_block_id.toString()]));
         block.content = str;
 
-        setTimeout(function() {
+        let after_time = Date.now();
+
+        let new_delay = block.delay * 1000 - (after_time - this.cur_time);
+
+        if (new_delay < 0) {
             self.send_message(block);
-        }, block.delay * 1000);    
+        }
+        else {
+            setTimeout(function() {
+                self.send_message(block);
+            }, new_delay);        
+        }
     }
 
     async receive_message(str: string) {
