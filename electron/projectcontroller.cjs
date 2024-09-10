@@ -14,12 +14,16 @@ class ProjectController {
         if (process.versions.hasOwnProperty('electron')) {
           let Logger = require('./logger.cjs');
           this.logger = new Logger(p);
-          this._send_current_message();        
+          if (this.current_block_id !== -1) {
+            this._send_current_message();        
+          }
         }
         else {
           import('../clientsocket/logger.js').then((mod) => {
             this.logger = new mod.Logger(project.id);
-            this._send_current_message();        
+            if (this.current_block_id !== -1) {
+              this._send_current_message();        
+            }
           });
         }        
 
@@ -68,7 +72,7 @@ class ProjectController {
     }
     
     async _send_current_message(input = '') {
-        if (this.current_block_id == undefined) {
+        if (this.current_block_id == undefined || this.current_block_id == -1) {
           return;
         }
 
@@ -140,6 +144,33 @@ class ProjectController {
       let matches = regExp.exec(content);
 
       if (matches !== null) {
+        if (matches[1].indexOf(' = ') !== -1) {
+          let matches2 = regExp.exec(content);
+
+          let parts = matches[1].split(' = ');
+          if (parts[0] in this.client_vars && this.client_vars[parts[0]] == parts[1]) {
+              content = content.substring(matches2.index + 1, matches2.index + 1 + matches2[1].length) + content.substring(matches2.index + matches2[0].length);
+              return this.check_variables(content, input);
+          }
+          else {
+              content = content.replace(matches[0], '').replace(matches2[0], '');
+              return this.check_variables(content, input);
+          }
+        }
+        else if (matches[1].indexOf(' != ') !== -1) {
+          let matches2 = regExp.exec(content);
+
+          let parts = matches[1].split(' != ');
+          if (parts[0] in this.client_vars && this.client_vars[parts[0]] != parts[1]) {
+              content = content.substring(matches2.index + 1, matches2.index + 1 + matches2[1].length) + content.substring(matches2.index + matches2[0].length);
+              return this.check_variables(content, input);
+          }
+          else {
+              content = content.replace(matches[0], '').replace(matches2[0], '');
+              return this.check_variables(content, input);
+          }
+        }
+
         if (typeof input === 'object' && input !== null) {
           content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
         }
@@ -171,6 +202,10 @@ class ProjectController {
           }
         }
       }  
+
+      if (regExp.lastIndex !== 0) {
+        return this.check_variables(content, input);
+      }      
 
       return content;
   }    
@@ -247,7 +282,25 @@ class ProjectController {
 
             }
             else {
+              if (connector.events[c].var_value.startsWith('+')) {
+                if (this.client_vars[connector.events[c].var_name] === undefined) {
+                    this.client_vars[connector.events[c].var_name] = parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
+                }
+                else {
+                    this.client_vars[connector.events[c].var_name] = parseInt(this.client_vars[connector.events[c].var_name]) + parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
+                }
+              }
+              else if (connector.events[c].var_value.startsWith('-')) {
+                  if (this.client_vars[connector.events[c].var_name] === undefined) {
+                      this.client_vars[connector.events[c].var_name] = 0 - parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
+                  }
+                  else {
+                      this.client_vars[connector.events[c].var_name] = parseInt(this.client_vars[connector.events[c].var_name]) - parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
+                  }
+              }         
+              else {
                 this.client_vars[connector.events[c].var_name] = connector.events[c].var_value;
+              }
             }
           }          
         }
@@ -266,7 +319,11 @@ class ProjectController {
 
         console.log(block.connectors);
         for (var c in block.connectors) {
-          params.options.push(block.connectors[c].label);
+          // Remove any additional variables/checks from the connector
+          let label_cleaned = block.connectors[c].label.replace(/\[([^\]]+)\]/g, "");
+          if (!params.options.includes(label_cleaned)) {
+              params.options.push(label_cleaned);
+          }
         }
 
         console.log(params);
@@ -328,6 +385,36 @@ class ProjectController {
     }   
     
     async check_labeled_connector(connector, str) {
+      // Check if we should match a variable
+      if (connector.indexOf(' = ') !== -1) {
+        let parts = connector.split(' = ');
+        
+        let key = parts[0] + ']';
+        let val = parts[1].substring(0, parts[1].length-1);
+        let res = await this.check_labeled_connector(key, val);
+
+        if (res == val) {
+            return val;
+        }
+        else {
+            return null;
+        }
+      }
+      else if (connector.indexOf(' != ') !== -1) {
+          let parts = connector.split(' != ');
+
+          let key = parts[0] + ']';
+          let val = parts[1].substring(0, parts[1].length-1);
+          let res = await this.check_labeled_connector(key, val);
+
+          if (res !== val) {
+              return val;
+          }
+          else {
+              return null;
+          }
+      }
+
       // Check for tags / special commands
       let regExp = /\[([^\]]+)\]/g;
       let matches = regExp.exec(connector);
@@ -381,6 +468,15 @@ class ProjectController {
                   }
               }
           }
+
+          else {
+            if (matches[1] in this.client_vars && this.client_vars[matches[1]] == str) {
+                return str;
+            }
+            else {
+                return '';
+            }
+          }          
       }
 
       else {
@@ -399,57 +495,39 @@ class ProjectController {
       let found = false;
       let else_connector_id = '-1';
 
-      if (this.current_block_id !== undefined) {
+      if (this.current_block_id !== undefined && this.current_block_id !== -1) {
         var block = this.project.blocks[this.current_block_id.toString()];
         this.logger.log('message_user', str);
 
-        // @TODO: improve processing of message
-        if (block.type == 'MC') {
+        for (var c in block.connectors) {
+            if (block.connectors[c].label == '[else]') {
+                else_connector_id = c;
+            }
 
-          for (var c in block.connectors) {
-              if (block.connectors[c].label == str) {
-                  if (block.connectors[c].targets.length > 0) {
+            else if ((block.connectors[c].method == 'barcode' && str.startsWith('barcode:')) || block.connectors[c].method !== 'barcode') {
+                // @TODO: distinguish between contains / exact match options                       
+                let ands = block.connectors[c].label.split(' [and] ');
+                let num_match = 0;
+                let last_found_output = null;
+
+                for (let and in ands) {
+                    //for (let part in parts) {
+                        let output = await this.check_labeled_connector(ands[and], str);
+                        if (output !== null) {
+                            num_match += 1;
+                            last_found_output = output;
+                        }
+                    //}
+                }
+
+                if (num_match == ands.length) {
                     found = true;
                     this.current_block_id = block.connectors[c].targets[0];
-                    this.send_events(block.connectors[c], str);
-                    this._send_current_message(str);  
-                  }
-              }
-          }
-        }
-
-        else if (block.type == 'Text' || block.type == 'List') {
-          for (var c in block.connectors) {
-              if (block.connectors[c].label == '[else]') {
-                  else_connector_id = c;
-              }
-
-              else if ((block.connectors[c].method == 'barcode' && str.startsWith('barcode:')) || block.connectors[c].method !== 'barcode') {
-                  // @TODO: distinguish between contains / exact match options                       
-                  let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
-                  let num_match = 0;
-                  let last_found_output = null;
-
-                  for (let and in ands) {
-                      //for (let part in parts) {
-                          let output = await this.check_labeled_connector(ands[and], str);
-                          if (output !== null) {
-                              num_match += 1;
-                              last_found_output = output;
-                          }
-                      //}
-                  }
-
-                  if (num_match == ands.length) {
-                      found = true;
-                      this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
-                      this.send_events(this.project.blocks[b].connectors[c], last_found_output);
-                      this._send_current_message(last_found_output);                
-                      break;
-                  }
-              }
-          }
-
+                    this.send_events(block.connectors[c], last_found_output);
+                    this._send_current_message(last_found_output);                
+                    break;
+                }
+            }
         }
 
       }

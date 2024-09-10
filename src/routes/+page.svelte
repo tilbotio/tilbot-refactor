@@ -261,6 +261,7 @@ async function message_received(event: MessageEvent) {
 
 function project_received(data: any) {
     messages = [];
+    current_message_type = 'Auto';
     path = data.path + 'avatar/';
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)

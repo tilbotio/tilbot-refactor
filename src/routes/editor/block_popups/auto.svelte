@@ -1,4 +1,5 @@
 <label for="my-modal-3" class="btn btn-sm btn-circle absolute right-2 top-2" on:click={cancel}>✕</label>
+
 <h3 class="text-lg font-bold">
     <svg style="display: inline; vertical-align: sub" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -7,6 +8,18 @@
     <div class="inline" contenteditable="true" bind:textContent={copy.name} on:keypress={name_keypress}></div>
 </h3>
 <p class="py-4">Text for the bot to say:</p>
+<button class="btn btn-square btn-outline btn-sm mt-2 mb-2" on:click="{toggle_img_select}">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+    </svg>      
+</button>
+{#if show_img_select}
+<div class="bg-slate-200 p-4">
+    <input type="text" placeholder="images/tilbot_logo.svg" class="input input-bordered input-sm w-full max-w-xs" bind:value={tmp_image} />
+    <button class="btn btn-active btn-sm" on:click={image_save}>Insert</button> 
+    <button class="btn btn-outline btn-sm" on:click={image_cancel}>Cancel</button>
+</div>
+{/if}
 <div class="textarea text-base textarea-bordered resize-none inset-y-2 w-full h-24 max-h-40 overflow-scroll" contenteditable="true" bind:innerHTML={copy.content}></div>
 
 <br />
@@ -29,6 +42,9 @@
     import { onMount, createEventDispatcher } from "svelte";
     export let objAttributes = {};
     let copy: any = {};
+
+    let show_img_select = false;
+    let tmp_image = '';
 
     const dispatch = createEventDispatcher();
 
@@ -59,5 +75,20 @@
             event: 'save',
             block: copy
         });
+    }
+
+    function toggle_img_select() {
+        show_img_select = !show_img_select;        
+    }
+
+    function image_save() {
+        copy.content += "<img src=\"" + tmp_image + "\" />";        
+        show_img_select = true;
+        tmp_image = '';
+    }
+
+    function image_cancel() {
+        show_img_select = false;
+        tmp_image = '';
     }
 </script>

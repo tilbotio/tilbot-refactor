@@ -94,22 +94,6 @@
         </thead>
         <tbody>
             {#each Object.entries(copy.connectors) as [id, connector]}
-            {#if connector.label == '[else]'}
-            <tr>
-                <td>
-                </td>
-                <td>[else]</td>
-                <td>
-                    <button class="btn btn-square btn-sm {(connector.events === undefined || connector.events.length == 0) ? 'btn-outline' : ''}" on:click={() => btn_event(id)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                        </svg>
-                    </button>
-                </td>
-                <td>
-                </td>
-            </tr>            
-            {:else}            
             <tr>
                 <td>
                     <select bind:value={connector.method} class="select select-bordered w-full max-w-xs">
@@ -133,7 +117,6 @@
                     </button>
                 </td>
             </tr>
-            {/if}
             {/each}
         </tbody>
       </table>
