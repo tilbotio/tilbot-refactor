@@ -55,7 +55,7 @@ LocalLLM.init(settings.llm_api_address);
 let clients = {};
 
 app.use(express.static(path.join(__dirname, '/../build/')));
-app.use(express.static(path.join(p, '/currentproject/avatar/')));
+app.use(express.static(path.join(p, '/currentproject/')));
 
 app.get('/', (req, res) => {
     res.status(200);

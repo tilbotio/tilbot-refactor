@@ -323,7 +323,11 @@ const createWindow = () => {
       }
 
       if (proj_obj.settings !== undefined && proj_obj.settings.avatar_file !== undefined && proj_obj.settings.avatar_file !== '') {
-        file.addLocalFile(p + '/currentproject/avatar/' + proj_obj.settings.avatar_file);
+        file.addLocalFile(p + '/currentproject/avatar/' + proj_obj.settings.avatar_file, 'avatar');
+      }
+
+      if (proj_obj.settings !== undefined && proj_obj.settings.avatar_file_sm !== undefined && proj_obj.settings.avatar_file_sm !== '') {
+        file.addLocalFile(p + '/currentproject/avatar/' + proj_obj.settings.avatar_file_sm, 'avatar');
       }
       
       fs.writeFileSync(save_file, file.toBuffer());

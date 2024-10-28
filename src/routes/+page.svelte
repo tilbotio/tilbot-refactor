@@ -8,101 +8,133 @@
 </div>
 
 <div class="flex flex-col w-full h-full">
-<div class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow" bind:this={header}>
-    {#if settings.show_avatar == 'yes'}
-    <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
-        {#if settings.avatar_file == ''}
-        <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
-          <span>{firstletter(settings.name)}</span>
+  {#if show_header}
+  <div class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow" bind:this={header}>
+      {#if settings.show_avatar == 'yes'}
+      <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
+          {#if settings.avatar_file == ''}
+          <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
+            <span>{firstletter(settings.name)}</span>
+          </div>
+          {:else}
+          <div class="rounded-full w-12">
+            <img src="{path + 'avatar/' + settings.avatar_file}" />
+          </div>
+          {/if}
+      </div> 
+      {/if}
+      <div class="text-lg font-medium mt-6 ml-4 float-left">{settings.name}</div>
+  </div>
+  {/if}
+
+  <div class="w-full h-full flex-1 overflow-y-scroll py-2" bind:this={message_container}>
+    {#each messages as message}
+    {#if message.from == 'bot'}
+    <div class="chat chat-start">
+      {#if settings.show_avatar_sm == 'yes'}
+      {#if settings.avatar_file_sm == ''}
+      <div class="chat-image avatar ml-2">
+          <div class="bg-neutral-focus text-neutral-content rounded-full w-10 !flex items-center justify-center">
+              <div>{firstletter(settings.name)}</div>
+          </div>
+      </div>
+      {:else}
+      <div class="chat-image avatar ml-2">
+        <div class="w-10 rounded-full">
+          <img src="{path + 'avatar/' + settings.avatar_file_sm}" />
         </div>
-        {:else}
-        <div class="rounded-full w-12">
-          <img src="{path + settings.avatar_file}" />
-        </div>
-        {/if}
-    </div> 
+      </div>
+      {/if}   
+      {/if}   
+      <div class="chat-bubble bg-tilbot-secondary-purple">
+        {@html message.content}
+      </div>
+    </div>
+    {:else if message.from == 'chatgpt'}
+    <div class="chat chat-end">
+      <div class="chat-bubble chat-bubble-secondary bg-[#FFC500]">
+        {@html message.content}
+      </div>
+    </div>
+    {:else}
+    <div class="chat chat-end">
+      <div class="chat-bubble chat-bubble-secondary bg-tilbot-secondary-hardpink">
+        {@html message.content}
+      </div>
+    </div>
     {/if}
-    <div class="text-lg font-medium mt-6 ml-4 float-left">{settings.name}</div>
-</div>
+    {/each}
+    {#if show_typing_indicator}
+    <div class="chat chat-start">
+      {#if settings.show_avatar_sm == 'yes'}
+      {#if settings.avatar_file_sm == ''}
+      <div class="chat-image avatar ml-2">
+          <div class="bg-neutral-focus text-neutral-content rounded-full w-10 !flex items-center justify-center">
+              <div>{firstletter(settings.name)}</div>
+          </div>
+      </div>
+      {:else}
+      <div class="chat-image avatar ml-2">
+        <div class="w-10 rounded-full">
+          <img src="{path + 'avatar/' + settings.avatar_file_sm}" />
+        </div>
+      </div>
+      {/if}      
+      {/if}
+      <div class="chat-bubble bg-tilbot-secondary-purple">
+        ...
+      </div>
+    </div>
+    {/if}
+  </div>
 
-<div class="w-full h-full flex-1 overflow-y-scroll py-2" bind:this={message_container}>
-  {#each messages as message}
-  {#if message.from == 'bot'}
-  <div class="chat chat-start">
-    <div class="chat-bubble bg-tilbot-secondary-purple">
-      {@html message.content}
+  {#if current_message_type == 'MC'}
+  <div class="bg-gray-100 w-full drop-shadow-md">
+    <div class="p-3 mr-16 text-center">
+    {#each mc_options as mc_option}
+      <button class="btn btn-outline m-1" on:click={mc_submit}>{mc_option.content}</button>
+    {/each}
     </div>
-  </div>
-  {:else if message.from == 'chatgpt'}
-  <div class="chat chat-end">
-    <div class="chat-bubble chat-bubble-secondary bg-[#FFC500]">
-      {@html message.content}
-    </div>
-  </div>
-  {:else}
-  <div class="chat chat-end">
-    <div class="chat-bubble chat-bubble-secondary bg-tilbot-secondary-hardpink">
-      {@html message.content}
-    </div>
-  </div>
-  {/if}
-  {/each}
-  {#if show_typing_indicator}
-  <div class="chat chat-start">
-    <div class="chat-bubble bg-tilbot-secondary-purple">
-      ...
-    </div>
-  </div>
-  {/if}
-</div>
-
-{#if current_message_type == 'MC'}
-<div class="bg-gray-100 w-full drop-shadow-md">
-  <div class="p-3 mr-16 text-center">
-  {#each mc_options as mc_option}
-    <button class="btn btn-outline m-1" on:click={mc_submit}>{mc_option.content}</button>
-  {/each}
-  </div>
-  <button class="btn btn-circle absolute bottom-4 right-4" on:click={mc_submit}>
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-      </svg>          
-  </button>
-</div>
-
-{:else}
-<div class="bg-gray-100 w-full h-20 drop-shadow-md">
-    <textarea class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
-    <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text !== null && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit_button}>
+    <button class="btn btn-circle absolute bottom-4 right-4" on:click={mc_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
         </svg>          
     </button>
-    <div id="menu" class="float-right z-10 {(input_text !== undefined && input_text !== null && input_text.value == '') ? '' : 'hidden'}">
-      <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
-          <li>
-            <a class="active:bg-tilbot-secondary-hardpink">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
-              </svg>              
-            </a>
-            <ul class="bg-slate-100 shadow-md -top-full">
-                <div class="tooltip tooltip-left" data-tip="Scan barcode">
-                  <li>
-                      <a class="active:bg-tilbot-secondary-hardpink" on:click={start_barcode}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
-                        </svg>                                                  
-                      </a>
-                  </li>
-                </div>
-            </ul>
-          </li>
-        </ul>
-      </div>  
-</div>
-{/if}
+  </div>
+
+  {:else}
+  <div class="bg-gray-100 w-full h-20 drop-shadow-md">
+      <textarea class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
+      <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text !== null && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit_button}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+          </svg>          
+      </button>
+      <div id="menu" class="float-right z-10 {(input_text !== undefined && input_text !== null && input_text.value == '') ? '' : 'hidden'}">
+        <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
+            <li>
+              <a class="active:bg-tilbot-secondary-hardpink">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+                </svg>              
+              </a>
+              <ul class="bg-slate-100 shadow-md -top-full">
+                  <div class="tooltip tooltip-left" data-tip="Scan barcode">
+                    <li>
+                        <a class="active:bg-tilbot-secondary-hardpink" on:click={start_barcode}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                          </svg>                                                  
+                        </a>
+                    </li>
+                  </div>
+              </ul>
+            </li>
+          </ul>
+        </div>  
+  </div>
+  {/if}
 </div>
 
 {#if !isTilbotEditor}
@@ -121,6 +153,7 @@ import { Html5Qrcode } from "html5-qrcode";
 
 let message_container: HTMLElement;
 let header: HTMLElement;
+let show_header: boolean = true;
 
 // For the barcode scanner
 let scan_overlay: HTMLElement;
@@ -137,7 +170,7 @@ let isTilbotEditor = true;
 let socket_addr = null;
 let participant_id: string | null = '';
 
-let path: string = null;
+let path: string = '';
 
 let settings: any = {
                 'typing_style': 'fixed',
@@ -171,6 +204,15 @@ onMount(() => {
     //window.api.send('get-settings');
 
     const url = $page.url;
+
+    if (url.searchParams.get('show_header') !== null && url.searchParams.get('show_header') != '') {
+      if (url.searchParams.get('show_header') == '1') {
+        show_header = true;
+      }
+      else {
+        show_header = false;
+      }
+    }    
 
     if (url.searchParams.get('pid') !== null && url.searchParams.get('pid') != '') {
       participant_id = url.searchParams.get('pid');
@@ -262,7 +304,7 @@ async function message_received(event: MessageEvent) {
 function project_received(data: any) {
     messages = [];
     current_message_type = 'Auto';
-    path = data.path + 'avatar/';
+    path = data.path;
 
     // Clear all ongoing timers (https://stackoverflow.com/questions/3847121/how-can-i-disable-all-settimeout-events)
     // Set a fake timeout to get the highest timeout id

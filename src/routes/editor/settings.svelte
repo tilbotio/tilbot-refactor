@@ -110,6 +110,49 @@
                                     </td>
                                 </tr>
                                 {/if}
+                                <tr>
+                                    <td class="w-48">Show small avatar next to messages</td>
+                                    <td><input type="radio" name="radio-2" class="radio" bind:group="{copy.show_avatar_sm}" value="yes" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="w-48">Hide small avatar next to messages</td>
+                                    <td><input type="radio" name="radio-2" class="radio" bind:group="{copy.show_avatar_sm}" value="no" /></td>
+                                </tr>
+                                {#if copy.show_avatar_sm == 'yes'}
+                                <tr>
+                                    <td class="w-48">Small avatar</td>
+                                    <td>
+                                        <div class="float-left">
+                                            <div class="chat chat-start">
+                                                {#if copy.avatar_file_sm == ''}
+                                                <div class="chat-image avatar">
+                                                    <div class="bg-neutral-focus text-neutral-content rounded-full w-10 !flex items-center justify-center">
+                                                        <div>{firstletter(copy.name)}</div>
+                                                    </div>
+                                                </div>
+                                                {:else}
+                                                <div class="chat-image avatar">
+                                                  <div class="w-10 rounded-full">
+                                                    <img src="{path + copy.avatar_file_sm}" />
+                                                  </div>
+                                                </div>
+                                                {/if}
+                                                <div class="chat-bubble bg-tilbot-secondary-purple pr-16">Hello there!</div>
+                                            </div>                                            
+                                        </div>
+                                        <button class="btn-sm btn-square ml-4 mt-6" on:click={load_avatar_sm}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
+                                            </svg>
+                                        </button>                                        
+                                        <button class="btn-sm btn-square mt-6" on:click={delete_avatar_sm}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                        </button> 
+                                    </td>
+                                </tr>
+                                {/if}                                
                             </tbody>
                         </table>
 
@@ -297,6 +340,7 @@
     let gen_copy = {}; 
 
     let is_loading_avatar: boolean = false;
+    let is_loading_avatar_sm: boolean = false;
 
     let default_prompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create. 
     You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
@@ -323,6 +367,8 @@
                     'temperature': 0.5,
                     'show_avatar': 'yes',
                     'avatar_file': '',
+                    'show_avatar_sm': 'no',
+                    'avatar_file_sm': '',
                     'name': 'Tilbot'
                 }
             }
@@ -358,6 +404,12 @@
                 if (copy.avatar_file == undefined) {
                     copy.avatar_file = '';
                 }
+                if (copy.show_avatar_sm == undefined) {
+                    copy.show_avatar_sm = 'no';
+                }
+                if (copy.avatar_file_sm == undefined) {
+                    copy.avatar_file_sm = '';
+                }                
                 if (copy.name == undefined) {
                     copy.name = 'Tilbot';
                 }
@@ -385,8 +437,14 @@
                     copy.avatar_file = param.filename;
                     is_loading_avatar = false;                    
                 }
-            });
+                else if (is_loading_avatar_sm) {
+                    copy.avatar_file_sm = param.filename;
+                    is_loading_avatar_sm = false;                    
+                }
+            });    
         }
+
+        console.log(copy);
     });
 
     function load_avatar() {
@@ -399,7 +457,19 @@
             window.api.send('do-delete-avatar', copy.avatar_file);
             copy.avatar_file = '';
         }
-    }       
+    } 
+    
+    function load_avatar_sm() {
+        is_loading_avatar_sm = true;
+        window.api.send('do-load-avatar', copy.avatar_file_sm);
+    }
+
+    function delete_avatar_sm() {
+        if (copy.avatar_file_sm !== '') {
+            window.api.send('do-delete-avatar', copy.avatar_file_sm);
+            copy.avatar_file_sm = '';
+        }
+    }
 
     function typing_style_change() {
         //copy.typing_style = event.currentTarget.value;
