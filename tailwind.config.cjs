@@ -12,6 +12,7 @@ module.exports = {
       white: colors.white,
       black: colors.black,
       gray: colors.gray,
+      sky: colors.sky,
       'tilbot-primary-500': '#29004A',
       'tilbot-primary-400': '#6C4199',
       'tilbot-primary-300': '#A840E3',
