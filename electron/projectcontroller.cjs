@@ -497,6 +497,10 @@ class ProjectController {
 
       if (this.current_block_id !== undefined && this.current_block_id !== -1) {
         var block = this.project.blocks[this.current_block_id.toString()];
+        if (block.type == 'Auto') {
+          return;
+        }        
+        
         this.logger.log('message_user', str);
 
         for (var c in block.connectors) {

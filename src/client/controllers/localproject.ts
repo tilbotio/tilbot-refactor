@@ -431,6 +431,9 @@ class LocalProjectController extends BasicProjectController {
 
         if (this.current_block_id !== undefined && this.current_block_id !== -1) {
             var block = this.project.blocks[this.current_block_id.toString()];
+            if (block.type == 'Auto') {
+                return;
+            }
 
             for (var c in block.connectors) {
                 if (block.connectors[c].label == '[else]') {
