@@ -936,8 +936,12 @@
 
         is_loading = true;
         num_draggable_loaded = 0;
-        project = JSON.parse(json_str);
-        project.blocks = project.blocks;
+
+        // Introduce a small delay so that everything will load properly (incl. lines)
+        setTimeout(function() {
+            project = JSON.parse(json_str);
+            project.blocks = project.blocks;
+        }, 500);
     }
 
     function run_all() {
