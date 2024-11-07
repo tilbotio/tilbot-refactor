@@ -165,6 +165,7 @@ class LocalProjectController extends BasicProjectController {
 
         if (path.length == 0) {
             if (this.project.blocks[this.current_block_id.toString()].type == 'Auto') {
+                this.send_events(this.project.blocks[this.current_block_id.toString()].connectors[0], '');
                 this.current_block_id = this.project.blocks[this.current_block_id.toString()].connectors[0].targets[0];
                 this._send_current_message();
             }  
