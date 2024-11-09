@@ -351,6 +351,10 @@ class ProjectController {
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Auto') {
+        if (block.connectors[0].targets.length == 0) {
+          // This one must rely on triggers, so we should accept input -- especially useful for triggering voice input to listen.
+          params.expect_input = true;
+        }
         this.io.to(this.socket_id).emit('bot message', {type: block.type, content: content, params: params});          
         this.logger.log('message_bot', block.content);
       }
@@ -482,7 +486,7 @@ class ProjectController {
 
       else {
           let candidate = connector.toLowerCase().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-          if (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b"+candidate+"\\b", "i")) != null) {
+          if ((candidate == str.replace('barcode:', '').toLowerCase()) || (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b"+candidate+"\\b", "i")) != null)) {
               return str;
           }                  
       }
@@ -496,11 +500,8 @@ class ProjectController {
       let found = false;
       let else_connector_id = '-1';
 
-      if (this.current_block_id !== undefined && this.current_block_id !== -1) {
+      if (this.current_block_id !== undefined && this.current_block_id !== -1 && this.project.blocks[this.current_block_id.toString()].type !== 'Auto') {
         var block = this.project.blocks[this.current_block_id.toString()];
-        if (block.type == 'Auto') {
-          return;
-        }        
         
         this.logger.log('message_user', str);
 
