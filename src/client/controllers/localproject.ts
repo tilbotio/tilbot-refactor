@@ -387,7 +387,7 @@ class LocalProjectController extends BasicProjectController {
 
         else {
             let candidate = connector.toLowerCase().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-            if (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b"+candidate+"\\b", "i")) != null) {
+            if ((candidate == str.replace('barcode:', '').toLowerCase()) || (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b"+candidate+"\\b", "i")) != null)) {
                 return str;
             }                    
         }
@@ -430,11 +430,8 @@ class LocalProjectController extends BasicProjectController {
         let found = false;
         let else_connector_id = '-1';
 
-        if (this.current_block_id !== undefined && this.current_block_id !== -1) {
+        if (this.current_block_id !== undefined && this.current_block_id !== -1 && this.project.blocks[this.current_block_id.toString()].type !== 'Auto') {
             var block = this.project.blocks[this.current_block_id.toString()];
-            if (block.type == 'Auto') {
-                return;
-            }
 
             for (var c in block.connectors) {
                 if (block.connectors[c].label == '[else]') {
