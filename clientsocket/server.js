@@ -18,7 +18,7 @@ var server = null;
 let is_https = false;
 
 function app(req, res) {
-        
+
 };
 
 if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
@@ -28,8 +28,8 @@ if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirnam
   var ssloptions = {
     key: key,
     cert: cert
-  };   
-  
+  };
+
   server = https.createServer(ssloptions, app);
   is_https = true;
 }
@@ -90,35 +90,33 @@ mongo.then(() => {
           }
         });
 
-
         let clients = {};
-        
-        
+
         server.listen(port, () => {
             console.log('listening on port ' + server.address().port + (is_https?' (https)':' (http)'));
             project.socket = server.address().port;
             project.save();
         });
-        
+
         io.on('connection', (socket) => {
             console.log('a user connected');
-                    
+
             clients[socket.id] = new ProjectController(io, project, socket.id, __dirname + '/../projects/' + project.id, llm_setting);
-            
+
             socket.on('message sent', () => {
                 clients[socket.id].message_sent_event();
             });
-        
+
             socket.on('user_message', (str) => {
                 clients[socket.id].receive_message(str);
             });
-        
+
             socket.on('disconnect', () => {
                 clients[socket.id].disconnected();
                 delete clients[socket.id];
                 console.log('disconnected');
             });
-        
+
             socket.on('log', (str) => {
                 clients[socket.id].log(str);
             });
@@ -126,10 +124,10 @@ mongo.then(() => {
             socket.on('pid', (pid) => {
               clients[socket.id].set_participant_id(pid);
             });
-        
-        });        
+
+        });
     }
 
   });
-    
+
 });

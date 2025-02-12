@@ -3,7 +3,7 @@
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
   </button>
   <div id="barcodereader" class="!border-0 z-0">
-    
+
   </div>
 </div>
 
@@ -21,7 +21,7 @@
             <img src="{path + 'avatar/' + settings.avatar_file}" />
           </div>
           {/if}
-      </div> 
+      </div>
       {/if}
       <div class="text-lg font-medium mt-6 ml-4 float-left">{settings.name}</div>
   </div>
@@ -44,8 +44,8 @@
           <img src="{path + 'avatar/' + settings.avatar_file_sm}" />
         </div>
       </div>
-      {/if}   
-      {/if}   
+      {/if}
+      {/if}
       <div class="chat-bubble bg-tilbot-secondary-purple">
         {@html message.content}
       </div>
@@ -79,7 +79,7 @@
           <img src="{path + 'avatar/' + settings.avatar_file_sm}" />
         </div>
       </div>
-      {/if}      
+      {/if}
       {/if}
       <div class="chat-bubble bg-tilbot-secondary-purple">
         ...
@@ -98,7 +98,7 @@
     <button class="btn btn-circle absolute bottom-4 right-4" on:click={mc_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-        </svg>          
+        </svg>
     </button>
   </div>
 
@@ -108,7 +108,7 @@
       <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text !== null && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit_button}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-          </svg>          
+          </svg>
       </button>
       <div id="menu" class="float-right z-10 {(input_text !== undefined && input_text !== null && input_text.value == '') ? '' : 'hidden'}">
         <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
@@ -116,7 +116,7 @@
               <a class="active:bg-tilbot-secondary-hardpink">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
-                </svg>              
+                </svg>
               </a>
               <ul class="bg-slate-100 shadow-md -top-full">
                   <div class="tooltip tooltip-left" data-tip="Scan barcode">
@@ -125,14 +125,14 @@
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
-                          </svg>                                                  
+                          </svg>
                         </a>
                     </li>
                   </div>
               </ul>
             </li>
           </ul>
-        </div>  
+        </div>
   </div>
   {/if}
 </div>
@@ -147,7 +147,7 @@
 
 <script lang="ts">
 import { onMount, tick } from "svelte";
-import { page } from '$app/stores'; 
+import { page } from '$app/stores';
 import { LocalProjectController} from "../client/controllers/localproject";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -178,7 +178,7 @@ let settings: any = {
                 'typing_charpsec': 40,
                 'show_avatar': 'yes',
                 'avatar_file': '',
-                'name': 'Tilbot'  
+                'name': 'Tilbot'
 };
 
 onMount(() => {
@@ -197,7 +197,7 @@ onMount(() => {
 
     if (document.referrer == '') {
         // @TODO load a temp local file here to display to users connecting
-    }    
+    }
 
     window.addEventListener('message', message_received, false);
 
@@ -212,7 +212,7 @@ onMount(() => {
       else {
         show_header = false;
       }
-    }    
+    }
 
     if (url.searchParams.get('pid') !== null && url.searchParams.get('pid') != '') {
       participant_id = url.searchParams.get('pid');
@@ -223,7 +223,7 @@ onMount(() => {
       path = '/proj_pub/' + url.searchParams.get('project') + '/';
 
       fetch(
-        location.protocol + '//' + window.location.hostname + '/api/get_socket?id=' 
+        '/api/get_socket?id='
         + url.searchParams.get('project')
       )
       .then(response => {
@@ -259,7 +259,7 @@ function socket_script_loaded(event: Event) {
   }
   import("../client/controllers/remoteproject").then(function(m: any) {
     controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings, set_typing_indicator);
-    
+
     if (participant_id !== '') {
       // Add a delay because the socket needs time to set up.
       setTimeout(function() {
@@ -267,7 +267,7 @@ function socket_script_loaded(event: Event) {
       }, 2500);
     }
   });
-  
+
 }
 
 async function message_received(event: MessageEvent) {
@@ -296,7 +296,7 @@ async function message_received(event: MessageEvent) {
       }
       finally {
         input_text.value = '';
-      }    
+      }
     }
   }
 }
@@ -319,7 +319,7 @@ function project_received(data: any) {
           msg: "reset_var_mem"
     }
 
-    window.parent.postMessage(windowmsg);      
+    window.parent.postMessage(windowmsg);
 }
 
 function set_typing_indicator() {
@@ -352,7 +352,7 @@ function chatbot_message(msg: any) {
       setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
 
       let timeout = 2000;
-     
+
       if (settings.typing_style !== undefined && settings.typing_style == 'variable') {
         timeout = msg.content.length / settings.typing_charpsec * 1000;
       }
@@ -366,13 +366,13 @@ function chatbot_message(msg: any) {
         if (msg.has_targets === undefined) {
           msg.has_targets = true;
         }
-        
+
         show_message(msg.type, msg.content, msg.params, msg.has_targets);
         controller.message_sent_event();
       }, timeout);
 }
 
-function input_key_down(event: KeyboardEvent) {  
+function input_key_down(event: KeyboardEvent) {
   if (event.key == "Enter" && !event.shiftKey) {
     try {
       text_submit();
@@ -407,7 +407,7 @@ function qrboxFunction(viewfinderWidth: number, viewfinderHeight: number) {
   return {
       width: qrboxSize,
       height: qrboxSize
-  };  
+  };
 }
 
 function start_barcode() {
@@ -499,7 +499,7 @@ function chatgpt_message(content: string) {
 
 function variation_request(content: string, prompt:string, memory:boolean) {
     show_typing_indicator = true;
-    
+
     let windowmsg = {
           msg: "variation",
           content: content,
@@ -507,7 +507,7 @@ function variation_request(content: string, prompt:string, memory:boolean) {
           memory: memory
     }
 
-    window.parent.postMessage(windowmsg);  
+    window.parent.postMessage(windowmsg);
 }
 
 function variation_message(content: string) {
@@ -515,7 +515,7 @@ function variation_message(content: string) {
     controller.receive_variation(content);
 }
 
-function show_message(type: string, content: string, params: any, has_targets: boolean) {   
+function show_message(type: string, content: string, params: any, has_targets: boolean) {
 
     if (isTilbotEditor) {
       let gpttype = type;
@@ -541,7 +541,7 @@ function show_message(type: string, content: string, params: any, has_targets: b
 
     messages.push({from: 'bot', content: content});
     messages = messages;
-    setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);    
+    setTimeout(function() { message_container.scrollTop = message_container.scrollHeight; }, 10);
 
     current_message_type = type;
     mc_options = [];
@@ -573,7 +573,7 @@ function show_message(type: string, content: string, params: any, has_targets: b
       }
       else {
         $('#input_field').show();
-      } */   
+      } */
 }
 
 

@@ -25,7 +25,7 @@ const app = express();
 
 // Set up server for HTTP/HTTPS
 let server = null;
-let port = 80;
+let port = parseInt(process.env.LISTEN_PORT ?? '0');
 
 if (fs.existsSync(__dirname + '/certs/privkey.pem') && fs.existsSync(__dirname + '/certs/pubkey.pem')) {
 
@@ -34,13 +34,14 @@ if (fs.existsSync(__dirname + '/certs/privkey.pem') && fs.existsSync(__dirname +
   var ssloptions = {
     key: key,
     cert: cert
-  };   
-  
+  };
+
+  port ||= 443;
   server = https.createServer(ssloptions, app);
-  port = 443;
 }
 
 else {
+  port ||= 80;
   server = http.createServer(app);
 }
 
@@ -59,7 +60,7 @@ app.use(cors({
 }));
 
 // Set up the MongoDB connection
-var dbPath = 'mongodb://127.0.0.1:27017/tilbot';
+var dbPath = process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot';
 
 console.log(dbPath);
 
@@ -160,7 +161,7 @@ mongo.then(() => {
   app.post('/api/change_pass', (req, res) => {
     UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass).then(function(success) {
       res.send(success);
-    });    
+    });
   });
 
   app.post('/api/create_user_account', (req, res) => {
@@ -170,7 +171,7 @@ mongo.then(() => {
           UserApiController.create_account(req.body.username, req.body.password, 1).then(function(success) {
             console.log(success);
             res.send(success);
-          });    
+          });
         }
 
         else {
@@ -180,7 +181,7 @@ mongo.then(() => {
       else {
         res.send('USER_NOT_FOUND');
       }
-    });  
+    });
   });
 
   app.post('/api/set_user_active', (req, res) => {
@@ -211,7 +212,7 @@ mongo.then(() => {
       else {
         res.send('USER_NOT_FOUND');
       }
-    });    
+    });
   });
 
   app.get('/api/get_dashboard', (req, res) => {
@@ -256,7 +257,7 @@ mongo.then(() => {
         }
       });
     }
-  });  
+  });
 
   app.post('/api/create_project', (req, res) => {
     ProjectApiController.create_project(req.session.username).then(function(response) {
@@ -284,7 +285,7 @@ mongo.then(() => {
                 // Make the project inactive
                 ProjectApiController.set_project_active(req.body.projectid, req.body.active).then(function(response) {
                   res.send('OK');
-                });                  
+                });
               }
               else {
                 // @TODO: maybe at some point also make it possible to set the project back to active.
@@ -304,13 +305,14 @@ mongo.then(() => {
         res.send('USER_NOT_FOUND');
       }
     });
-  }); 
+  });
 
   // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
   app.get('/api/get_socket', async (req, res) => {
     res.status(200);
 
     ProjectApiController.get_socket(req.query.id).then(function(response) {
+      console.log("Response:", res);
       res.send(response);
     });
   });
@@ -330,9 +332,9 @@ mongo.then(() => {
                   if (req.body.status == 1) {
                     start_bot(req.body.projectid);
                   }
-                  else {                      
+                  else {
                     stop_bot(req.body.projectid);
-                  }          
+                  }
                   res.send('OK');
                 }
               });
@@ -354,7 +356,7 @@ mongo.then(() => {
    * API call: Import a project
    */
   app.post('/api/import_project', upload.single('file'), async (req, res) => {
-    // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97 
+    // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
     UserApiController.get_user(req.session.username).then(function(user) {
       if (user !== null) {
           console.log('=== IMPORT PROJECT ===');
@@ -391,7 +393,7 @@ mongo.then(() => {
 
           let found_projectfile = false;
           let api_promise = null;
-    
+
           zipEntries.forEach(function (zipEntry) {
               if (zipEntry.entryName == "project.json") {
                   found_projectfile = true;
@@ -400,7 +402,7 @@ mongo.then(() => {
                   if (running_bots[req.body.project_id] !== undefined) {
                     stop_bot(req.body.project_id);
                   }
-            
+
                   api_promise = ProjectApiController.import_project(
                     zipEntry.getData().toString("utf8"),
                     req.body.project_id,
@@ -415,7 +417,7 @@ mongo.then(() => {
               else {
                 zip.extractEntryTo(zipEntry, pub_dir);
               }
-          });  
+          });
 
           if (found_projectfile) {
             api_promise.then(function(response) {
@@ -437,7 +439,7 @@ mongo.then(() => {
           }
 
       }
-    });    
+    });
   });
 
   /**
@@ -461,7 +463,7 @@ mongo.then(() => {
         res.send('USER_NOT_FOUND');
       }
     });
-  });   
+  });
 
   // API call: get a project's log files
   app.get('/api/get_logs', async (req, res) => {
@@ -496,7 +498,7 @@ mongo.then(() => {
       }
     });
 
-  });    
+  });
 
   // API call: delete a project's log files
   app.post('/api/delete_logs', async (req, res) => {
@@ -505,7 +507,7 @@ mongo.then(() => {
     UserApiController.get_user(req.session.username).then(function(user) {
       if (user !== null) {
         if (user.role == 1) {
-          ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {              
+          ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {
             if (response == null) {
               res.send('NOK')
             }
@@ -526,8 +528,8 @@ mongo.then(() => {
       }
     });
 
-  });    
-  
+  });
+
   const start_bot = function(projectid) {
     console.log('starting ' + projectid);
     // Check whether we are running in Docker or not
@@ -552,7 +554,7 @@ mongo.then(() => {
     }
   }
 
-  
+
   const stop_bot = function(projectid) {
     console.log('stopping ' + projectid);
     // Check whether we are running in Docker or not
@@ -582,12 +584,12 @@ mongo.then(() => {
   if (fs.existsSync('./build/handler.js')) {
     import('./build/handler.js').then((m) => {
       app.use('/proj_pub', express.static('./proj_pub'));
-      app.use(m.handler);  
+      app.use(m.handler);
     });
   }
-  
-  server.listen(port, () => {
+
+  server.listen(port, '0.0.0.0', () => {
     console.log('listening on port ' + port);
   });
-    
+
 });

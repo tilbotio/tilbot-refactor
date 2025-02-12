@@ -1,0 +1,66 @@
+version: "3.8"
+services:
+  npm-ci:
+    build: .
+    command: ["npm", "ci"]
+    volumes:
+      - .:/home/node
+
+  sveltekit:
+    build: .
+    depends_on:
+      npm-ci:
+        condition: service_completed_successfully
+    ports:
+      - 5173:5173
+    networks:
+      - app_network
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    volumes:
+      - .:/home/node
+    environment:
+      - VITE_API_URL=http://express:8000
+      - MONGO_DB=mongodb://mongo/tilbot
+    command: ["npm", "run", "dev-vite"]
+
+  express:
+    build: .
+    depends_on:
+      npm-ci:
+        condition: service_completed_successfully
+    ports:
+      - 8000:8000
+    networks:
+      - app_network
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    volumes:
+      - .:/home/node
+    environment:
+      LISTEN_PORT: 8000
+      MONGO_DB: mongodb://mongo/tilbot
+    command: ["npm", "run", "server"]
+
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    networks:
+    - app_network
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: tilbot
+    volumes:
+      - mongodb:/data/db
+
+volumes:
+  mongodb:
+
+networks:
+  app_network:
+    driver: bridge
