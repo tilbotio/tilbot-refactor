@@ -139,9 +139,9 @@
 
 {#if !isTilbotEditor}
   {#if socket_addr !== null && socket_addr != ''}
-  <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
+  <script src="{socket_addr + 'api/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
   {:else if socket_addr !== null && socket_addr == ''}
-  <script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
+  <script src="api/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
   {/if}
 {/if}
 
@@ -230,7 +230,7 @@ onMount(() => {
           response.text().then(socket_id => {
               if(socket_id !== '-1') {
                 socket_addr = url.protocol + '//' + url.hostname + ':' + socket_id;
-                console.log(socket_addr);
+                console.log('Socket address', socket_addr);
               }
           })
           .catch(err => {

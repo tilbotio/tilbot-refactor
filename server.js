@@ -312,7 +312,6 @@ mongo.then(() => {
     res.status(200);
 
     ProjectApiController.get_socket(req.query.id).then(function(response) {
-      console.log("Response:", res);
       res.send(response);
     });
   });
@@ -473,7 +472,6 @@ mongo.then(() => {
       if (user !== null) {
         if (user.role == 1) {
           ProjectApiController.get_project(req.query.projectid, req.session.username).then(function(response) {
-            console.log(response);
             if (response == null) {
               res.send('NOK')
             }
