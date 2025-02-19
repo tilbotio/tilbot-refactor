@@ -47,7 +47,7 @@ const io = new Server(server, {
 });
 
 // Set up the MongoDB connection
-var dbPath = 'mongodb://127.0.0.1:27017/tilbot';
+var dbPath = process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot';
 
 if (process.env.MONGO_USERNAME != undefined) {
   dbPath = 'mongodb://' + process.env.MONGO_USERNAME + ':' + process.env.MONGO_PASSWORD + '@mongo:' + process.env.MONGO_PORT + '/' + process.env.MONGO_DB;
@@ -68,7 +68,11 @@ mongo.then(() => {
         process.exit();
     }
     else {
-        let port = 0;
+        // This is just the starting point (non-inclusive) of the port range
+        // we'll try to listen on. We'll try to bind higher and higher ports
+        // (consecutively) until we find one that's available. This makes
+        // the port range a bit more predictable.
+        const startPort = parseInt(process.env.LISTEN_PORT ?? (is_https ? '443' : '80')) + 1;
 
         let llm_setting = 'chatgpt';
 
@@ -92,10 +96,28 @@ mongo.then(() => {
 
         let clients = {};
 
-        server.listen(port, () => {
-            console.log('listening on port ' + server.address().port + (is_https?' (https)':' (http)'));
-            project.socket = server.address().port;
-            project.save();
+        function tryNextPort(port, ...listenArgs) {
+          server.listen(port, ...listenArgs).on('error', err => {
+            if (err.code === 'EADDRINUSE') {
+              if (port < 65535) {
+                tryNextPort(port + 1);
+              } else {
+                // Don't try to pass the callback parameter again, apparently
+                // the server stores it each time you call .listen() and you would
+                // end up with a thundering herd of callback invocations (one for
+                // each attempt) when it finally finds a free port.
+                throw new Error("Unable to bind any port");
+              }
+            } else {
+              throw new Error(`Error while binding to port ${port}: ${err.message}`);
+            }
+          });
+        }
+
+        tryNextPort(startPort, () => {
+          console.log(`listening on port ${server.address().port} (${is_https ? 'https' : 'http'})`);
+          project.socket = server.address().port;
+          project.save();
         });
 
         io.on('connection', (socket) => {

@@ -32,7 +32,7 @@ services:
       npm-ci:
         condition: service_completed_successfully
     ports:
-      - 8000:8000
+      - 8000-8010:8000-8010
     networks:
       - app_network
     read_only: true
