@@ -541,14 +541,7 @@ mongo.then(() => {
         stop_bot(projectid);
       }
 
-      running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid], {
-        silent: true,
-        stdio: 'pipe'
-      });
-
-      running_bots[projectid].stdout.on('data', (data) => {
-        console.log(data.toString());
-      });
+      running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid]);
     }
   }
 
