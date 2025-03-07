@@ -139,9 +139,9 @@
 
 {#if !isTilbotEditor}
   {#if socket_addr !== null && socket_addr != ''}
-  <script src="{socket_addr + 'api/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
+  <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
   {:else if socket_addr !== null && socket_addr == ''}
-  <script src="api/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
+  <script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
   {/if}
 {/if}
 
