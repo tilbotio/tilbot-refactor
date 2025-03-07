@@ -138,6 +138,7 @@
 </div>
 
 {#if !isTilbotEditor}
+  <!-- https://stackoverflow.com/questions/54676405/where-is-socket-io-socket-io-js-location -->
   {#if socket_addr !== null && socket_addr != ''}
   <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
   {:else if socket_addr !== null && socket_addr == ''}
