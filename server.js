@@ -165,6 +165,7 @@ await connectToMongoDB();
       }
     } catch (error) {
       console.error(`Error launching running bots: ${error.message}`);
+      // PvG: Might be unnecessary to exit here, reconsider later
       process.exit(1);
     }
   }
@@ -189,6 +190,7 @@ await connectToMongoDB();
       }
     } catch (error) {
       console.error(`Error in login: ${error.message}`);
+      // PvG: Might be unnecessary to exit here, reconsider later
       process.exit(1);
     }
   });
@@ -209,6 +211,7 @@ await connectToMongoDB();
 
     } catch (error) {
       console.error(`Error in admin_account_exists: ${error.message}`);
+      // PvG: Might be unnecessary to exit here, reconsider later
       process.exit(1);
     }
   });
@@ -226,6 +229,7 @@ await connectToMongoDB();
       res.send(success);
     } catch (error) {
       console.error(`Error updating password: ${error.message}`);
+      // PvG: Might be unnecessary to exit here, reconsider later
       process.exit(1);
     }
   });
@@ -250,6 +254,7 @@ await connectToMongoDB();
       }
     } catch (error) {
       console.error(`Error creating user account: ${error.message}`);
+      // PvG: Might be unnecessary to exit here, reconsider later
       process.exit(1);
     }
   });
