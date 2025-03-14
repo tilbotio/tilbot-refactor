@@ -156,11 +156,11 @@ await connectToMongoDB();
     }
   });
 
-  app.get('/api/admin_account_exists', (req, res) => {
-    res.status(200);
+  app.get('/api/admin_account_exists', async (req, res) => {
+    try {
+      res.status(200);
 
-    UserApiController.get_admin_user().then(function(admin) {
-      console.log(admin);
+      const admin = await UserApiController.get_admin_user();
 
       if (admin === null) {
         UserApiController.create_account('admin', 'admin', 99);
@@ -169,8 +169,11 @@ await connectToMongoDB();
       else {
         res.send('EXISTS');
       }
-    });
 
+    } catch (error) {
+      console.error(`Error in admin_account_exists: ${error.message}`);
+      process.exit(1);
+    }
   });
 
   app.post('/api/logout', (req, res) => {
