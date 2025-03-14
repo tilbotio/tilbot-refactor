@@ -87,7 +87,7 @@ async function connectToMongoDB() {
 }
 
 // Call MongoDB connection function.
-connectToMongoDB();
+await connectToMongoDB();
 
   // Sessions
   const store = new MongoDBStore({
