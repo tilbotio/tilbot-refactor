@@ -135,22 +135,25 @@ await connectToMongoDB();
   // Launch all running bots
   await launchRunningBots();
 
-
   // add a route that lives separately from the SvelteKit app
-  app.post('/api/login', (req, res) => {
-    res.status(200);
+  app.post('/api/login', async (req, res) => {
+    try {
+      res.status(200);
 
-    UserApiController.login(req.body.username, req.body.password).then(function(success) {
+      const success = await UserApiController.login(req.body.username, req.body.password);
+
       if(success) {
         req.session.username = req.body.username;
         req.session.save();
         res.send('OK');
       }
-
       else {
         res.send('NOK');
       }
-    });
+    } catch (error) {
+      console.error(`Error in login: ${error.message}`);
+      process.exit(1);
+    }
   });
 
   app.get('/api/admin_account_exists', (req, res) => {
