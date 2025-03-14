@@ -75,9 +75,19 @@ const mongo = mongoose.connect(dbPath, options);
 console.log(mongodbsession);
 const MongoDBStore = mongodbsession(session);
 
-// Main MongoDB connection
-mongo.then(() => {
-  console.log('MongoDB connected');
+// Main MongoDB connection function
+async function connectToMongoDB() {
+  try {
+    await mongoose.connect(dbPath, options);
+    console.log('MongoDB connected');
+  } catch (error) {
+    console.log(`MongoDB connection error: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+// Call MongoDB connection function.
+connectToMongoDB();
 
   // Sessions
   const store = new MongoDBStore({
@@ -582,5 +592,3 @@ mongo.then(() => {
   server.listen(port, '0.0.0.0', () => {
     console.log('listening on port ' + port);
   });
-
-});
