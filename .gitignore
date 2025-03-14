@@ -29,3 +29,6 @@ static/images/
 static/shrimp/
 src/routes/shrimp/
 src/routes/wecare/
+/.gitconfig
+/.ssh/
+/.vscode-server/
