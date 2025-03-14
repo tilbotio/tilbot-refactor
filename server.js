@@ -119,12 +119,21 @@ await connectToMongoDB();
     sameSite: 'none'
   }));
 
-  // Launch all running bots
-  ProjectApiController.get_running_projects().then(function(projects) {
-    for (var p in projects) {
-      start_bot(projects[p].id);
+  // Function to launch all running bots
+  async function launchRunningBots() {
+    try {
+      const projects = await ProjectApiController.get_running_projects();
+      for (const project of projects) {
+        start_bot(project.id);
+      }
+    } catch (error) {
+      console.error(`Error launching running bots: ${error.message}`);
+      process.exit(1);
     }
-  });
+  }
+
+  // Launch all running bots
+  await launchRunningBots();
 
 
   // add a route that lives separately from the SvelteKit app
