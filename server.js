@@ -183,10 +183,14 @@ await connectToMongoDB();
     res.send('OK');
   });
 
-  app.post('/api/change_pass', (req, res) => {
-    UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass).then(function(success) {
+  app.post('/api/change_pass', async (req, res) => {
+    try {
+      const success = await UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass);
       res.send(success);
-    });
+    } catch (error) {
+      console.error(`Error updating password: ${error.message}`);
+      process.exit(1);
+    }
   });
 
   app.post('/api/create_user_account', (req, res) => {
