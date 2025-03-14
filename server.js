@@ -18,6 +18,43 @@ import { SettingsApiController } from './api/settings.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const start_bot = function(projectid) {
+  console.log('starting ' + projectid);
+  // Check whether we are running in Docker or not
+  if (process.env.TILBOT_PORT != undefined) {
+    // @TODO: Docker not implemented yet.
+    //this.botlauncher.write('start ' + projectid);
+  }
+  else {
+    // Stop the bot if it is currently already running (Docker does this too further down the line)
+    if (running_bots[projectid] !== undefined) {
+      stop_bot(projectid);
+    }
+
+    running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid]);
+  }
+}
+
+
+const stop_bot = function(projectid) {
+  console.log('stopping ' + projectid);
+  // Check whether we are running in Docker or not
+  if (process.env.TILBOT_PORT != undefined) {
+    // @TODO: Docker not implemented yet
+    //this.botlauncher.write('stop ' + projectid);
+  }
+  else {
+    if (running_bots[projectid] !== undefined) {
+      running_bots[projectid].send('exit', undefined, undefined, (e) => {
+
+      });
+    }
+  }
+
+  ProjectApiController.set_project_status(projectid, 0).then(function(response) {
+  });
+}
+
 // Keep track of running external processes for bots.
 let running_bots = {};
 
@@ -556,43 +593,6 @@ await connectToMongoDB();
     });
 
   });
-
-  const start_bot = function(projectid) {
-    console.log('starting ' + projectid);
-    // Check whether we are running in Docker or not
-    if (process.env.TILBOT_PORT != undefined) {
-      // @TODO: Docker not implemented yet.
-      //this.botlauncher.write('start ' + projectid);
-    }
-    else {
-      // Stop the bot if it is currently already running (Docker does this too further down the line)
-      if (running_bots[projectid] !== undefined) {
-        stop_bot(projectid);
-      }
-
-      running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid]);
-    }
-  }
-
-
-  const stop_bot = function(projectid) {
-    console.log('stopping ' + projectid);
-    // Check whether we are running in Docker or not
-    if (process.env.TILBOT_PORT != undefined) {
-      // @TODO: Docker not implemented yet
-      //this.botlauncher.write('stop ' + projectid);
-    }
-    else {
-      if (running_bots[projectid] !== undefined) {
-        running_bots[projectid].send('exit', undefined, undefined, (e) => {
-
-        });
-      }
-    }
-
-    ProjectApiController.set_project_status(projectid, 0).then(function(response) {
-    });
-  }
 
   app.get('/api/sesh', (req, res) => {
     res.status(200);
