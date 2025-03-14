@@ -230,16 +230,17 @@ await connectToMongoDB();
     }
   });
 
-  app.post('/api/create_user_account', (req, res) => {
-    UserApiController.get_user(req.session.username).then(function(user) {
-      if (user !== null) {
-        if (user.role == 99) { // admin
-          UserApiController.create_account(req.body.username, req.body.password, 1).then(function(success) {
-            console.log(success);
-            res.send(success);
-          });
-        }
+  app.post('/api/create_user_account', async (req, res) => {
+    try {
+      const user = await UserApiController.get_user(req.session.username);
 
+      if (user !== null) {
+        // Check if user is admin
+        if (user.role == 99) {
+          const success = await UserApiController.create_account(req.body.username, req.body.password, 1);
+          console.log(success);
+          res.send(success);
+        }
         else {
           res.send('USER_NOT_ADMIN');
         }
@@ -247,7 +248,10 @@ await connectToMongoDB();
       else {
         res.send('USER_NOT_FOUND');
       }
-    });
+    } catch (error) {
+      console.error(`Error creating user account: ${error.message}`);
+      process.exit(1);
+    }
   });
 
   app.post('/api/set_user_active', (req, res) => {
