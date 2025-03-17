@@ -263,35 +263,38 @@ await connectToMongoDB();
     }
   });
 
-  app.post('/api/set_user_active', (req, res) => {
+  app.post('/api/set_user_active', async (req, res) => {
     res.status(200);
 
-    UserApiController.get_user(req.session.username).then(function(user) {
-      if (user !== null) {
-        if (user.role == 99) { // admin
-          UserApiController.set_user_active(req.body.username, req.body.active).then(async function(response) {
-            // If a user was set to inactive, stop all of their running projects.
-            if (req.body.active == 'false') {
-              var projects = await ProjectApiController.get_running_projects_user(req.body.username);
+    try{
+      const user = await UserApiController.get_user(req.session.username);
 
-              for (var p in projects) {
-                ProjectApiController.set_project_status(projects[p].id, 0).then(function(response) {
-                  this.stop_bot(projects[p].id);
-                });
+      if (user !== null){
+        if(user.role == 99) { //admin
+          await UserApiController.set_user_active(req.body.username, req.body.active);
+           // If a user was set to inactive, stop all of their running projects.
+          if (req.body.active == 'false'){
+            try {
+              const projects = await ProjectApiController.get_running_projects_user(req.body.username);
+              for (const p of projects){
+                await ProjectApiController.set_project_status(p.id, 0);
+                stop_bot(p.id);
               }
+            } catch (error) {
+              console.error(`Error stopping projects for user ${req.body.username}: ${error.message}`);
             }
 
-            res.send('OK');
-          });
-        }
-        else {
+          }
+          res.send('OK');
+        } else {
           res.send('USER_NOT_ADMIN');
         }
-      }
-      else {
+      } else {
         res.send('USER_NOT_FOUND');
       }
-    });
+    } catch (error) {
+      console.error(`Error when setting user active: ${error.message}`);
+    }
   });
 
   app.get('/api/get_dashboard', (req, res) => {
