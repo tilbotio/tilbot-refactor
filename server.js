@@ -15,6 +15,7 @@ import child_process from 'child_process';
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
+import { createNoSubstitutionTemplateLiteral } from 'typescript';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -36,7 +37,7 @@ const start_bot = function(projectid) {
 }
 
 
-const stop_bot = function(projectid) {
+const stop_bot = async function(projectid) {
   console.log('stopping ' + projectid);
   // Check whether we are running in Docker or not
   if (process.env.TILBOT_PORT != undefined) {
@@ -51,9 +52,12 @@ const stop_bot = function(projectid) {
     }
   }
 
-  ProjectApiController.set_project_status(projectid, 0).then(function(response) {
-  });
-}
+  try {
+    await ProjectApiController.set_project_status(projectid, 0);
+  } catch (error) {
+    console.error(`Error stopping bot: ${error}`);
+  }
+};
 
 // Keep track of running external processes for bots.
 let running_bots = {};
