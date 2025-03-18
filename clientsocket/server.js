@@ -100,12 +100,12 @@ mongo.then(() => {
           server.listen(port, ...listenArgs).on('error', err => {
             if (err.code === 'EADDRINUSE') {
               if (port < 65535) {
-                tryNextPort(port + 1);
-              } else {
                 // Don't try to pass the callback parameter again, apparently
                 // the server stores it each time you call .listen() and you would
                 // end up with a thundering herd of callback invocations (one for
                 // each attempt) when it finally finds a free port.
+                tryNextPort(port + 1);
+              } else {
                 throw new Error("Unable to bind any port");
               }
             } else {
