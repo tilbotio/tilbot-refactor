@@ -40,7 +40,7 @@
     let toggle: HTMLElement;
     let error: string = '';
 
-    let user = {};
+    let user: any = {};
 
     export const newuserwindow = {
         show() {
@@ -53,39 +53,33 @@
         toggle.click();
     }
 
-    function save() {
-        fetch("/api/create_user_account", {
-            method: 'post',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(user)
-        })
-        .then(response => {
-            response.text().then(txt => {
-                if (txt == 'OK') {
-                    dispatch('message', {
-                        event: 'load_data'
-                    });
-                    toggle.click();
-                }
-                else if (txt == 'NOT_LOGGED_IN') {
-                    location.replace('/login');
-                }
-                else if (txt == 'USER_EXISTS') {
-                    error = 'A user with that username already exists.';
-                }
-                else {
-                    error = txt;
-                }
-
+    async function save() {
+        try {
+            const response = await fetch("/api/create_user_account", {
+                method: 'post',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(user),
             });
-        })
-        .catch(err => {
+            const txt = await response.text();
+            if (txt == 'OK') {
+                dispatch('message', {
+                    event: 'load_data',
+                });
+                toggle.click();
+            } else if (txt == 'NOT_LOGGED_IN') {
+                location.replace('/login');
+            } else if (txt == 'USER_EXISTS') {
+                error = 'A user with that username already exists.';
+            } else {
+                error = txt;
+            }
+        } catch(err) {
             error = 'An unknown error occurred. Please contact your administrator.'
             console.log(err);
-        });
+        }
     }
 
 </script>
