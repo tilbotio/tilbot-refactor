@@ -54,102 +54,90 @@ if (process.env.MONGO_USERNAME != undefined) {
 }
 
 const options = {useNewUrlParser: true, useUnifiedTopology: true};
-const mongo = mongoose.connect(dbPath, options);
+await mongoose.connect(dbPath, options);
 
 // Main MongoDB connection
-mongo.then(() => {
-  console.log('MongoDB connected');
+console.log('MongoDB connected');
 
-  const ProjectDetails = mongoose.model('projectschemas', ProjectSchema);
+const ProjectDetails = mongoose.model('projectschemas', ProjectSchema);
 
-  ProjectDetails.findOne({'id': project_id}).then(function(project) {
-    if (project === null) {
-        console.log('Project not found -- exiting');
-        process.exit();
+const project = await ProjectDetails.findOne({'id': project_id});
+if (project === null) {
+    console.log('Project not found -- exiting');
+    process.exit();
+} else {
+    // This is just the starting point (non-inclusive) of the port range
+    // we'll try to listen on. We'll try to bind higher and higher ports
+    // (consecutively) until we find one that's available. This makes
+    // the port range a bit more predictable.
+    const startPort = parseInt(process.env.LISTEN_PORT ?? (is_https ? '443' : '80')) + 1;
+
+    // Retrieve general user settings for ChatGPT API key and local LLM settings
+    // @TODO: also retrieve ChatGPT version setting -- now forced to 4.0
+    // NOTE: ChatGPT currently is set up to be a static class, so it takes the last API that it was initiated with, not one API per user/project!
+    const SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
+
+    const settings = await SettingsDetails.findOne({'user_id': project.user_id});
+    if (settings != null) {
+      const llm_setting = settings.llm_setting ?? 'chatgpt';
+      if (llm_setting === 'chatgpt') {
+        ChatGPT.init(settings.chatgpt_api_key);
+      } else {
+        LocalLLM.init(settings.llm_api_address);
+      }
     }
-    else {
-        // This is just the starting point (non-inclusive) of the port range
-        // we'll try to listen on. We'll try to bind higher and higher ports
-        // (consecutively) until we find one that's available. This makes
-        // the port range a bit more predictable.
-        const startPort = parseInt(process.env.LISTEN_PORT ?? (is_https ? '443' : '80')) + 1;
 
-        let llm_setting = 'chatgpt';
+    let clients = {};
 
-        // Retrieve general user settings for ChatGPT API key and local LLM settings
-        // @TODO: also retrieve ChatGPT version setting -- now forced to 4.0
-        // NOTE: ChatGPT currently is set up to be a static class, so it takes the last API that it was initiated with, not one API per user/project!
-        const SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
-
-        SettingsDetails.findOne({'user_id': project.user_id}).then(function(settings) {
-
-          llm_setting = settings.llm_setting;
-
-          if (settings !== null && settings.llm_setting == 'chatgpt') {
-            ChatGPT.init(settings.chatgpt_api_key);
+    function tryNextPort(port, ...listenArgs) {
+      server.listen(port, ...listenArgs).on('error', err => {
+        if (err.code === 'EADDRINUSE') {
+          if (port < 65535) {
+            // Don't try to pass the callback parameter again, apparently
+            // the server stores it each time you call .listen() and you would
+            // end up with a thundering herd of callback invocations (one for
+            // each attempt) when it finally finds a free port.
+            tryNextPort(port + 1);
+          } else {
+            throw new Error("Unable to bind any port");
           }
-
-          if (settings !== null && settings.llm_setting !== 'chatgpt') {
-            LocalLLM.init(settings.llm_api_address);
-          }
-        });
-
-        let clients = {};
-
-        function tryNextPort(port, ...listenArgs) {
-          server.listen(port, ...listenArgs).on('error', err => {
-            if (err.code === 'EADDRINUSE') {
-              if (port < 65535) {
-                // Don't try to pass the callback parameter again, apparently
-                // the server stores it each time you call .listen() and you would
-                // end up with a thundering herd of callback invocations (one for
-                // each attempt) when it finally finds a free port.
-                tryNextPort(port + 1);
-              } else {
-                throw new Error("Unable to bind any port");
-              }
-            } else {
-              throw new Error(`Error while binding to port ${port}: ${err.message}`);
-            }
-          });
+        } else {
+          throw new Error(`Error while binding to port ${port}: ${err.message}`);
         }
-
-        tryNextPort(startPort, () => {
-          console.log(`listening on port ${server.address().port} (${is_https ? 'https' : 'http'})`);
-          project.socket = server.address().port;
-          project.save();
-        });
-
-        io.on('connection', (socket) => {
-            console.log('a user connected');
-
-            clients[socket.id] = new ProjectController(io, project, socket.id, __dirname + '/../projects/' + project.id, llm_setting);
-
-            socket.on('message sent', () => {
-                clients[socket.id].message_sent_event();
-            });
-
-            socket.on('user_message', (str) => {
-                clients[socket.id].receive_message(str);
-            });
-
-            socket.on('disconnect', () => {
-                clients[socket.id].disconnected();
-                delete clients[socket.id];
-                console.log('disconnected');
-            });
-
-            socket.on('log', (str) => {
-                clients[socket.id].log(str);
-            });
-
-            socket.on('pid', (pid) => {
-              clients[socket.id].set_participant_id(pid);
-            });
-
-        });
+      });
     }
 
-  });
+    tryNextPort(startPort, () => {
+      console.log(`listening on port ${server.address().port} (${is_https ? 'https' : 'http'})`);
+      project.socket = server.address().port;
+      project.save();
+    });
 
-});
+    io.on('connection', (socket) => {
+        console.log('a user connected');
+
+        clients[socket.id] = new ProjectController(io, project, socket.id, __dirname + '/../projects/' + project.id, llm_setting);
+
+        socket.on('message sent', () => {
+            clients[socket.id].message_sent_event();
+        });
+
+        socket.on('user_message', (str) => {
+            clients[socket.id].receive_message(str);
+        });
+
+        socket.on('disconnect', () => {
+            clients[socket.id].disconnected();
+            delete clients[socket.id];
+            console.log('disconnected');
+        });
+
+        socket.on('log', (str) => {
+            clients[socket.id].log(str);
+        });
+
+        socket.on('pid', (pid) => {
+          clients[socket.id].set_participant_id(pid);
+        });
+    });
+}
