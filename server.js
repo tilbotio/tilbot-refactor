@@ -27,8 +27,7 @@ const start_bot = function(projectid) {
   if (process.env.TILBOT_PORT != undefined) {
     // @TODO: Docker not implemented yet.
     //this.botlauncher.write('start ' + projectid);
-  }
-  else {
+  } else {
     // Stop the bot if it is currently already running (Docker does this too further down the line)
     if (running_bots[projectid] !== undefined) {
       stop_bot(projectid);
@@ -44,8 +43,7 @@ const stop_bot = async function(projectid) {
   if (process.env.TILBOT_PORT != undefined) {
     // @TODO: Docker not implemented yet
     //this.botlauncher.write('stop ' + projectid);
-  }
-  else {
+  } else {
     if (running_bots[projectid] !== undefined) {
       running_bots[projectid].send('exit', undefined, undefined, (e) => {
 
@@ -80,9 +78,7 @@ if (fs.existsSync(__dirname + '/certs/privkey.pem') && fs.existsSync(__dirname +
 
   port ||= 443;
   server = https.createServer(ssloptions, app);
-}
-
-else {
+} else {
   port ||= 80;
   server = http.createServer(app);
 }
@@ -167,8 +163,7 @@ app.post('/api/login', async (req, res) => {
       req.session.username = req.body.username;
       req.session.save();
       res.send('OK');
-    }
-    else {
+    } else {
       res.send('NOK');
     }
   } catch (error) {
@@ -185,8 +180,7 @@ app.get('/api/admin_account_exists', async (req, res) => {
     if (admin === null) {
       UserApiController.create_account('admin', 'admin', 99);
       res.send('CREATED');
-    }
-    else {
+    } else {
       res.send('EXISTS');
     }
 
@@ -221,12 +215,10 @@ app.post('/api/create_user_account', async (req, res) => {
         const success = await UserApiController.create_account(req.body.username, req.body.password, 1);
         console.log(success);
         res.send(success);
-      }
-      else {
+      } else {
         res.send('USER_NOT_ADMIN');
       }
-    }
-    else {
+    } else {
       res.send('USER_NOT_FOUND');
     }
   } catch (error) {
@@ -430,7 +422,7 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
       fs.mkdirSync(pub_dir);
 
       const zip = new AdmZip(req.file.path);
-      var zipEntries = zip.getEntries(); // an array of ZipEntry records
+      const zipEntries = zip.getEntries(); // an array of ZipEntry records
 
       console.log(zipEntries);
 
@@ -566,13 +558,13 @@ app.get('/api/sesh', (req, res) => {
   console.log(req.session);
 });
 
-
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
 if (fs.existsSync('./build/handler.js')) {
-  import('./build/handler.js').then((m) => {
+  (async () => {
+    const m = await import('./build/handler.js');
     app.use('/proj_pub', express.static('./proj_pub'));
     app.use(m.handler);
-  });
+  })();
 }
 
 server.listen(port, '0.0.0.0', () => {
