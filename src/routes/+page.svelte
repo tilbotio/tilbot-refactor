@@ -182,7 +182,7 @@ let settings: any = {
                 'name': 'Tilbot'
 };
 
-onMount(() => {
+onMount(async () => {
     // Check if we're in the editor
     try {
       if (window.parent.isTilbotEditor === undefined) {
@@ -223,24 +223,20 @@ onMount(() => {
 
       path = '/proj_pub/' + url.searchParams.get('project') + '/';
 
-      fetch(
-        '/api/get_socket?id='
-        + url.searchParams.get('project')
-      )
-      .then(response => {
-          response.text().then(socket_id => {
-              if(socket_id !== '-1') {
-                socket_addr = url.protocol + '//' + url.hostname + ':' + socket_id;
-                console.log('Socket address', socket_addr);
-              }
-          })
-          .catch(err => {
-              console.log(err);
-          });
-      });
-
-    }
-    else {
+      try {
+        const response = await fetch(
+          '/api/get_socket?id='
+          + url.searchParams.get('project')
+        );
+        const socket_id = await response.text();
+        if(socket_id !== '-1') {
+          socket_addr = `${url.protocol}//${url.hostname}:${socket_id}`;
+          console.log('Socket address', socket_addr);
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    } else {
       socket_addr = '';
     }
 });
@@ -390,13 +386,10 @@ function input_key_up(event: KeyboardEvent) {
   input_text.value = input_text.value;
 }
 
-function close_scan_overlay() {
+async function close_scan_overlay() {
   try {
-    html5Qrcode.stop().then((ignore) => {
-    }).catch((err) => {
-    });
-  }
-  finally {
+    await html5Qrcode.stop();
+  } finally {
     scan_overlay.classList.add('hidden');
   }
 }
@@ -428,19 +421,19 @@ function start_barcode() {
   //html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 }
 
-function onScanSuccess(decodedText: string, decodedResult: any) {
+async function onScanSuccess(decodedText: string, decodedResult: any) {
   input_text.value = 'barcode:' + decodedText;
   try {
     text_submit();
   }
   finally {
     input_text.value = '';
-    html5Qrcode.stop().then((ignore) => {
-    }).catch((err) => {
-    }).finally(() => {
+    try {
+      await html5Qrcode.stop();
+    } finally {
       message_container.dispatchEvent(new Event('mousedown'));
       scan_overlay.classList.add('hidden');
-    });
+    }
   }
 }
 
