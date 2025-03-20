@@ -481,7 +481,6 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
   }
 });
 
-
 /**
  * API call: save a user's settings
  */
@@ -507,66 +506,59 @@ app.post('/api/save_settings', async (req, res) => {
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
-  res.status(200);
+  try {
+    res.status(200);
 
-  UserApiController.get_user(req.session.username).then(function(user) {
+    const user = await UserApiController.get_user(req.session.username);
     if (user !== null) {
       if (user.role == 1) {
-        ProjectApiController.get_project(req.query.projectid, req.session.username).then(function(response) {
+        const project = await ProjectApiController.get_project(req.query.projectid, req.session.username);
+        if (project == null) {
+          res.send('NOK')
+        } else {
+          const response = ProjectApiController.get_logs(req.query.projectid);
           if (response == null) {
-            res.send('NOK')
+            res.send('NOK');
+          } else {
+            res.send(response);
           }
-          else {
-            ProjectApiController.get_logs(req.query.projectid).then(function(response) {
-              if (response == null) {
-                res.send('NOK');
-              }
-              else {
-                res.send(response);
-              }
-            })
-          }
-        });
-      }
-      else {
+        }
+      } else {
         res.send('NOK');
       }
-    }
-    else {
+    } else {
       res.send('NOK');
     }
-  });
-
+  } catch (error) {
+    console.error(`Error getting logfiles: ${error}`);
+  }
 });
 
 // API call: delete a project's log files
 app.post('/api/delete_logs', async (req, res) => {
-  res.status(200);
+  try {
+    res.status(200);
 
-  UserApiController.get_user(req.session.username).then(function(user) {
+    const user = await UserApiController.get_user(req.session.username);
     if (user !== null) {
       if (user.role == 1) {
-        ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {
-          if (response == null) {
-            res.send('NOK')
-          }
-          else {
-            ProjectApiController.delete_logs(req.body.projectid).then(function(response) {
-              console.log('deleted logs: ' + response);
-                res.send(response);
-            })
-          }
-        });
-      }
-      else {
+        const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+        if (project == null) {
+          res.send('NOK')
+        } else {
+          const response = await ProjectApiController.delete_logs(req.body.projectid);
+          console.log(`Deleted logs: ${response}`);
+          res.send(response);
+        }
+      } else {
         res.send('NOK');
       }
-    }
-    else {
+    } else {
       res.send('NOK');
     }
-  });
-
+  } catch (error) {
+    console.error(`Error deleting project logs: ${error}`);
+  }
 });
 
 app.get('/api/sesh', (req, res) => {
