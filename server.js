@@ -385,7 +385,7 @@ app.post('/api/set_project_status', async (req, res) => {
           res.send('NOK');
         }
       } else {
-        res.send('OK');
+        res.send('NOK');
       }
     }
   } catch (error) {
@@ -397,91 +397,90 @@ app.post('/api/set_project_status', async (req, res) => {
  * API call: Import a project
  */
 app.post('/api/import_project', upload.single('file'), async (req, res) => {
-  // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
-  UserApiController.get_user(req.session.username).then(function(user) {
+  try {
+    // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
+    const user = UserApiController.get_user(req.session.username);
+
     if (user !== null) {
-        console.log('=== IMPORT PROJECT ===');
-        console.log(req.body);
+      console.log('=== IMPORT PROJECT ===');
+      console.log(req.body);
 
-        // Check if the private project file directory exists
-        if (!fs.existsSync('projects')) {
-          fs.mkdirSync('projects');
+      // Check if the private project file directory exists
+      if (!fs.existsSync('projects')) {
+        fs.mkdirSync('projects');
+      }
+
+      // Check if the public project file directory exists
+      if (!fs.existsSync('proj_pub')) {
+        fs.mkdirSync('proj_pub');
+      }
+
+      // Remove the old project files
+      let priv_dir = 'projects/' + req.body.project_id;
+      let pub_dir = 'proj_pub/' + req.body.project_id;
+
+      if (fs.existsSync(priv_dir)) {
+        fs.rmSync(priv_dir, { recursive: true });
+      }
+      fs.mkdirSync(priv_dir);
+
+      if (fs.existsSync(pub_dir)) {
+        fs.rmSync(pub_dir, { recursive: true });
+      }
+      fs.mkdirSync(pub_dir);
+
+      const zip = new AdmZip(req.file.path);
+      var zipEntries = zip.getEntries(); // an array of ZipEntry records
+
+      console.log(zipEntries);
+
+      let found_projectfile = false;
+      let api_promise = null;
+
+      zipEntries.forEach(function (zipEntry) {
+          if (zipEntry.entryName == "project.json") {
+              found_projectfile = true;
+              console.log('project file found');
+
+              if (running_bots[req.body.project_id] !== undefined) {
+                stop_bot(req.body.project_id);
+              }
+
+              api_promise = ProjectApiController.import_project(
+                zipEntry.getData().toString("utf8"),
+                req.body.project_id,
+                req.session.username
+              );
+              // @TODO: import project file into database
+              //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
+          } else if (zipEntry.entryName.startsWith('var/')) {
+            zip.extractEntryTo(zipEntry, priv_dir)
+          } else {
+            zip.extractEntryTo(zipEntry, pub_dir);
+          }
+      });
+
+      if (found_projectfile) {
+        const response= await api_promise();
+        // Remove the temporary file
+        fs.rmSync(req.file.path);
+
+        if (response) {
+          res.send('OK');
         }
-
-        // Check if the public project file directory exists
-        if (!fs.existsSync('proj_pub')) {
-          fs.mkdirSync('proj_pub');
-        }
-
-        // Remove the old project files
-        let priv_dir = 'projects/' + req.body.project_id;
-        let pub_dir = 'proj_pub/' + req.body.project_id;
-
-        if (fs.existsSync(priv_dir)) {
-          fs.rmSync(priv_dir, { recursive: true });
-        }
-        fs.mkdirSync(priv_dir);
-
-        if (fs.existsSync(pub_dir)) {
-          fs.rmSync(pub_dir, { recursive: true });
-        }
-        fs.mkdirSync(pub_dir);
-
-        const zip = new AdmZip(req.file.path);
-        var zipEntries = zip.getEntries(); // an array of ZipEntry records
-
-        console.log(zipEntries);
-
-        let found_projectfile = false;
-        let api_promise = null;
-
-        zipEntries.forEach(function (zipEntry) {
-            if (zipEntry.entryName == "project.json") {
-                found_projectfile = true;
-                console.log('project file found');
-
-                if (running_bots[req.body.project_id] !== undefined) {
-                  stop_bot(req.body.project_id);
-                }
-
-                api_promise = ProjectApiController.import_project(
-                  zipEntry.getData().toString("utf8"),
-                  req.body.project_id,
-                  req.session.username
-                );
-                // @TODO: import project file into database
-                //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
-            }
-            else if (zipEntry.entryName.startsWith('var/')) {
-              zip.extractEntryTo(zipEntry, priv_dir)
-            }
-            else {
-              zip.extractEntryTo(zipEntry, pub_dir);
-            }
-        });
-
-        if (found_projectfile) {
-          api_promise.then(function(response) {
-            // Remove the temporary file
-            fs.rmSync(req.file.path);
-
-            if (response) {
-              res.send('OK');
-            }
-            else {
-              res.send('NOK');
-            }
-          });
-        }
-
         else {
-          fs.rmSync(req.file.path);
-          res.send('NO_PROJECT_FILE');
+          res.send('NOK');
         }
-
+      } else {
+        fs.rmSync(req.file.path);
+        res.send('NO_PROJECT_FILE');
+      }
     }
-  });
+  } catch (error) {
+    console.error(`Error importing project: ${error}`);
+  }
 });
+
 
 /**
  * API call: save a user's settings
