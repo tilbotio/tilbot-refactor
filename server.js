@@ -352,11 +352,13 @@ app.post('/api/set_project_active', async (req, res) => {
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
 app.get('/api/get_socket', async (req, res) => {
-  res.status(200);
-
-  ProjectApiController.get_socket(req.query.id).then(function(response) {
+  try {
+    res.status(200);
+    const response = await ProjectApiController.get_socket(req.query.id);
     res.send(response);
-  });
+  } catch (error) {
+    console.error(`Error in getting socket: ${error}`);
+  }
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
