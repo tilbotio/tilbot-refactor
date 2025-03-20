@@ -486,23 +486,23 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
  * API call: save a user's settings
  */
 app.post('/api/save_settings', async (req, res) => {
-  res.status(200);
+  try {
+    res.status(200);
 
-  UserApiController.get_user(req.session.username).then(function(user) {
+    const user = await UserApiController.get_user(req.session.username);
     if (user !== null) {
       if (user.role == 1) {
-        SettingsApiController.update_settings(req.session.username, req.body.settings).then(function(response) {
-          res.send(response);
-        });
-      }
-      else {
+        const response = await SettingsApiController.update_settings(req.session.username, req.body.settings);
+        res.send(response);
+      } else {
         res.send('NOK');
       }
-    }
-    else {
+    } else {
       res.send('USER_NOT_FOUND');
     }
-  });
+  } catch (error) {
+    console.error(`Error saving settings: ${error}`);
+  }
 });
 
 // API call: get a project's log files
