@@ -1,13 +1,24 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import type { UserConfig } from 'vite';
+import { defineConfig } from 'vite';
 
-const config: UserConfig = {
-	plugins: [sveltekit()],
-	server: {
-		fs: {
-			allow: ['proj_pub']
-		}
-	}
-};
+const API_URL = process.env.VITE_API_URL || 'http://localhost:8000';
 
-export default config;
+export default defineConfig({
+  plugins: [sveltekit()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
+    fs: {
+      allow: ['proj_pub']
+    },
+    proxy: {
+      '/api': {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+        // rewrite: (path) => path.replace(/^\/api/, '')
+      },
+    }
+  }
+});

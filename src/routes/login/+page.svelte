@@ -52,7 +52,7 @@
 
     onMount(() => {
       // Check if an admin account exists, if not create one.
-      fetch(location.protocol + '//' + window.location.hostname + "/api/admin_account_exists", {
+      fetch("/api/admin_account_exists", {
             method: 'get',
             headers: {
                 'Content-Type': 'application/json'
@@ -64,12 +64,12 @@
                 info_txt = 'No admin account was found, so I created it. Log in with username "admin", password "admin"';
                 info = true;
               }
-            });            
+            });
         })
         .catch(err => {
             error_txt = 'Unknown error occurred. Please contact your administrator and try again later.';
             error = true;
-        });      
+        });
     });
 
     function login(e: any) {
@@ -85,7 +85,7 @@
             data[key] = value;
         }
 
-        fetch(location.protocol + '//' + window.location.hostname + "/api/login", {
+        fetch("/api/login", {
             method: 'post',
             credentials: 'include',
             headers: {
@@ -103,7 +103,7 @@
                 error_txt = 'Incorrect username or password.';
                 error = true;
               }
-            });            
+            });
         })
         .catch(err => {
             error_txt = 'Unknown error occurred. Please contact your administrator and try again later.';

@@ -29,8 +29,8 @@ export class ProjectApiController {
                 resolve(project);
             });
         });
-    }    
-        
+    }
+
     /**
      * Import a project, replacing the existing one
      *
@@ -58,12 +58,12 @@ export class ProjectApiController {
                     }).catch(function(error) {
                         console.log(error);
                         resolve(false);
-                    });    
+                    });
                 }
             });
         });
-    }        
-            
+    }
+
     /**
      * Retrieve all projects belonging to the current user from database.
      *
@@ -82,9 +82,9 @@ export class ProjectApiController {
                         status: projects[p].status
                     });
                 }
-    
+
                 projects_return.sort((a, b) => (a.name > b.name) ? 1 : -1);
-    
+
                 resolve(projects_return);
             });
         });
@@ -100,7 +100,7 @@ export class ProjectApiController {
         return new Promise(resolve => {
             this.ProjectDetails.find({ user_id: user, active: true, status: 1 }).then(function(projects) {
                 var projects_return = [];
-        
+
                 for (var p in projects) {
                     projects_return.push({
                         id: projects[p].id,
@@ -108,14 +108,14 @@ export class ProjectApiController {
                         status: projects[p].status
                     });
                 }
-        
+
                 projects_return.sort((a, b) => (a.name > b.name) ? 1 : -1);
 
                 resolve(projects_return);
             });
         });
-    }        
-        
+    }
+
     /**
      * Create a new account and store it in the database.
      *
@@ -145,7 +145,7 @@ export class ProjectApiController {
      *
      * @param {string} project_id - Project ID
      * @return {integer} Socket of the retrieved project, or -1 if the project is not found.
-     */        
+     */
     static get_socket(project_id) {
         return new Promise(resolve => {
             this.ProjectDetails.findOne({ id: project_id, status: 1, active: true }).then(function(project) {
@@ -162,14 +162,14 @@ export class ProjectApiController {
     /**
      * Retrieve all running bots.
      *
-     */        
+     */
     static get_running_projects() {
         return new Promise(resolve => {
             this.ProjectDetails.find({ status: 1, active: true }).then(function(projects) {
                 resolve(projects);
             });
         });
-    }        
+    }
 
 
     /**
@@ -177,7 +177,7 @@ export class ProjectApiController {
      *
      * @param {string} project_id - Project ID
      * @return {integer} The status that the project should be set to (0 = paused, 1 = running)
-     */        
+     */
     static set_project_status(project_id, status) {
         return new Promise(resolve => {
             // @TODO: active projects only
@@ -193,7 +193,7 @@ export class ProjectApiController {
             });
         });
     }
-        
+
     /**
      * Set a project to active or inactive status.
      * Used to delete projects without permanently deleting them.
@@ -201,7 +201,7 @@ export class ProjectApiController {
      *
      * @param {string} project_id - Project ID
      * @param {boolean} active - true if needs to be set to active, false for inactive
-     */    
+     */
     static set_project_active(project_id, active) {
         return new Promise(resolve => {
             this.ProjectDetails.findOne({ id: project_id }).then(function(schema) {
@@ -209,9 +209,9 @@ export class ProjectApiController {
                     schema.active = active;
                     schema.save().then(function() {
                         resolve(active);
-                    });            
+                    });
                 }
-            });        
+            });
         });
     }
 
@@ -238,11 +238,11 @@ export class ProjectApiController {
                         to_return += id + ";" + logs[l]._id + ";" + logs[l].participant_id + ";" + started_str + ";" + ended_str + ";" + logs[l].messages[m].source + ";" + sent_at_str + ';"' + logs[l].messages[m].message.replace(/(\r\n|\n|\r)/gm, " ").replace('"', '') + '"' + "\r\n";
                     }
                 }
-                
+
                 resolve(to_return);
             });
         });
-    }   
+    }
 
     /**
      * Delete a project's logs
@@ -256,5 +256,5 @@ export class ProjectApiController {
                 resolve(true);
             });
         });
-    }     
+    }
 }

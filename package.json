@@ -7,7 +7,7 @@
 		"dev": "del-cli ./build && (copy svelte_server.config.js svelte.config.js || cp svelte_server.config.js svelte.config.js) && concurrently \"npm run server\" \"npm run dev-vite\"",
 		"prod": "npm run build && npm run server",
 		"server": "node server.js",
-		"dev-vite": "vite dev",
+		"dev-vite": "vite dev --host 0.0.0.0 --port 5173",
 		"electron": "(copy svelte_electron.config.js svelte.config.js || cp svelte_electron.config.js svelte.config.js) && vite build && electron .",
 		"build": "(copy svelte_server.config.js svelte.config.js || cp svelte_server.config.js svelte.config.js) && vite build",
 		"preview": "vite preview",

@@ -1,10 +1,12 @@
 .DS_Store
 node_modules
 /build
+.cache/
 /.svelte-kit
 /package
 .env
 .env.*
+.npm/
 !.env.example
 /logs
 /currentproject
