@@ -314,43 +314,40 @@ app.post('/api/create_project', async (req, res) => {
 /**
  * API call: change a project's status (active/inactive)
  */
-app.post('/api/set_project_active', async (req, res) => {
-  res.status(200);
 
-  UserApiController.get_user(req.session.username).then(function(user) {
+app.post('/api/set_project_active', async (req, res) => {
+  try {
+    res.status(200);
+    const user = await UserApiController.get_user(req.session.username);
     if (user !== null) {
       if (user.role == 1) {
-        ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {
-          if (response != null) {
-            if (response.status == 1) {
-              // Stop project from running first.
-              stop_bot(req.body.projectid);
-            }
-
-            if (!req.body.active) {
-              // Make the project inactive
-              ProjectApiController.set_project_active(req.body.projectid, req.body.active).then(function(response) {
-                res.send('OK');
-              });
-            }
-            else {
-              // @TODO: maybe at some point also make it possible to set the project back to active.
-              res.send('NOK');
-            }
+        const response = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+        if (response != null) {
+          if (response.status == 1) {
+            // Stop project from running first
+            stop_bot(req.body.projectid);
           }
-          else {
+
+          if (!req.body.active) {
+            // Make the project inactive
+            const response = await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
+            res.send('OK');
+          } else {
+            // @TODO: maybe at some point also make it possible to set the project back to active.
             res.send('NOK');
           }
-        });
-      }
-      else {
+        } else {
+          res.send('NOK');
+        }
+      } else {
         res.send('NOK');
       }
-    }
-    else {
+    } else {
       res.send('USER_NOT_FOUND');
     }
-  });
+  } catch (error) {
+    console.error(`Error in setting project active: ${error}`);
+  }
 });
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
