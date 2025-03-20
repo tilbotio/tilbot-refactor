@@ -107,12 +107,10 @@ if (process.env.MONGO_USERNAME != undefined) {
 }
 
 const options = {useNewUrlParser: true, useUnifiedTopology: true};
-const mongo = mongoose.connect(dbPath, options);
+await mongoose.connect(dbPath, options);
 // Make sure the express-mongodb-session can also use the existing connection
 console.log(mongodbsession);
 const MongoDBStore = mongodbsession(session);
-
-await mongo();
 
 // Sessions
 const store = new MongoDBStore({
@@ -560,11 +558,15 @@ app.get('/api/sesh', (req, res) => {
 
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
 if (fs.existsSync('./build/handler.js')) {
-  (async () => {
-    const m = await import('./build/handler.js');
-    app.use('/proj_pub', express.static('./proj_pub'));
-    app.use(m.handler);
-  })();
+  try {
+    (async () => {
+      const m = await import('./build/handler.js');
+      app.use('/proj_pub', express.static('./proj_pub'));
+      app.use(m.handler);
+    })();
+  } catch (error) {
+    console.error(`Error using Sveltekit handler: ${error}`);
+  }
 }
 
 server.listen(port, '0.0.0.0', () => {
