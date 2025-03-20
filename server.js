@@ -268,42 +268,47 @@ app.post('/api/set_user_active', async (req, res) => {
 });
 
 app.get('/api/get_dashboard', async (req, res) => {
-  res.status(200);
+  try {
+    res.status(200);
 
-  // Return error message if not logged in
-  if (req.session.username === undefined) {
-    res.send('NOT_LOGGED_IN');
-  } else {
-    const data = {'username': req.session.username};
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 99) { // admin, retrieve user accounts
-        const users = await UserApiController.get_users();
-        for (const u in users) {
-          const projects = await ProjectApiController.get_running_projects_user(users[u].username);
-          users[u].running_projects = projects.length;
-        }
-        data.users = users;
-        res.send(JSON.stringify(data));
-      } else { // regular user, retrieve projects and settings
-        ProjectApiController.get_projects(req.session.username).then(function(projects) {
+    // Return error message if not logged in
+    if (req.session.username === undefined) {
+      res.send('NOT_LOGGED_IN');
+    } else {
+      const data = {'username': req.session.username};
+      const user = await UserApiController.get_user(req.session.username);
+      if (user !== null) {
+        if (user.role == 99) { // admin, retrieve user accounts
+          const users = await UserApiController.get_users();
+          for (const u in users) {
+            const projects = await ProjectApiController.get_running_projects_user(users[u].username);
+            users[u].running_projects = projects.length;
+          }
+          data.users = users;
+          res.send(JSON.stringify(data));
+        } else { // regular user, retrieve projects and settings
+          const projects = await ProjectApiController.get_projects(req.session.username);
           data.projects = projects;
-          SettingsApiController.get_settings(req.session.username).then(function(settings) {
-            data.settings = settings;
-            res.send(JSON.stringify(data));
-          });
-        });
+          const settings = await SettingsApiController.get_settings(req.session.username);
+          data.settings = settings;
+          res.send(JSON.stringify(data));
+        }
+      } else { // An invalid username is somehow in the function
+        res.send('USER_NOT_FOUND');
       }
-    } else { // An invalid username is somehow in the function
-      res.send('USER_NOT_FOUND');
     }
+  } catch(error) {
+    console.log(`Error in getting dashboard: ${error}`);
   }
 });
 
-app.post('/api/create_project', (req, res) => {
-  ProjectApiController.create_project(req.session.username).then(function(response) {
+app.post('/api/create_project', async (req, res) => {
+  try {
+    const response = await ProjectApiController.create_project(req.session.username);
     res.send(response);
-  });
+  } catch (error) {
+    console.log(`Error creating project: ${error}`);
+  }
 });
 
 /**
