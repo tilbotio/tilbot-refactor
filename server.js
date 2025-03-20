@@ -15,6 +15,7 @@ import child_process from 'child_process';
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
+import { start } from 'repl';
 // PvG: Import below is deprecated and not used
 // import { createNoSubstitutionTemplateLiteral } from 'typescript';
 
@@ -363,38 +364,34 @@ app.get('/api/get_socket', async (req, res) => {
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
-  res.status(200);
-
-  UserApiController.get_user(req.session.username).then(function(user) {
+  try {
+    res.status(200);
+    const user = await UserApiController.get_user(req.session.username);
     if (user !== null) {
       if (user.role == 1) {
-        ProjectApiController.get_project(req.body.projectid, req.session.username).then(function(response) {
-          if (response != null) {
-            ProjectApiController.set_project_status(req.body.projectid, req.body.status).then(function(response) {
-              if (response) {
-                console.log(req.body.status);
-                if (req.body.status == 1) {
-                  start_bot(req.body.projectid);
-                }
-                else {
-                  stop_bot(req.body.projectid);
-                }
-                res.send('OK');
-              }
-            });
+        const project = ProjectApiController.get_project(req.body.projectid, req.session.username);
+        if (project != null ){
+          const response = ProjectApiController.set_project_status(req.body.projectid, req.body.status);
+          if (response) {
+            console.log(req.body.status);
+            if (req.body.status == 1){
+              start_bot(req.body.projectid);
+            } else {
+              stop_bot(req.body.projectid);
+            }
+            res.send('OK');
           }
-          else {
-            res.send('NOK');
-          }
-        });
-      }
-      else {
-        res.send('NOK');
+        } else {
+          res.send('NOK');
+        }
+      } else {
+        res.send('OK');
       }
     }
-  });
+  } catch (error) {
+    console.error(`Error changing project status: ${error}`);
+  }
 });
-
 
 /**
  * API call: Import a project
