@@ -304,7 +304,7 @@
 import NewUser from './newuser.svelte';
 import { SvelteComponent, onMount } from 'svelte';
 
-    let data = {};
+    let data: any = {};
     let loaded = false;
     let pass_error = false;
     let pass_error_txt = '';
@@ -327,122 +327,101 @@ import { SvelteComponent, onMount } from 'svelte';
             let data = new FormData();
             data.append('file', import_file[0], import_file[0].name);
             data.append('project_id', selected_project_id);
-
-            fetch("/api/import_project", {
+            const fetch_init = {
                 method: 'post',
-                credentials: 'include',
-                body: data
-            })
-            .then(response => {
-                response.text().then(txt => {
+                credentials: 'include' as RequestCredentials,
+                body: data,
+            };
+
+            async function background_fetch() {
+                try {
+                    const response = await fetch("/api/import_project", fetch_init);
+                    const txt = await response.text();
                     if (txt == 'NOT_LOGGED_IN') {
                         location.replace('/login');
-                    }
-                    else {
+                    } else {
                         load_data();
                     }
+                } catch(err) {
+                    console.log(err);
+                }
+            }
 
-                });
-            })
-            .catch(err => {
-                console.log(err);
-            });
+            background_fetch();
         }
     }
 
     // Load dashboard data
-    onMount(async () => {
-        load_data();
-    });
+    onMount(load_data);
 
-    function view_bot(id) {
-        window.open('/?project=' + id, '_blank');
+    function view_bot(id: string) {
+        window.open(`/?project=${id}`, '_blank');
     }
 
-    function get_logs(id) {
-        fetch("api/get_logs?projectid=" + id, {
+    async function get_logs(id: string) {
+        try {
+            const response = await fetch(`api/get_logs?projectid=${id}`, {
                 method: 'get',
-                credentials: 'include'
-            })
-            .then(response => {
-                /*response.text().then(txt => {
-                    if (txt == 'NOT_LOGGED_IN') {
-                        location.replace('/login');
-                    }
-                    else {
-                        load_data();
-                    }
-
-                });*/
-                response.text().then(txt => {
-                    var dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(txt);
-                    var downloadAnchorNode = document.createElement('a');
-                    downloadAnchorNode.setAttribute("href",     dataStr);
-                    downloadAnchorNode.setAttribute("download", "logs.csv");
-                    document.body.appendChild(downloadAnchorNode); // required for firefox
-                    downloadAnchorNode.click();
-                    downloadAnchorNode.remove();
-                });
-            })
-            .catch(err => {
-                console.log(err);
+                credentials: 'include',
             });
-
-    }
-
-    function load_data() {
-        fetch("/api/get_dashboard", {
-            method: 'get',
-            credentials: 'include'
-        })
-        .then(response => {
-            response.text().then(txt => {
-                if (txt == 'NOT_LOGGED_IN') {
-                    location.replace('/login');
-                }
-                else {
-                    let json = JSON.parse(txt);
-                    data = json;
-                    console.log(json);
-                    loaded = true;
-
-
-                    setTimeout(function() {
-                        if (data.users !== undefined && !toggle_users.checked) {
-                            toggle_users.click();
-                        }
-                        else if (data.projects !== undefined && !toggle_projects.checked) {
-                            toggle_projects.click();
-                        }
-                    }, 20);
-
-                }
-
-            });
-        })
-        .catch(err => {
+            const txt = await response.text();
+            const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(txt);
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "logs.csv");
+            document.body.appendChild(downloadAnchorNode); // required for firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        } catch(err) {
             console.log(err);
-        });
+        }
     }
 
-    function logout(e: any) {
-        fetch("/api/logout", {
-            method: 'post',
-            credentials: 'include'
-        })
-        .then(response => {
-            response.text().then(txt => {
-                // Always succeeds
+    async function load_data() {
+        try {
+            const response = await fetch("/api/get_dashboard", {
+                method: 'get',
+                credentials: 'include',
+            });
+            const txt = await response.text();
+            if (txt == 'NOT_LOGGED_IN') {
                 location.replace('/login');
-            });
-        })
-        .catch(err => {
+            } else {
+                let json = JSON.parse(txt);
+                data = json;
+                // console.log(json);
+                loaded = true;
+
+                setTimeout(function() {
+                    if (data.users !== undefined && !toggle_users.checked) {
+                        toggle_users.click();
+                    } else if (data.projects !== undefined && !toggle_projects.checked) {
+                        toggle_projects.click();
+                    }
+                }, 20);
+            }
+        } catch(err) {
             console.log(err);
-        });
+        }
     }
 
-    function update_pass(e: any) {
+    async function logout(e: any) {
+        try {
+            const response = await fetch("/api/logout", {
+                method: 'post',
+                credentials: 'include',
+            });
+            await response.text();
+            // Always succeeds
+            location.replace('/login');
+        } catch(err) {
+            console.log(err);
+        }
+    }
+
+    async function update_pass(e: any) {
         pass_error = false;
+        // FIXME: maybe initialize pass_success too?
 
         const formData = new FormData(e.target);
 
@@ -456,111 +435,100 @@ import { SvelteComponent, onMount } from 'svelte';
         if (data['newpass'] != data['newpass2']) {
             pass_error_txt = 'The two new passwords do not match.';
             pass_error = true;
-        }
-
-        else {
-
-            fetch("/api/change_pass", {
-                method: 'post',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => {
-                response.text().then(txt => {
-                    if (txt == 'true') {
-                        pass_success = true;
-                    }
-                    else {
-                        pass_error_txt = 'Error changing password: did you enter the correct old password?';
-                        pass_error = true;
-                    }
+        } else {
+            try {
+                const response = await fetch("/api/change_pass", {
+                    method: 'post',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
                 });
-            })
-            .catch(err => {
+                const txt = await response.text();
+                if (txt === 'true') {
+                    pass_success = true;
+                } else {
+                    pass_error_txt = 'Error changing password: did you enter the correct old password?';
+                    pass_error = true;
+                }
+            } catch(err) {
                 pass_error_txt = 'Unknown error occurred. Please contact your administrator and try again later.';
                 pass_error = true;
                 console.log(err);
-            });
-
+            }
         }
     }
 
-    function set_user_active(e: any) {
-        fetch("/api/set_user_active", {
-            method: 'post',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                active: e.target.checked,
-                username: e.target.dataset['username']
-            })
-        })
-        .then(response => {
-            response.text().then(txt => {
-                console.log(txt);
+    async function set_user_active(e: any) {
+        try {
+            const response = await fetch("/api/set_user_active", {
+                method: 'post',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    active: e.target.checked,
+                    username: e.target.dataset['username'],
+                }),
             });
-        })
-        .catch(err => {
+            const txt = await response.text();
+            console.log(txt);
+        } catch(err) {
             console.log(err);
-        });
+        }
     }
 
-    function handleNewUserMessage(e: Event) {
+    function handleNewUserMessage(e: any) {
         if (e.detail.event == 'load_data') {
             load_data();
         }
     }
 
-    function new_project() {
-        fetch("/api/create_project", {
-            method: 'post',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            response.text().then(txt => {
-                if (txt == 'OK') {
-                    load_data();
-                }
-                else {
-
-                }
-            });
-        })
-        .catch(err => {
-            console.log(err);
-        });
-    }
-
-    function set_project_inactive(e: any) {
-        if (confirm("Are you sure you wish to delete the project \"" + e.target.dataset['name'] + "\"?")) {
-            fetch("/api/set_project_active", {
+    async function new_project() {
+        try {
+            const response = await fetch("/api/create_project", {
                 method: 'post',
                 credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    active: false,
-                    projectid: e.target.dataset['id']
-                })
-            })
-            .then(response => {
-                response.text().then(txt => {
-                    console.log(txt);
-                    load_data();
-                });
-            })
-            .catch(err => {
-                console.log(err);
             });
+            const txt = await response.text();
+            if (txt == 'OK') {
+                load_data();
+            }
+        } catch(err) {
+            console.log(err);
+        }
+    }
+
+    function set_project_inactive(e: any) {
+        async function _do_set_project_inactive() {
+            try {
+                const response = await fetch("/api/set_project_active", {
+                    method: 'post',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        active: false,
+                        projectid: e.target.dataset['id'],
+                    }),
+                });
+                const txt = await response.text();
+                console.log(txt);
+                load_data();
+            } catch(err) {
+                console.log(err);
+            }
+        }
+
+        // confirm() is reactive and therefore can't be inside an async context
+        if (confirm(`Are you sure you wish to delete the project "${e.target.dataset['name']}?`)) {
+            _do_set_project_inactive();
         }
     }
 
@@ -569,55 +537,50 @@ import { SvelteComponent, onMount } from 'svelte';
         import_file_upload.click();
     }
 
-    function toggle_project_running(e: any) {
-        fetch("/api/set_project_status", {
-            method: 'post',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                projectid: e.target.dataset['id'],
-                status: (e.target.dataset['status'] == 'true'?1:0)
-            })
-        })
-        .then(response => {
-            response.text().then(txt => {
-                console.log(txt);
-            })
-            .catch(err => {
-                console.log(err);
-            });
-        })
-
-    }
-
-    function save_settings() {
-        settings_error = false;
-        settings_success = false;
-
-        fetch("/api/save_settings", {
+    async function toggle_project_running(e: any) {
+        try {
+            const response = await fetch("/api/set_project_status", {
                 method: 'post',
                 credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    settings: JSON.stringify(data.settings)
-                })
-            })
-            .then(response => {
-                response.text().then(txt => {
-                    console.log(txt);
-                    load_data();
-                    settings_success = true;
-                });
-            })
-            .catch(err => {
-                settings_error_txt = 'An unknown error occurred, please contact your administrator.';
-                settings_error = true;
-                console.log(err);
+                    projectid: e.target.dataset['id'],
+                    status: (e.target.dataset['status'] == 'true' ? 1 : 0),
+                }),
             });
+            const txt = await response.text();
+            console.log(txt);
+        } catch(err) {
+            console.log(err);
+        }
+    }
+
+    async function save_settings() {
+        settings_error = false;
+        settings_success = false;
+
+        try {
+            const response = await fetch("/api/save_settings", {
+                method: 'post',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    settings: JSON.stringify(data.settings),
+                }),
+            });
+            const txt = await response.text();
+            console.log(txt);
+            load_data();
+            settings_success = true;
+        } catch(err) {
+            settings_error_txt = 'An unknown error occurred, please contact your administrator.';
+            settings_error = true;
+            console.log(err);
+        }
     }
 
 </script>
