@@ -21,7 +21,7 @@ import { start } from 'repl';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const start_bot = function(projectid) {
+function start_bot(projectid) {
   console.log('starting ' + projectid);
   // Check whether we are running in Docker or not
   if (process.env.TILBOT_PORT != undefined) {
@@ -37,7 +37,7 @@ const start_bot = function(projectid) {
   }
 }
 
-const stop_bot = async function(projectid) {
+async function stop_bot(projectid) {
   console.log('stopping ' + projectid);
   // Check whether we are running in Docker or not
   if (process.env.TILBOT_PORT != undefined) {
@@ -389,7 +389,7 @@ app.post('/api/set_project_status', async (req, res) => {
 app.post('/api/import_project', upload.single('file'), async (req, res) => {
   try {
     // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
-    const user = UserApiController.get_user(req.session.username);
+    const user = await UserApiController.get_user(req.session.username);
 
     if (user !== null) {
       console.log('=== IMPORT PROJECT ===');
@@ -558,15 +558,15 @@ app.get('/api/sesh', (req, res) => {
 
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
 if (fs.existsSync('./build/handler.js')) {
-  try {
     (async () => {
-      const m = await import('./build/handler.js');
-      app.use('/proj_pub', express.static('./proj_pub'));
-      app.use(m.handler);
-    })();
-  } catch (error) {
-    console.error(`Error using Sveltekit handler: ${error}`);
-  }
+      try {
+        const m = await import('./build/handler.js');
+        app.use('/proj_pub', express.static('./proj_pub'));
+        app.use(m.handler);
+      } catch (error) {
+        console.error(`Error importing Sveltekit handler`);
+      }
+   })();
 }
 
 server.listen(port, '0.0.0.0', () => {
