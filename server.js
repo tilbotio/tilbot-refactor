@@ -32,7 +32,6 @@ function start_bot(projectid) {
     if (running_bots[projectid] !== undefined) {
       stop_bot(projectid);
     }
-
     running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid]);
   }
 }
@@ -46,7 +45,6 @@ async function stop_bot(projectid) {
   } else {
     if (running_bots[projectid] !== undefined) {
       running_bots[projectid].send('exit', undefined, undefined, (e) => {
-
       });
     }
   }
@@ -106,7 +104,7 @@ if (process.env.MONGO_USERNAME != undefined) {
   dbPath = 'mongodb://' + process.env.MONGO_USERNAME + ':' + process.env.MONGO_PASSWORD + '@mongo:' + process.env.MONGO_PORT + '/' + process.env.MONGO_DB;
 }
 
-const options = {useNewUrlParser: true, useUnifiedTopology: true};
+const options = { useNewUrlParser: true, useUnifiedTopology: true };
 await mongoose.connect(dbPath, options);
 // Make sure the express-mongodb-session can also use the existing connection
 console.log(mongodbsession);
@@ -122,7 +120,7 @@ const store = new MongoDBStore({
 });
 
 // Catch errors
-store.on('error', function(error) {
+store.on('error', function (error) {
   console.log(error);
 });
 
@@ -154,7 +152,7 @@ app.use(session({
 app.post('/api/login', async (req, res) => {
   res.status(200);
   const success = await UserApiController.login(req.body.username, req.body.password);
-  if(success) {
+  if (success) {
     req.session.username = req.body.username;
     req.session.save();
     res.send('OK');
@@ -204,16 +202,16 @@ app.post('/api/create_user_account', async (req, res) => {
 app.post('/api/set_user_active', async (req, res) => {
   res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null){
-    if(user.role == 99) { //admin
+  if (user !== null) {
+    if (user.role == 99) { //admin
       await UserApiController.set_user_active(req.body.username, req.body.active);
-        // If a user was set to inactive, stop all of their running projects.
-      if (req.body.active == 'false'){
-          const projects = await ProjectApiController.get_running_projects_user(req.body.username);
-          for (const p of projects){
-            await ProjectApiController.set_project_status(p.id, 0);
-            stop_bot(p.id);
-          }
+      // If a user was set to inactive, stop all of their running projects.
+      if (req.body.active == 'false') {
+        const projects = await ProjectApiController.get_running_projects_user(req.body.username);
+        for (const p of projects) {
+          await ProjectApiController.set_project_status(p.id, 0);
+          stop_bot(p.id);
+        }
       }
       res.send('OK');
     } else {
@@ -230,7 +228,7 @@ app.get('/api/get_dashboard', async (req, res) => {
   if (req.session.username === undefined) {
     res.send('NOT_LOGGED_IN');
   } else {
-    const data = {'username': req.session.username};
+    const data = { 'username': req.session.username };
     const user = await UserApiController.get_user(req.session.username);
     if (user !== null) {
       if (user.role == 99) { // admin, retrieve user accounts
@@ -307,11 +305,11 @@ app.post('/api/set_project_status', async (req, res) => {
   if (user !== null) {
     if (user.role == 1) {
       const project = ProjectApiController.get_project(req.body.projectid, req.session.username);
-      if (project != null ){
+      if (project != null) {
         const response = ProjectApiController.set_project_status(req.body.projectid, req.body.status);
         if (response) {
           console.log(req.body.status);
-          if (req.body.status == 1){
+          if (req.body.status == 1) {
             start_bot(req.body.projectid);
           } else {
             stop_bot(req.body.projectid);
@@ -371,30 +369,30 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
     let api_promise = null;
 
     zipEntries.forEach(function (zipEntry) {
-        if (zipEntry.entryName == "project.json") {
-            found_projectfile = true;
-            console.log('project file found');
+      if (zipEntry.entryName == "project.json") {
+        found_projectfile = true;
+        console.log('project file found');
 
-            if (running_bots[req.body.project_id] !== undefined) {
-              stop_bot(req.body.project_id);
-            }
-
-            api_promise = ProjectApiController.import_project(
-              zipEntry.getData().toString("utf8"),
-              req.body.project_id,
-              req.session.username
-            );
-            // @TODO: import project file into database
-            //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
-        } else if (zipEntry.entryName.startsWith('var/')) {
-          zip.extractEntryTo(zipEntry, priv_dir)
-        } else {
-          zip.extractEntryTo(zipEntry, pub_dir);
+        if (running_bots[req.body.project_id] !== undefined) {
+          stop_bot(req.body.project_id);
         }
+
+        api_promise = ProjectApiController.import_project(
+          zipEntry.getData().toString("utf8"),
+          req.body.project_id,
+          req.session.username
+        );
+        // @TODO: import project file into database
+        //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
+      } else if (zipEntry.entryName.startsWith('var/')) {
+        zip.extractEntryTo(zipEntry, priv_dir)
+      } else {
+        zip.extractEntryTo(zipEntry, pub_dir);
+      }
     });
 
     if (found_projectfile) {
-      const response= await api_promise();
+      const response = await api_promise();
       // Remove the temporary file
       fs.rmSync(req.file.path);
 
@@ -483,15 +481,15 @@ app.get('/api/sesh', (req, res) => {
 
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
 if (fs.existsSync('./build/handler.js')) {
-    (async () => {
-      try {
-        const m = await import('./build/handler.js');
-        app.use('/proj_pub', express.static('./proj_pub'));
-        app.use(m.handler);
-      } catch (error) {
-        console.error(`Error importing Sveltekit handler`);
-      }
-   })();
+  (async () => {
+    try {
+      const m = await import('./build/handler.js');
+      app.use('/proj_pub', express.static('./proj_pub'));
+      app.use(m.handler);
+    } catch (error) {
+      console.error(`Error importing Sveltekit handler`);
+    }
+  })();
 }
 
 server.listen(port, '0.0.0.0', () => {
