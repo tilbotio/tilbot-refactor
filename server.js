@@ -152,234 +152,178 @@ app.use(session({
 
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
-  try {
-    res.status(200);
-
-    const success = await UserApiController.login(req.body.username, req.body.password);
-
-    if(success) {
-      req.session.username = req.body.username;
-      req.session.save();
-      res.send('OK');
-    } else {
-      res.send('NOK');
-    }
-  } catch (error) {
-    console.error(`Error in login: ${error.message}`);
+  res.status(200);
+  const success = await UserApiController.login(req.body.username, req.body.password);
+  if(success) {
+    req.session.username = req.body.username;
+    req.session.save();
+    res.send('OK');
+  } else {
+    res.send('NOK');
   }
 });
 
 app.get('/api/admin_account_exists', async (req, res) => {
-  try {
-    res.status(200);
-
-    const admin = await UserApiController.get_admin_user();
-
-    if (admin === null) {
-      UserApiController.create_account('admin', 'admin', 99);
-      res.send('CREATED');
-    } else {
-      res.send('EXISTS');
-    }
-
-  } catch (error) {
-    console.error(`Error in admin_account_exists: ${error.message}`);
+  res.status(200);
+  const admin = await UserApiController.get_admin_user();
+  if (admin === null) {
+    UserApiController.create_account('admin', 'admin', 99);
+    res.send('CREATED');
+  } else {
+    res.send('EXISTS');
   }
 });
 
 app.post('/api/logout', (req, res) => {
   res.status(200);
-
   req.session.destroy();
   res.send('OK');
 });
 
 app.post('/api/change_pass', async (req, res) => {
-  try {
-    const success = await UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass);
-    res.send(success);
-  } catch (error) {
-    console.error(`Error updating password: ${error.message}`);
-  }
+  const success = await UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass);
+  res.send(success);
 });
 
 app.post('/api/create_user_account', async (req, res) => {
-  try {
-    const user = await UserApiController.get_user(req.session.username);
-
-    if (user !== null) {
-      // Check if user is admin
-      if (user.role == 99) {
-        const success = await UserApiController.create_account(req.body.username, req.body.password, 1);
-        console.log(success);
-        res.send(success);
-      } else {
-        res.send('USER_NOT_ADMIN');
-      }
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null) {
+    // Check if user is admin
+    if (user.role == 99) {
+      const success = await UserApiController.create_account(req.body.username, req.body.password, 1);
+      console.log(success);
+      res.send(success);
     } else {
-      res.send('USER_NOT_FOUND');
+      res.send('USER_NOT_ADMIN');
     }
-  } catch (error) {
-    console.error(`Error creating user account: ${error.message}`);
+  } else {
+    res.send('USER_NOT_FOUND');
   }
 });
 
 app.post('/api/set_user_active', async (req, res) => {
   res.status(200);
-
-  try{
-    const user = await UserApiController.get_user(req.session.username);
-
-    if (user !== null){
-      if(user.role == 99) { //admin
-        await UserApiController.set_user_active(req.body.username, req.body.active);
-          // If a user was set to inactive, stop all of their running projects.
-        if (req.body.active == 'false'){
-          try {
-            const projects = await ProjectApiController.get_running_projects_user(req.body.username);
-            for (const p of projects){
-              await ProjectApiController.set_project_status(p.id, 0);
-              stop_bot(p.id);
-            }
-          } catch (error) {
-            console.error(`Error stopping projects for user ${req.body.username}: ${error.message}`);
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null){
+    if(user.role == 99) { //admin
+      await UserApiController.set_user_active(req.body.username, req.body.active);
+        // If a user was set to inactive, stop all of their running projects.
+      if (req.body.active == 'false'){
+          const projects = await ProjectApiController.get_running_projects_user(req.body.username);
+          for (const p of projects){
+            await ProjectApiController.set_project_status(p.id, 0);
+            stop_bot(p.id);
           }
-
-        }
-        res.send('OK');
-      } else {
-        res.send('USER_NOT_ADMIN');
       }
+      res.send('OK');
     } else {
-      res.send('USER_NOT_FOUND');
+      res.send('USER_NOT_ADMIN');
     }
-  } catch (error) {
-    console.error(`Error when setting user active: ${error.message}`);
+  } else {
+    res.send('USER_NOT_FOUND');
   }
 });
 
 app.get('/api/get_dashboard', async (req, res) => {
-  try {
-    res.status(200);
-
-    // Return error message if not logged in
-    if (req.session.username === undefined) {
-      res.send('NOT_LOGGED_IN');
-    } else {
-      const data = {'username': req.session.username};
-      const user = await UserApiController.get_user(req.session.username);
-      if (user !== null) {
-        if (user.role == 99) { // admin, retrieve user accounts
-          const users = await UserApiController.get_users();
-          for (const u in users) {
-            const projects = await ProjectApiController.get_running_projects_user(users[u].username);
-            users[u].running_projects = projects.length;
-          }
-          data.users = users;
-          res.send(JSON.stringify(data));
-        } else { // regular user, retrieve projects and settings
-          const projects = await ProjectApiController.get_projects(req.session.username);
-          data.projects = projects;
-          const settings = await SettingsApiController.get_settings(req.session.username);
-          data.settings = settings;
-          res.send(JSON.stringify(data));
+  res.status(200);
+  // Return error message if not logged in
+  if (req.session.username === undefined) {
+    res.send('NOT_LOGGED_IN');
+  } else {
+    const data = {'username': req.session.username};
+    const user = await UserApiController.get_user(req.session.username);
+    if (user !== null) {
+      if (user.role == 99) { // admin, retrieve user accounts
+        const users = await UserApiController.get_users();
+        for (const u in users) {
+          const projects = await ProjectApiController.get_running_projects_user(users[u].username);
+          users[u].running_projects = projects.length;
         }
-      } else { // An invalid username is somehow in the function
-        res.send('USER_NOT_FOUND');
+        data.users = users;
+        res.send(JSON.stringify(data));
+      } else { // regular user, retrieve projects and settings
+        const projects = await ProjectApiController.get_projects(req.session.username);
+        data.projects = projects;
+        const settings = await SettingsApiController.get_settings(req.session.username);
+        data.settings = settings;
+        res.send(JSON.stringify(data));
       }
+    } else { // An invalid username is somehow in the function
+      res.send('USER_NOT_FOUND');
     }
-  } catch(error) {
-    console.log(`Error in getting dashboard: ${error}`);
   }
 });
 
 app.post('/api/create_project', async (req, res) => {
-  try {
-    const response = await ProjectApiController.create_project(req.session.username);
-    res.send(response);
-  } catch (error) {
-    console.log(`Error creating project: ${error}`);
-  }
+  const response = await ProjectApiController.create_project(req.session.username);
+  res.send(response);
 });
 
 /**
  * API call: change a project's status (active/inactive)
  */
-
 app.post('/api/set_project_active', async (req, res) => {
-  try {
-    res.status(200);
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 1) {
-        const response = await ProjectApiController.get_project(req.body.projectid, req.session.username);
-        if (response != null) {
-          if (response.status == 1) {
-            // Stop project from running first
-            stop_bot(req.body.projectid);
-          }
+  res.status(200);
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null) {
+    if (user.role == 1) {
+      const response = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+      if (response != null) {
+        if (response.status == 1) {
+          // Stop project from running first
+          stop_bot(req.body.projectid);
+        }
 
-          if (!req.body.active) {
-            // Make the project inactive
-            const response = await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
-            res.send('OK');
-          } else {
-            // @TODO: maybe at some point also make it possible to set the project back to active.
-            res.send('NOK');
-          }
+        if (!req.body.active) {
+          // Make the project inactive
+          const response = await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
+          res.send('OK');
         } else {
+          // @TODO: maybe at some point also make it possible to set the project back to active.
           res.send('NOK');
         }
       } else {
         res.send('NOK');
       }
     } else {
-      res.send('USER_NOT_FOUND');
+      res.send('NOK');
     }
-  } catch (error) {
-    console.error(`Error in setting project active: ${error}`);
+  } else {
+    res.send('USER_NOT_FOUND');
   }
 });
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
 app.get('/api/get_socket', async (req, res) => {
-  try {
-    res.status(200);
-    const response = await ProjectApiController.get_socket(req.query.id);
-    res.send(response);
-  } catch (error) {
-    console.error(`Error in getting socket: ${error}`);
-  }
+  res.status(200);
+  const response = await ProjectApiController.get_socket(req.query.id);
+  res.send(response);
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
-  try {
-    res.status(200);
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 1) {
-        const project = ProjectApiController.get_project(req.body.projectid, req.session.username);
-        if (project != null ){
-          const response = ProjectApiController.set_project_status(req.body.projectid, req.body.status);
-          if (response) {
-            console.log(req.body.status);
-            if (req.body.status == 1){
-              start_bot(req.body.projectid);
-            } else {
-              stop_bot(req.body.projectid);
-            }
-            res.send('OK');
+  res.status(200);
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null) {
+    if (user.role == 1) {
+      const project = ProjectApiController.get_project(req.body.projectid, req.session.username);
+      if (project != null ){
+        const response = ProjectApiController.set_project_status(req.body.projectid, req.body.status);
+        if (response) {
+          console.log(req.body.status);
+          if (req.body.status == 1){
+            start_bot(req.body.projectid);
+          } else {
+            stop_bot(req.body.projectid);
           }
-        } else {
-          res.send('NOK');
+          res.send('OK');
         }
       } else {
         res.send('NOK');
       }
+    } else {
+      res.send('NOK');
     }
-  } catch (error) {
-    console.error(`Error changing project status: ${error}`);
   }
 });
 
@@ -387,87 +331,83 @@ app.post('/api/set_project_status', async (req, res) => {
  * API call: Import a project
  */
 app.post('/api/import_project', upload.single('file'), async (req, res) => {
-  try {
-    // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
-    const user = await UserApiController.get_user(req.session.username);
+  // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
+  const user = await UserApiController.get_user(req.session.username);
 
-    if (user !== null) {
-      console.log('=== IMPORT PROJECT ===');
-      console.log(req.body);
+  if (user !== null) {
+    console.log('=== IMPORT PROJECT ===');
+    console.log(req.body);
 
-      // Check if the private project file directory exists
-      if (!fs.existsSync('projects')) {
-        fs.mkdirSync('projects');
-      }
-
-      // Check if the public project file directory exists
-      if (!fs.existsSync('proj_pub')) {
-        fs.mkdirSync('proj_pub');
-      }
-
-      // Remove the old project files
-      let priv_dir = 'projects/' + req.body.project_id;
-      let pub_dir = 'proj_pub/' + req.body.project_id;
-
-      if (fs.existsSync(priv_dir)) {
-        fs.rmSync(priv_dir, { recursive: true });
-      }
-      fs.mkdirSync(priv_dir);
-
-      if (fs.existsSync(pub_dir)) {
-        fs.rmSync(pub_dir, { recursive: true });
-      }
-      fs.mkdirSync(pub_dir);
-
-      const zip = new AdmZip(req.file.path);
-      const zipEntries = zip.getEntries(); // an array of ZipEntry records
-
-      console.log(zipEntries);
-
-      let found_projectfile = false;
-      let api_promise = null;
-
-      zipEntries.forEach(function (zipEntry) {
-          if (zipEntry.entryName == "project.json") {
-              found_projectfile = true;
-              console.log('project file found');
-
-              if (running_bots[req.body.project_id] !== undefined) {
-                stop_bot(req.body.project_id);
-              }
-
-              api_promise = ProjectApiController.import_project(
-                zipEntry.getData().toString("utf8"),
-                req.body.project_id,
-                req.session.username
-              );
-              // @TODO: import project file into database
-              //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
-          } else if (zipEntry.entryName.startsWith('var/')) {
-            zip.extractEntryTo(zipEntry, priv_dir)
-          } else {
-            zip.extractEntryTo(zipEntry, pub_dir);
-          }
-      });
-
-      if (found_projectfile) {
-        const response= await api_promise();
-        // Remove the temporary file
-        fs.rmSync(req.file.path);
-
-        if (response) {
-          res.send('OK');
-        }
-        else {
-          res.send('NOK');
-        }
-      } else {
-        fs.rmSync(req.file.path);
-        res.send('NO_PROJECT_FILE');
-      }
+    // Check if the private project file directory exists
+    if (!fs.existsSync('projects')) {
+      fs.mkdirSync('projects');
     }
-  } catch (error) {
-    console.error(`Error importing project: ${error}`);
+
+    // Check if the public project file directory exists
+    if (!fs.existsSync('proj_pub')) {
+      fs.mkdirSync('proj_pub');
+    }
+
+    // Remove the old project files
+    let priv_dir = 'projects/' + req.body.project_id;
+    let pub_dir = 'proj_pub/' + req.body.project_id;
+
+    if (fs.existsSync(priv_dir)) {
+      fs.rmSync(priv_dir, { recursive: true });
+    }
+    fs.mkdirSync(priv_dir);
+
+    if (fs.existsSync(pub_dir)) {
+      fs.rmSync(pub_dir, { recursive: true });
+    }
+    fs.mkdirSync(pub_dir);
+
+    const zip = new AdmZip(req.file.path);
+    const zipEntries = zip.getEntries(); // an array of ZipEntry records
+
+    console.log(zipEntries);
+
+    let found_projectfile = false;
+    let api_promise = null;
+
+    zipEntries.forEach(function (zipEntry) {
+        if (zipEntry.entryName == "project.json") {
+            found_projectfile = true;
+            console.log('project file found');
+
+            if (running_bots[req.body.project_id] !== undefined) {
+              stop_bot(req.body.project_id);
+            }
+
+            api_promise = ProjectApiController.import_project(
+              zipEntry.getData().toString("utf8"),
+              req.body.project_id,
+              req.session.username
+            );
+            // @TODO: import project file into database
+            //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
+        } else if (zipEntry.entryName.startsWith('var/')) {
+          zip.extractEntryTo(zipEntry, priv_dir)
+        } else {
+          zip.extractEntryTo(zipEntry, pub_dir);
+        }
+    });
+
+    if (found_projectfile) {
+      const response= await api_promise();
+      // Remove the temporary file
+      fs.rmSync(req.file.path);
+
+      if (response) {
+        res.send('OK');
+      }
+      else {
+        res.send('NOK');
+      }
+    } else {
+      fs.rmSync(req.file.path);
+      res.send('NO_PROJECT_FILE');
+    }
   }
 });
 
@@ -475,79 +415,64 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
  * API call: save a user's settings
  */
 app.post('/api/save_settings', async (req, res) => {
-  try {
-    res.status(200);
-
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 1) {
-        const response = await SettingsApiController.update_settings(req.session.username, req.body.settings);
-        res.send(response);
-      } else {
-        res.send('NOK');
-      }
+  res.status(200);
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null) {
+    if (user.role == 1) {
+      const response = await SettingsApiController.update_settings(req.session.username, req.body.settings);
+      res.send(response);
     } else {
-      res.send('USER_NOT_FOUND');
+      res.send('NOK');
     }
-  } catch (error) {
-    console.error(`Error saving settings: ${error}`);
+  } else {
+    res.send('USER_NOT_FOUND');
   }
 });
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
-  try {
-    res.status(200);
-
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 1) {
-        const project = await ProjectApiController.get_project(req.query.projectid, req.session.username);
-        if (project == null) {
-          res.send('NOK')
-        } else {
-          const response = ProjectApiController.get_logs(req.query.projectid);
-          if (response == null) {
-            res.send('NOK');
-          } else {
-            res.send(response);
-          }
-        }
+  res.status(200);
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null) {
+    if (user.role == 1) {
+      const project = await ProjectApiController.get_project(req.query.projectid, req.session.username);
+      if (project == null) {
+        res.send('NOK')
       } else {
-        res.send('NOK');
+        const response = ProjectApiController.get_logs(req.query.projectid);
+        if (response == null) {
+          res.send('NOK');
+        } else {
+          res.send(response);
+        }
       }
     } else {
       res.send('NOK');
     }
-  } catch (error) {
-    console.error(`Error getting logfiles: ${error}`);
+  } else {
+    res.send('NOK');
   }
 });
 
 // API call: delete a project's log files
 app.post('/api/delete_logs', async (req, res) => {
-  try {
-    res.status(200);
-
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 1) {
-        const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
-        if (project == null) {
-          res.send('NOK')
-        } else {
-          const response = await ProjectApiController.delete_logs(req.body.projectid);
-          console.log(`Deleted logs: ${response}`);
-          res.send(response);
-        }
+  res.status(200);
+  const user = await UserApiController.get_user(req.session.username);
+  if (user !== null) {
+    if (user.role == 1) {
+      const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+      if (project == null) {
+        res.send('NOK')
       } else {
-        res.send('NOK');
+        const response = await ProjectApiController.delete_logs(req.body.projectid);
+        console.log(`Deleted logs: ${response}`);
+        res.send(response);
       }
     } else {
       res.send('NOK');
     }
-  } catch (error) {
-    console.error(`Error deleting project logs: ${error}`);
+  } else {
+    res.send('NOK');
   }
 });
 
