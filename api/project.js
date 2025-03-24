@@ -109,22 +109,19 @@ export class ProjectApiController {
      * @param {string} user - Username
      * @return {boolean} true if project created successfully, false if not.
      */
-    static create_project(user) {
-        return new Promise(resolve => {
-            var p = new this.ProjectDetails();
+    static async create_project(user) {
+        const p = new this.ProjectDetails();
+        p.id = crypto.MD5('tb' + user + Date.now());
+        p.user_id = user;
+        p.status = 0; // Paused by default
+        p.settings.project_name = 'New project';
 
-            // Generate a unique id
-            p.id = crypto.MD5('tb' + user + Date.now());
-            p.user_id = user;
-            p.status = 0; // paused by default
-            p.settings.project_name = 'New project';
-
-            p.save().then(function(e) {
-                resolve('OK');
-            }).catch(function(error) {
-                resolve(error);
-            });
-        });
+        try {
+            await p.save();
+            return('OK')
+        } catch (error) {
+            return(error);
+        }
     }
 
     /**
