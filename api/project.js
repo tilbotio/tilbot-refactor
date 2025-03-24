@@ -23,12 +23,9 @@ export class ProjectApiController {
      * @param {string} username - The username that owns the project.
      * @return {ProjectSchema} The project object from database if found, otherwise null.
      */
-    static get_project(id, username) {
-        return new Promise(resolve => {
-            this.ProjectDetails.findOne({ id: id, user_id: username, active: true }).then(function(project) {
-                resolve(project);
-            });
-        });
+    static async get_project(id, username) {
+        const project = await this.ProjectDetails.findOne({ id: id, user_id: username, active: true });
+        return project;
     }
 
     /**
