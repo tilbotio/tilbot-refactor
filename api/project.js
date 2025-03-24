@@ -214,11 +214,8 @@ export class ProjectApiController {
      * @param {string} id - The project id to search for.
      * @return {boolean} True if success, false if failed.
      */
-    static delete_logs(id) {
-        return new Promise(resolve => {
-            this.LogDetails.deleteMany({ project_id: id }).then(function() {
-                resolve(true);
-            });
-        });
+    static async delete_logs(id) {
+        await this.LogDetails.deleteMany({ project_id: id });
+        return(true);
     }
 }
