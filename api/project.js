@@ -143,12 +143,9 @@ export class ProjectApiController {
      * Retrieve all running bots.
      *
      */
-    static get_running_projects() {
-        return new Promise(resolve => {
-            this.ProjectDetails.find({ status: 1, active: true }).then(function(projects) {
-                resolve(projects);
-            });
-        });
+    static async get_running_projects() {
+        const projects = await this.ProjectDetails.find({ status: 1, active: true});
+            return projects;
     }
 
 
@@ -158,20 +155,15 @@ export class ProjectApiController {
      * @param {string} project_id - Project ID
      * @return {integer} The status that the project should be set to (0 = paused, 1 = running)
      */
-    static set_project_status(project_id, status) {
-        return new Promise(resolve => {
-            // @TODO: active projects only
-            this.ProjectDetails.findOne({ id: project_id, active: true }).then(function(project) {
-                if (project === null) {
-                    resolve('NOK');
-                }
-                else {
-                    project.status = status;
-                    project.save();
-                    resolve('OK');
-                }
-            });
-        });
+    static async set_project_status(project_id, status) {
+        const project = await this.ProjectDetails.findOne({ id: project_id, active: true });
+        if (project === null) {
+            return('NOK');
+        } else {
+            project.status = status;
+            project.save();
+            return('OK');
+        }
     }
 
     /**
@@ -182,17 +174,13 @@ export class ProjectApiController {
      * @param {string} project_id - Project ID
      * @param {boolean} active - true if needs to be set to active, false for inactive
      */
-    static set_project_active(project_id, active) {
-        return new Promise(resolve => {
-            this.ProjectDetails.findOne({ id: project_id }).then(function(schema) {
-                if (schema != null) {
-                    schema.active = active;
-                    schema.save().then(function() {
-                        resolve(active);
-                    });
-                }
-            });
-        });
+    static async set_project_active(project_id, active) {
+        const schema = await this.ProjectDetails.findOne({ id: project_id });
+        if (schema != null) {
+            schema.active = active;
+            await schema.save();
+            return(active);
+        }
     }
 
     /**
