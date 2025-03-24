@@ -130,17 +130,13 @@ export class ProjectApiController {
      * @param {string} project_id - Project ID
      * @return {integer} Socket of the retrieved project, or -1 if the project is not found.
      */
-    static get_socket(project_id) {
-        return new Promise(resolve => {
-            this.ProjectDetails.findOne({ id: project_id, status: 1, active: true }).then(function(project) {
-                if (project === null) {
-                    resolve('-1');
-                }
-                else {
-                    resolve(project.socket.toString());
-                }
-            });
-        });
+    static async get_socket(project_id) {
+        const project = await this.ProjectDetails.findOne({ id: project_id, status: 1, active: true});
+        if (project === null) {
+            return ('-1');
+        } else {
+            return(project.socket.toString());
+        }
     }
 
     /**
