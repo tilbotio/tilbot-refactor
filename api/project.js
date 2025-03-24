@@ -35,30 +35,25 @@ export class ProjectApiController {
      * @param {string} username - The username that owns the project.
      * @return {boolean} True if success, false if failed.
      */
-    static import_project(project, project_id, username) {
-        let self = this;
+    static async import_project(project, project_id, username) {
+        const res = await this.ProjectDetails.deleteOne({ id: project_id, user_id: username });
 
-        return new Promise(resolve => {
-            this.ProjectDetails.deleteOne({ id: project_id, user_id: username }).then(function(res) {
+        if (res.deletedCount == 0) {
+            return false;
+        } else {
+            // Add new project
+            let newschema = this.ProjectDetails.fromModel(JSON.parse(project));
+            newschema.id = project_id;
+            newschema.user_id = username;
 
-                if (res.deletedCount == 0) {
-                    resolve(false);
-                }
-                else {
-                    // Add new project
-                    let newschema = self.ProjectDetails.fromModel(JSON.parse(project));
-                    newschema.id = project_id;
-                    newschema.user_id = username;
-
-                    newschema.save().then(function(e) {
-                        resolve(true);
-                    }).catch(function(error) {
-                        console.log(error);
-                        resolve(false);
-                    });
-                }
-            });
-        });
+            try {
+                await newschema.save();
+                return true;
+            } catch (error) {
+                console.log(error);
+                return false;
+            }
+        }
     }
 
     /**
