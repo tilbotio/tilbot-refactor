@@ -88,24 +88,19 @@ export class ProjectApiController {
      * @param {string} user - The username that owns the projects.
      * @return {string[]} Array of projects present in database.
      */
-    static get_running_projects_user(user) {
-        return new Promise(resolve => {
-            this.ProjectDetails.find({ user_id: user, active: true, status: 1 }).then(function(projects) {
-                var projects_return = [];
-
-                for (var p in projects) {
-                    projects_return.push({
-                        id: projects[p].id,
-                        name: projects[p].name,
-                        status: projects[p].status
-                    });
-                }
-
-                projects_return.sort((a, b) => (a.name > b.name) ? 1 : -1);
-
-                resolve(projects_return);
+    static async get_running_projects_user(user) {
+        const projects = await this.ProjectDetails.find({ user_id: user, active: true, status: 1 });
+        let projects_return = [];
+        for (const p in projects) {
+            projects_return.push({
+                id: projects[p].id,
+                name: projects[p].name,
+                status: projects[p].status
             });
-        });
+        }
+
+        projects_return.sort((a, b) => (a.name > b.name) ? 1 : -1);
+        return projects_return;
     }
 
     /**
