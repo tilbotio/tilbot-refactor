@@ -64,6 +64,11 @@ export class ProjectApiController {
      */
     static async get_projects(user) {
         const projects = await this.ProjectDetails.find({ user_id: user, active: true });
+        // let projects_return = Object.values(projects).map(project => ({
+        //     id: project.id,
+        //     name: project.settings.project_name,
+        //     status: project.status,
+        // }));
         let projects_return = [];
         for (const p in projects) {
             projects_return.push({
