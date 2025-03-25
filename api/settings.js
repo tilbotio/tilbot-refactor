@@ -24,8 +24,7 @@ export class SettingsApiController {
     static async get_settings(user) {
         const user_settings = await SettingsApiController.SettingsDetails.findOne({ user_id: user});
         if (user_settings === null) {
-            const settings = await SettingsApiController.create_settings(user);
-            return settings;
+            return await SettingsApiController.create_settings(user);
         } else {
             return user_settings;
         }

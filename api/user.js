@@ -61,8 +61,7 @@ export class UserApiController {
         const schema = await this.UserDetails.findOne({ username: user, active: true});
         if (schema != null) {
             try {
-                const valid = await schema.verifyPassword(pass);
-                return valid;
+                return await schema.verifyPassword(pass);
             } catch (error) {
                 console.log(error);
                 return false;
