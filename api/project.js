@@ -24,8 +24,7 @@ export class ProjectApiController {
      * @return {ProjectSchema} The project object from database if found, otherwise null.
      */
     static async get_project(id, username) {
-        const project = await this.ProjectDetails.findOne({ id: id, user_id: username, active: true });
-        return project;
+        return await this.ProjectDetails.findOne({ id: id, user_id: username, active: true });
     }
 
     /**
@@ -120,7 +119,7 @@ export class ProjectApiController {
             await p.save();
             return('OK')
         } catch (error) {
-            return(error);
+            return error;
         }
     }
 
@@ -144,8 +143,7 @@ export class ProjectApiController {
      *
      */
     static async get_running_projects() {
-        const projects = await this.ProjectDetails.find({ status: 1, active: true});
-            return projects;
+        return await this.ProjectDetails.find({ status: 1, active: true});
     }
 
 
@@ -179,7 +177,7 @@ export class ProjectApiController {
         if (schema != null) {
             schema.active = active;
             await schema.save();
-            return(active);
+            return active;
         }
     }
 
@@ -216,6 +214,6 @@ export class ProjectApiController {
      */
     static async delete_logs(id) {
         await this.LogDetails.deleteMany({ project_id: id });
-        return(true);
+        return true;
     }
 }
