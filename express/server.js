@@ -32,7 +32,7 @@ function start_bot(projectid) {
     if (running_bots[projectid] !== undefined) {
       stop_bot(projectid);
     }
-    running_bots[projectid] = child_process.fork('./clientsocket/server.js', [projectid]);
+    running_bots[projectid] = child_process.fork('../socket-io/server.js', [projectid]);
   }
 }
 
