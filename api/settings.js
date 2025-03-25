@@ -37,21 +37,19 @@ export class SettingsApiController {
      * @param {string} user - Username
      * @return {SettingsSchema} Created settings.
      */
-    static create_settings(user) {
-        return new Promise(resolve => {
-            var s = new SettingsApiController.SettingsDetails();
-            s.user_id = user;
-
-            s.save().then(function(e) {
-                console.log('saved!');
-                resolve(s);
-            }).catch(function(error) {
-                if (error.toString().includes('duplicate key')) { // This should not happen
-                    resolve('SETTINGS_ROW_EXISTS');
-                }
-                resolve(error);
-            });
-        });
+    static async create_settings(user) {
+        let s = new SettingsApiController.SettingsDetails();
+        s.user_id = user;
+        try {
+            await s.save();
+            console.log('saved!');
+            return s;
+        } catch (error) {
+            if (error.toString().includes('duplicate key')) { // This should not happen
+                return('SETTINGS_ROW_EXISTS');
+            }
+            return error;
+        }
     }
 
     /**
