@@ -19,8 +19,7 @@ export class UserApiController {
      * @return {UserSchema} The user object from database if found, otherwise null.
      */
     static async get_user(username) {
-        const user = await this.UserDetails.findOne({ username: username, active: true});
-        return user;
+        return await this.UserDetails.findOne({ username: username, active: true});
     }
 
     /**
@@ -29,8 +28,7 @@ export class UserApiController {
      * @return {UserSchema} The user object from database if found, otherwise null.
      */
     static async get_admin_user() {
-        const user = await this.UserDetails.findOne({ role: 99, active: true});
-        return user;
+        return await this.UserDetails.findOne({ role: 99, active: true});
     }
 
     /**
