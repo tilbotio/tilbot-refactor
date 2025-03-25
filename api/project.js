@@ -117,7 +117,7 @@ export class ProjectApiController {
 
         try {
             await p.save();
-            return('OK')
+            return 'OK';
         } catch (error) {
             return error;
         }
@@ -134,7 +134,7 @@ export class ProjectApiController {
         if (project === null) {
             return ('-1');
         } else {
-            return(project.socket.toString());
+            return project.socket.toString();
         }
     }
 
@@ -156,11 +156,11 @@ export class ProjectApiController {
     static async set_project_status(project_id, status) {
         const project = await this.ProjectDetails.findOne({ id: project_id, active: true });
         if (project === null) {
-            return('NOK');
+            return 'NOK';
         } else {
             project.status = status;
             project.save();
-            return('OK');
+            return 'OK';
         }
     }
 
