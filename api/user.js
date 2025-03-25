@@ -87,10 +87,10 @@ export class UserApiController {
         u.role = role;
         try {
             await u.save();
-            return('OK');
+            return 'OK';
         } catch (error) {
             if (error.toString().includes('duplicate key')) {
-                return('USER_EXISTS');
+                return 'USER_EXISTS';
             }
             return error;
         }
