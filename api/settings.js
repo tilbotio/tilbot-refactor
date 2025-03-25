@@ -46,7 +46,7 @@ export class SettingsApiController {
             return s;
         } catch (error) {
             if (error.toString().includes('duplicate key')) { // This should not happen
-                return('SETTINGS_ROW_EXISTS');
+                return 'SETTINGS_ROW_EXISTS';
             }
             return error;
         }
@@ -66,7 +66,7 @@ export class SettingsApiController {
                 schema[key] = settings_json[key];
                 });
             await schema.save();
-            return('OK');
+            return 'OK';
         }
     }
 }
