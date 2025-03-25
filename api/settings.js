@@ -12,8 +12,8 @@ export class SettingsApiController {
      */
     constructor() {
 
-    }    
-            
+    }
+
     /**
      * Retrieve the settings belonging to the current user from database.
      * If no settings are found, create a new row and return that.
@@ -21,21 +21,16 @@ export class SettingsApiController {
      * @param {string} user - The username that owns the settings.
      * @return {SettingsSchema} Settings present in database.
      */
-    static get_settings(user) {
-        return new Promise(resolve => {
-            SettingsApiController.SettingsDetails.findOne({ user_id: user }).then(function(settings) {
-                if (settings === null) {
-                    SettingsApiController.create_settings(user).then(function(settings) {
-                        resolve(settings);
-                    })
-                }
-                else {
-                    resolve(settings);
-                }
-            });
-        });
-    }      
-    
+    static async get_settings(user) {
+        const user_settings = await SettingsApiController.SettingsDetails.findOne({ user_id: user});
+        if (user_settings === null) {
+            const settings = await SettingsApiController.create_settings(user);
+            return settings;
+        } else {
+            return user_settings;
+        }
+    }
+
     /**
      * Create a new settings row and store it in the database.
      *
@@ -57,14 +52,14 @@ export class SettingsApiController {
                 resolve(error);
             });
         });
-    }    
+    }
 
     /**
      * Update a user's settings.
      *
      * @param {string} user - User ID
      * @param {string} settings - JSON structure of settings
-     */    
+     */
     static update_settings(user, settings) {
         return new Promise(resolve => {
             SettingsApiController.SettingsDetails.findOne({ user_id: user }).then(function(schema) {
@@ -77,10 +72,10 @@ export class SettingsApiController {
 
                     schema.save().then(function() {
                         resolve('OK');
-                    });            
+                    });
                 }
-            });        
+            });
         })
-    }    
-        
+    }
+
 }
