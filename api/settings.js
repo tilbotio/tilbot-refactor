@@ -58,22 +58,15 @@ export class SettingsApiController {
      * @param {string} user - User ID
      * @param {string} settings - JSON structure of settings
      */
-    static update_settings(user, settings) {
-        return new Promise(resolve => {
-            SettingsApiController.SettingsDetails.findOne({ user_id: user }).then(function(schema) {
-                if (schema !== null) {
-                    let settings_json = JSON.parse(settings);
-
-                    Object.keys(settings_json).forEach(function(key) {
-                        schema[key] = settings_json[key];
-                    });
-
-                    schema.save().then(function() {
-                        resolve('OK');
-                    });
-                }
-            });
-        })
+    static async update_settings(user, settings) {
+        const schema = await SettingsApiController.SettingsDetails.findOne({ user_id: user});
+        if (schema !== null) {
+            let settings_json = JSON.parse(settings);
+            Object.keys(settings_json).forEach(function(key) {
+                schema[key] = settings_json[key];
+                });
+            await schema.save();
+            return('OK');
+        }
     }
-
 }
