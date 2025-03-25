@@ -28,12 +28,9 @@ export class UserApiController {
      *
      * @return {UserSchema} The user object from database if found, otherwise null.
      */
-    static get_admin_user() {
-        return new Promise(resolve => {
-            this.UserDetails.findOne({ role: 99, active: true }).then(function(user) {
-                resolve(user);
-            });
-        });
+    static async get_admin_user() {
+        const user = await this.UserDetails.findOne({ role: 99, active: true});
+        return user;
     }
 
     /**
