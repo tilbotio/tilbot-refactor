@@ -59,27 +59,19 @@ export class UserApiController {
      * @param {string} pass - Password
      * @return {boolean} true if logged in correctly, false if not.
      */
-    static login(user, pass) {
-        return new Promise(resolve => {
-            this.UserDetails.findOne({ username: user, active: true }).then(function(schema) {
-                if (schema != null) {
-
-                    schema.verifyPassword(pass)
-                    .then(function(valid) {
-                        resolve(valid);
-                    })
-                    .catch(function(err) {
-                        console.log(err);
-                        resolve(false);
-                    });
-
-                }
-                else {
-                    resolve(false);
-                }
-            });
-
-        });
+    static async login(user, pass) {
+        const schema = await this.UserDetails.findOne({ username: user, active: true});
+        if (schema != null) {
+            try {
+                const valid = await schema.verifyPassword(pass);
+                return valid;
+            } catch (error) {
+                console.log(error);
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -90,21 +82,20 @@ export class UserApiController {
      * @param {number} role - User role: 99 = admin; 1 = user
      * @return {boolean} true if logged in correctly, false if not.
      */
-    static create_account(user, pass, role) {
-        return new Promise(resolve => {
-            var u = new this.UserDetails();
-            u.username = user;
-            u.password = pass;
-            u.role = role;
-            u.save().then(function(e) {
-                resolve('OK');
-            }).catch(function(error) {
-                if (error.toString().includes('duplicate key')) {
-                    resolve('USER_EXISTS');
-                }
-                resolve(error);
-            });
-        });
+    static async create_account(user, pass, role) {
+        const u = new this.UserDetails();
+        u.username = user;
+        u.password = pass;
+        u.role = role;
+        try {
+            await u.save();
+            return('OK');
+        } catch (error) {
+            if (error.toString().includes('duplicate key')) {
+                return('USER_EXISTS');
+            }
+            return error;
+        }
     }
 
     /**
@@ -114,30 +105,23 @@ export class UserApiController {
      * @param {string} oldpass - Original password
      * @param {string} newpass - New password
      */
-    static update_password(user, oldpass, newpass) {
-        return new Promise(resolve => {
-            this.UserDetails.findOne({ username: user, active: true }).then(function(schema) {
-                if (schema != null) {
-
-                    schema.verifyPassword(oldpass)
-                    .then(function(valid) {
-                        if (valid) {
-                            schema.password = newpass;
-                            schema.save().then(function() {
-                                resolve(true);
-                            });
-                        }
-                        else {
-                            resolve(false);
-                        }
-                    })
-                    .catch(function(err) {
-                        console.log(err);
-                        resolve(false);
-                    });
+    static async update_password(user, oldpass, newpass) {
+        const schema = await this.UserDetails.findOne({ username: user, active: true});
+        if (schema != null) {
+            try {
+                const valid = await schema.verifyPassword(oldpass);
+                if (valid) {
+                    schema.password = newpass;
+                    await schema.save();
+                    return true;
+                } else {
+                    return false;
                 }
-            });
-        })
+            } catch (error) {
+                console.log(error);
+                return false;
+            }
+        }
     }
 
     /**
@@ -147,16 +131,12 @@ export class UserApiController {
      * @param {string} user - Username
      * @param {boolean} active - true if needs to be set to active, false for inactive
      */
-    static set_user_active(username, active) {
-        return new Promise(resolve => {
-            this.UserDetails.findOne({ username: username }).then(function(schema) {
-                if (schema != null) {
-                    schema.active = active;
-                    schema.save().then(function() {
-                        resolve(active);
-                    });
-                }
-            });
-        })
+    static async set_user_active(username, active) {
+        const schema = await this.UserDetails.findOne({ username: username });
+        if (schema != null) {
+            schema.active = active;
+            await schema.save();
+            return active;
+        }
     }
 }
