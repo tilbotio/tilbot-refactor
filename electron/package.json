@@ -5,10 +5,10 @@
     "main": "electron-main.cjs",
     "scripts": {
       "start": "electron .",
-      "build": "cp svelte_electron.config.js ../apps/frontend/sveltekit/svelte.config.js",
-      "package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64 --icon=src/icon/win/icon.ico",
-      "package-mac-x64": "electron-packager . tilbot --overwrite --platform=darwin --arch=x64 --icon=frontend/sveltekit/src/icon/mac/icon.icns",
-      "package-mac-arm": "electron-packager . tilbot --overwrite --platform=darwin --arch=arm64 --icon=frontend/sveltekit/src/icon/mac/icon.icns"
+      "build": "cp svelte_electron.config.js ..sveltekit/svelte.config.js",
+      "package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64 --icon=../sveltekit/src/icon/win/icon.ico",
+      "package-mac-x64": "electron-packager . tilbot --overwrite --platform=darwin --arch=x64 --icon=../sveltekit/src/icon/mac/icon.icns",
+      "package-mac-arm": "electron-packager . tilbot --overwrite --platform=darwin --arch=arm64 --icon=../sveltekit/src/icon/mac/icon.icns"
     },
     "devDependencies": {
       "adm-zip": "^0.5.10",
