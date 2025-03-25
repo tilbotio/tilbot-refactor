@@ -132,7 +132,7 @@ export class ProjectApiController {
     static async get_socket(project_id) {
         const project = await this.ProjectDetails.findOne({ id: project_id, status: 1, active: true});
         if (project === null) {
-            return ('-1');
+            return '-1';
         } else {
             return project.socket.toString();
         }
