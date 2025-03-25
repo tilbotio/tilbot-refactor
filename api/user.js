@@ -3,13 +3,13 @@ import { mongoose } from 'mongoose';
 
 export class UserApiController {
     static UserDetails = mongoose.model('userschemas', UserSchema);
-    
+
     /**
      * Managing users stored in the database.
      * @constructor
      */
     constructor() {
-        
+
     }
 
     /**
@@ -18,12 +18,9 @@ export class UserApiController {
      * @param {string} username - The username to search for.
      * @return {UserSchema} The user object from database if found, otherwise null.
      */
-    static get_user(username) {
-        return new Promise(resolve => {
-            this.UserDetails.findOne({ username: username, active: true }).then(function(user) {
-                resolve(user);
-            });
-        });
+    static async get_user(username) {
+        const user = await this.UserDetails.findOne({ username: username, active: true});
+        return user;
     }
 
     /**
@@ -37,30 +34,25 @@ export class UserApiController {
                 resolve(user);
             });
         });
-    }    
+    }
 
     /**
      * Retrieve all users from database (role 1, not admin).
      *
      * @return {string[]} Array of usernames present in database.
      */
-    static get_users() {
-        return new Promise(resolve => {
-            this.UserDetails.find({ role: 1 }).then(function(users) {
-                var users_return = [];
-
-                for (var u in users) {
-                    users_return.push({
-                    username: users[u].username,
-                        active: users[u].active
-                    });
-                }
-
-                users_return.sort((a, b) => (a.username > b.username) ? 1 : -1);
-
-                resolve(users_return);
+    static async get_users() {
+        const users = await this.UserDetails.find({ role: 1});
+        let users_return = [];
+        for (const u in users) {
+            users_return.push({
+                username: users[u].username,
+                active: users[u].active
             });
-        });
+        }
+
+        users_return.sort((a, b) => (a.username > b.username) ? 1: -1);
+        return users_return;
     }
 
     /**
@@ -124,7 +116,7 @@ export class UserApiController {
      * @param {string} user - Username
      * @param {string} oldpass - Original password
      * @param {string} newpass - New password
-     */    
+     */
     static update_password(user, oldpass, newpass) {
         return new Promise(resolve => {
             this.UserDetails.findOne({ username: user, active: true }).then(function(schema) {
@@ -136,7 +128,7 @@ export class UserApiController {
                             schema.password = newpass;
                             schema.save().then(function() {
                                 resolve(true);
-                            });                
+                            });
                         }
                         else {
                             resolve(false);
@@ -147,7 +139,7 @@ export class UserApiController {
                         resolve(false);
                     });
                 }
-            });        
+            });
         })
     }
 
@@ -157,7 +149,7 @@ export class UserApiController {
      *
      * @param {string} user - Username
      * @param {boolean} active - true if needs to be set to active, false for inactive
-     */    
+     */
     static set_user_active(username, active) {
         return new Promise(resolve => {
             this.UserDetails.findOne({ username: username }).then(function(schema) {
@@ -165,9 +157,9 @@ export class UserApiController {
                     schema.active = active;
                     schema.save().then(function() {
                         resolve(active);
-                    });            
+                    });
                 }
-            });        
+            });
         })
     }
-}  
+}
