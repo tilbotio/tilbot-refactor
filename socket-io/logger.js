@@ -1,5 +1,5 @@
-import { LogSchema } from '../db/log.js';
-import { MessageSchema } from '../db/message.js';
+import { LogSchema } from '../express/db/log.js';
+import { MessageSchema } from '../express/db/message.js';
 import { mongoose } from 'mongoose';
 
 export class Logger {

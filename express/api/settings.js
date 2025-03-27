@@ -1,4 +1,3 @@
-import { construct_svelte_component } from 'svelte/internal';
 import { SettingsSchema } from '../db/settings.js';
 import { mongoose } from 'mongoose';
 

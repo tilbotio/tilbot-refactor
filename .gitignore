@@ -22,6 +22,7 @@ node_modules
 /static/guesswho/
 /static/images/
 /static/shrimp/
+/sveltekit/.*
 /tilbot-darwin-arm64
 /tilbot-darwin-x64
 /tilbot-win32-x64

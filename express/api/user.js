@@ -37,7 +37,7 @@ export class UserApiController {
      * @return {string[]} Array of usernames present in database.
      */
     static async get_users() {
-        const users = await this.UserDetails.find({ role: 1});
+        const users = await this.UserDetails.find({ role: 1 });
         let users_return = [];
         for (const u in users) {
             users_return.push({

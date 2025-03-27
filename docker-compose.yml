@@ -8,6 +8,7 @@ services:
 
   sveltekit:
     build: .
+    working_dir: /home/node/sveltekit
     depends_on:
       npm-ci:
         condition: service_completed_successfully
@@ -28,6 +29,7 @@ services:
 
   express:
     build: .
+    working_dir: /home/node/express
     depends_on:
       npm-ci:
         condition: service_completed_successfully
@@ -44,7 +46,7 @@ services:
     environment:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
-    command: ["npm", "run", "server"]
+    command: ["npm", "run", "start"]
 
   mongo:
     image: mongo
