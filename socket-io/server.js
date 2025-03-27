@@ -78,8 +78,11 @@ if (project === null) {
     const SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
 
     const settings = await SettingsDetails.findOne({'user_id': project.user_id});
+    let llm_setting = 'chatgpt';
     if (settings != null) {
-      const llm_setting = settings.llm_setting ?? 'chatgpt';
+      if (settings.llm_setting != null) {
+        llm_setting = settings.llm_setting;
+      }
       if (llm_setting === 'chatgpt') {
         ChatGPT.init(settings.chatgpt_api_key);
       } else {
