@@ -15,7 +15,6 @@ import child_process from 'child_process';
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
-import { start } from 'repl';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
