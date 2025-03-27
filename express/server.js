@@ -16,8 +16,6 @@ import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
 import { start } from 'repl';
-// PvG: Import below is deprecated and not used
-// import { createNoSubstitutionTemplateLiteral } from 'typescript';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
