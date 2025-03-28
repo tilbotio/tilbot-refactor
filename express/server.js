@@ -15,6 +15,12 @@ import child_process from 'child_process';
 import { UserApiController } from './api/user.js';
 import { ProjectApiController } from './api/project.js';
 import { SettingsApiController } from './api/settings.js';
+import {
+  TilBotError,
+  TilBotUserNotAdminError,
+  TilBotNotLoggedInError,
+  TilBotUserIsAdminError,
+} from './errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -92,6 +98,25 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use('/api', (err, req, res, next) => {
+  if (res.headersSent) {
+    // Not much we can do now that (some) data has already been sent.
+    next();
+  } else if (err instanceof TilBotError) {
+    res.send(err.api_status_code);
+  } else {
+    console.log(err);
+    res.send('NOK');
+  }
+});
+
+app.use('/api', (req, res, next) => {
+  next();
+  if (!res.headersSent) {
+    res.send('OK');
+  }
+});
+
 // Set up the MongoDB connection
 const dbPath = process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot';
 
@@ -147,106 +172,79 @@ app.use(session({
 
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
-  res.status(200);
-  const success = await UserApiController.login(req.body.username, req.body.password);
-  if (success) {
-    req.session.username = req.body.username;
-    req.session.save();
-    res.send('OK');
-  } else {
-    res.send('NOK');
-  }
+  await UserApiController.login(req.body.username, req.body.password);
+  req.session.username = req.body.username;
+  req.session.save();
 });
 
 app.get('/api/admin_account_exists', async (req, res) => {
-  res.status(200);
-  const admin = await UserApiController.get_admin_user();
-  if (admin === null) {
+  if (await UserApiController.admin_account_exists()) {
+    res.send('EXISTS');
+  } else {
     UserApiController.create_account('admin', 'admin', 99);
     res.send('CREATED');
-  } else {
-    res.send('EXISTS');
   }
 });
 
 app.post('/api/logout', (req, res) => {
-  res.status(200);
   req.session.destroy();
-  res.send('OK');
 });
 
 app.post('/api/change_pass', async (req, res) => {
-  const success = await UserApiController.update_password(req.session.username, req.body.oldpass, req.body.newpass);
-  res.send(success);
+  await UserApiController.update_password(
+    req.session.username,
+    req.body.oldpass,
+    req.body.newpass,
+  );
 });
 
 app.post('/api/create_user_account', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    // Check if user is admin
-    if (user.role == 99) {
-      const success = await UserApiController.create_account(req.body.username, req.body.password, 1);
-      console.log(success);
-      res.send(success);
-    } else {
-      res.send('USER_NOT_ADMIN');
-    }
-  } else {
-    res.send('USER_NOT_FOUND');
+  // Check if user is admin
+  if (user.role != 99) {
+    throw TilBotUserNotAdminError();
   }
+  await UserApiController.create_account(req.body.username, req.body.password, 1);
 });
 
 app.post('/api/set_user_active', async (req, res) => {
-  res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    if (user.role == 99) { //admin
-      await UserApiController.set_user_active(req.body.username, req.body.active);
-      // If a user was set to inactive, stop all of their running projects.
-      if (req.body.active == 'false') {
-        const projects = await ProjectApiController.get_running_projects_user(req.body.username);
-        for (const p of projects) {
-          await ProjectApiController.set_project_status(p.id, 0);
-          stop_bot(p.id);
-        }
-      }
-      res.send('OK');
-    } else {
-      res.send('USER_NOT_ADMIN');
+  if (user.role != 99) {
+    throw TilBotUserNotAdminError();
+  }
+
+  await UserApiController.set_user_active(req.body.username, req.body.active);
+  // If a user was set to inactive, stop all of their running projects.
+  if (req.body.active == 'false') {
+    const projects = await ProjectApiController.get_running_projects_user(req.body.username);
+    for (const p of projects) {
+      await ProjectApiController.set_project_status(p.id, 0);
+      stop_bot(p.id);
     }
-  } else {
-    res.send('USER_NOT_FOUND');
   }
 });
 
 app.get('/api/get_dashboard', async (req, res) => {
-  res.status(200);
   // Return error message if not logged in
-  if (req.session.username === undefined) {
-    res.send('NOT_LOGGED_IN');
-  } else {
-    const data = { 'username': req.session.username };
-    const user = await UserApiController.get_user(req.session.username);
-    if (user !== null) {
-      if (user.role == 99) { // admin, retrieve user accounts
-        const users = await UserApiController.get_users();
-        for (const u in users) {
-          const projects = await ProjectApiController.get_running_projects_user(users[u].username);
-          users[u].running_projects = projects.length;
-        }
-        data.users = users;
-        res.send(JSON.stringify(data));
-      } else { // regular user, retrieve projects and settings
-        const projects = await ProjectApiController.get_projects(req.session.username);
-        data.projects = projects;
-        const settings = await SettingsApiController.get_settings(req.session.username);
-        data.settings = settings;
-        res.send(JSON.stringify(data));
-      }
-    } else { // An invalid username is somehow in the function
-      res.send('USER_NOT_FOUND');
-    }
+  if (req.session.username == undefined) {
+    throw TilBotNotLoggedInError();
   }
+  const data = { 'username': req.session.username };
+  const user = await UserApiController.get_user(req.session.username);
+  if (user.role == 99) { // admin, retrieve user accounts
+    const users = await UserApiController.get_users();
+    for (const u in users) {
+      const projects = await ProjectApiController.get_running_projects_user(users[u].username);
+      users[u].running_projects = projects.length;
+    }
+    data.users = users;
+  } else { // regular user, retrieve projects and settings
+    const projects = await ProjectApiController.get_projects(req.session.username);
+    data.projects = projects;
+    const settings = await SettingsApiController.get_settings(req.session.username);
+    data.settings = settings;
+  }
+  res.send(JSON.stringify(data));
 });
 
 app.post('/api/create_project', async (req, res) => {
@@ -258,67 +256,49 @@ app.post('/api/create_project', async (req, res) => {
  * API call: change a project's status (active/inactive)
  */
 app.post('/api/set_project_active', async (req, res) => {
-  res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    if (user.role == 1) {
-      const response = await ProjectApiController.get_project(req.body.projectid, req.session.username);
-      if (response != null) {
-        if (response.status == 1) {
-          // Stop project from running first
-          stop_bot(req.body.projectid);
-        }
+  if (user.role != 1) {
+    throw TilBotUserIsAdminError(req.session.username);
+  }
 
-        if (!req.body.active) {
-          // Make the project inactive
-          const response = await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
-          res.send('OK');
-        } else {
-          // @TODO: maybe at some point also make it possible to set the project back to active.
-          res.send('NOK');
-        }
-      } else {
-        res.send('NOK');
-      }
-    } else {
-      res.send('NOK');
-    }
+  const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+  if (project.status == 1) {
+    // Stop project from running first
+    stop_bot(req.body.projectid);
+  }
+
+  if (req.body.active) {
+    // @TODO: maybe at some point also make it possible to set the project back to active.
+    throw TilBotError();
   } else {
-    res.send('USER_NOT_FOUND');
+    // Make the project inactive
+    await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
   }
 });
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
 app.get('/api/get_socket', async (req, res) => {
-  res.status(200);
-  const response = await ProjectApiController.get_socket(req.query.id);
-  res.send(response);
+  const socket = await ProjectApiController.get_socket(req.query.id);
+  res.send(socket);
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
   res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    if (user.role == 1) {
-      const project = ProjectApiController.get_project(req.body.projectid, req.session.username);
-      if (project != null) {
-        const response = ProjectApiController.set_project_status(req.body.projectid, req.body.status);
-        if (response) {
-          console.log(req.body.status);
-          if (req.body.status == 1) {
-            start_bot(req.body.projectid);
-          } else {
-            stop_bot(req.body.projectid);
-          }
-          res.send('OK');
-        }
-      } else {
-        res.send('NOK');
-      }
+  if (user.role != 1) {
+    throw TilBotUserIsAdminError(req.session.username);
+  }
+  const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+  const response = await ProjectApiController.set_project_status(req.body.projectid, req.body.status);
+  if (response) {
+    console.log(req.body.status);
+    if (req.body.status == 1) {
+      start_bot(req.body.projectid);
     } else {
-      res.send('NOK');
+      stop_bot(req.body.projectid);
     }
+    res.send('OK');
   }
 });
 
@@ -343,9 +323,14 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
       fs.mkdirSync('proj_pub');
     }
 
+    const project_id = req.body.project_id;
+    if (!/^[0-9a-f]{32}$/.test(project_id)) {
+      throw TilBotProjectNotFoundError(project_id);
+    }
+
     // Remove the old project files
-    let priv_dir = 'projects/' + req.body.project_id;
-    let pub_dir = 'proj_pub/' + req.body.project_id;
+    let priv_dir = 'projects/' + project_id;
+    let pub_dir = 'proj_pub/' + project_id;
 
     if (fs.existsSync(priv_dir)) {
       fs.rmSync(priv_dir, { recursive: true });
@@ -370,13 +355,13 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
         found_projectfile = true;
         console.log('project file found');
 
-        if (running_bots[req.body.project_id] !== undefined) {
-          stop_bot(req.body.project_id);
+        if (running_bots[project_id] !== undefined) {
+          stop_bot(project_id);
         }
 
         api_promise = ProjectApiController.import_project(
           zipEntry.getData().toString("utf8"),
-          req.body.project_id,
+          project_id,
           req.session.username
         );
         // @TODO: import project file into database

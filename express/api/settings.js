@@ -6,14 +6,6 @@ export class SettingsApiController {
     static SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
 
     /**
-     * Managing users stored in the database.
-     * @constructor
-     */
-    constructor() {
-
-    }
-
-    /**
      * Retrieve the settings belonging to the current user from database.
      * If no settings are found, create a new row and return that.
      *
