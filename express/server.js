@@ -20,6 +20,7 @@ import {
   TilBotUserNotAdminError,
   TilBotNotLoggedInError,
   TilBotUserIsAdminError,
+  TilBotNoProjectFileError,
 } from './errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -239,10 +240,8 @@ app.get('/api/get_dashboard', async (req, res) => {
     }
     data.users = users;
   } else { // regular user, retrieve projects and settings
-    const projects = await ProjectApiController.get_projects(req.session.username);
-    data.projects = projects;
-    const settings = await SettingsApiController.get_settings(req.session.username);
-    data.settings = settings;
+    data.projects = await ProjectApiController.get_projects(req.session.username);
+    data.settings = await SettingsApiController.get_permitted_settings(req.session.username);
   }
   res.send(JSON.stringify(data));
 });
@@ -261,7 +260,7 @@ app.post('/api/set_project_active', async (req, res) => {
     throw TilBotUserIsAdminError(req.session.username);
   }
 
-  const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+  const project = await ProjectApiController.get_project(req.body.projectid, req.session.username, { active: true });
   if (project.status == 1) {
     // Stop project from running first
     stop_bot(req.body.projectid);
@@ -289,8 +288,11 @@ app.post('/api/set_project_status', async (req, res) => {
   if (user.role != 1) {
     throw TilBotUserIsAdminError(req.session.username);
   }
-  const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
-  const response = await ProjectApiController.set_project_status(req.body.projectid, req.body.status);
+
+  // Ensure that this project is owned by the user who is logged in:
+  await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
+
+  const response = await ProjectApiController.set_project_status(project.id, req.body.status);
   if (response) {
     console.log(req.body.status);
     if (req.body.status == 1) {
@@ -298,7 +300,6 @@ app.post('/api/set_project_status', async (req, res) => {
     } else {
       stop_bot(req.body.projectid);
     }
-    res.send('OK');
   }
 });
 
@@ -306,64 +307,44 @@ app.post('/api/set_project_status', async (req, res) => {
  * API call: Import a project
  */
 app.post('/api/import_project', upload.single('file'), async (req, res) => {
-  // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
-  const user = await UserApiController.get_user(req.session.username);
+  try {
+    // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
 
-  if (user !== null) {
+    const user = await UserApiController.get_user(req.session.username);
+
     console.log('=== IMPORT PROJECT ===');
     console.log(req.body);
 
-    // Check if the private project file directory exists
-    if (!fs.existsSync('projects')) {
-      fs.mkdirSync('projects');
-    }
-
-    // Check if the public project file directory exists
-    if (!fs.existsSync('proj_pub')) {
-      fs.mkdirSync('proj_pub');
-    }
-
     const project_id = req.body.project_id;
+
+    // Be extra careful because we're going to do filesystem operations here!
     if (!/^[0-9a-f]{32}$/.test(project_id)) {
       throw TilBotProjectNotFoundError(project_id);
     }
 
-    // Remove the old project files
-    let priv_dir = 'projects/' + project_id;
-    let pub_dir = 'proj_pub/' + project_id;
+    // Ensure that the project exists and is owned by the user:
+    await ProjectApiController.get_project(project_id, { user_id: req.session.username });
 
-    if (fs.existsSync(priv_dir)) {
-      fs.rmSync(priv_dir, { recursive: true });
-    }
-    fs.mkdirSync(priv_dir);
+    const priv_dir = 'projects/' + project_id;
+    const pub_dir = 'proj_pub/' + project_id;
 
-    if (fs.existsSync(pub_dir)) {
-      fs.rmSync(pub_dir, { recursive: true });
-    }
-    fs.mkdirSync(pub_dir);
+    fs.rmSync(priv_dir, { recursive: true, force: true });
+    fs.mkdirSync(priv_dir, { recursive: true });
+
+    fs.rmSync(pub_dir, { recursive: true, force: true });
+    fs.mkdirSync(pub_dir, { recursive: true });
 
     const zip = new AdmZip(req.file.path);
     const zipEntries = zip.getEntries(); // an array of ZipEntry records
 
     console.log(zipEntries);
 
-    let found_projectfile = false;
-    let api_promise = null;
+    let project_data = null;
 
-    zipEntries.forEach(function (zipEntry) {
+    zipEntries.forEach(zipEntry => {
       if (zipEntry.entryName == "project.json") {
-        found_projectfile = true;
-        console.log('project file found');
+        project_data = zipEntry.getData().toString("utf8");
 
-        if (running_bots[project_id] !== undefined) {
-          stop_bot(project_id);
-        }
-
-        api_promise = ProjectApiController.import_project(
-          zipEntry.getData().toString("utf8"),
-          project_id,
-          req.session.username
-        );
         // @TODO: import project file into database
         //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
       } else if (zipEntry.entryName.startsWith('var/')) {
@@ -373,21 +354,24 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
       }
     });
 
-    if (found_projectfile) {
-      const response = await api_promise();
-      // Remove the temporary file
-      fs.rmSync(req.file.path);
-
-      if (response) {
-        res.send('OK');
-      }
-      else {
-        res.send('NOK');
-      }
-    } else {
-      fs.rmSync(req.file.path);
-      res.send('NO_PROJECT_FILE');
+    if (project_data == null) {
+      throw TilBotNoProjectFileError();
     }
+
+    console.log('project file found');
+
+    if (running_bots[project_id] !== undefined) {
+      await stop_bot(project_id);
+    }
+
+    await ProjectApiController.import_project(
+      project_data,
+      project_id,
+      req.session.username
+    );
+  } finally {
+    // Remove the temporary file
+    fs.rmSync(req.file.path);
   }
 });
 
@@ -415,7 +399,7 @@ app.get('/api/get_logs', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user !== null) {
     if (user.role == 1) {
-      const project = await ProjectApiController.get_project(req.query.projectid, req.session.username);
+      const project = await ProjectApiController.get_project(req.query.projectid, { user_id: req.session.username, active: true });
       if (project == null) {
         res.send('NOK')
       } else {
@@ -440,7 +424,7 @@ app.post('/api/delete_logs', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user !== null) {
     if (user.role == 1) {
-      const project = await ProjectApiController.get_project(req.body.projectid, req.session.username);
+      const project = await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
       if (project == null) {
         res.send('NOK')
       } else {
