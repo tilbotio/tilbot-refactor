@@ -8,7 +8,6 @@ import mongodbsession from 'express-mongodb-session';
 import session from 'express-session';
 import cors from 'cors';
 import multer from 'multer';
-const upload = multer({ dest: 'tmp_upload/' });
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 import child_process from 'child_process';
@@ -21,9 +20,11 @@ import {
   TilBotNotLoggedInError,
   TilBotUserIsAdminError,
   TilBotNoProjectFileError,
+  TilBotProjectNotFoundError,
 } from './errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const upload = multer({ dest: 'tmp_upload/' });
 
 function start_bot(projectid) {
   console.log('starting ' + projectid);
@@ -379,69 +380,39 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
  * API call: save a user's settings
  */
 app.post('/api/save_settings', async (req, res) => {
-  res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    if (user.role == 1) {
-      const response = await SettingsApiController.update_settings(req.session.username, req.body.settings);
-      res.send(response);
-    } else {
-      res.send('NOK');
-    }
-  } else {
-    res.send('USER_NOT_FOUND');
+  if (user.role !== 1) {
+    throw TilBotUserIsAdminError(req.session.username);
   }
+  await SettingsApiController.update_settings(req.session.username, req.body.settings);
 });
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
-  res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    if (user.role == 1) {
-      const project = await ProjectApiController.get_project(req.query.projectid, { user_id: req.session.username, active: true });
-      if (project == null) {
-        res.send('NOK')
-      } else {
-        const response = ProjectApiController.get_logs(req.query.projectid);
-        if (response == null) {
-          res.send('NOK');
-        } else {
-          res.send(response);
-        }
-      }
-    } else {
-      res.send('NOK');
-    }
-  } else {
-    res.send('NOK');
+  if (user.role !== 1) {
+    throw TilBotUserIsAdminError(req.session.username);
   }
+  if (!req.query.projectid) {
+    throw TilBotProjectNotFoundError();
+  }
+  const project = await ProjectApiController.get_project(req.query.projectid, { user_id: req.session.username, active: true });
+  const response = ProjectApiController.get_logs(req.query.projectid);
+  res.send(response);
 });
 
 // API call: delete a project's log files
 app.post('/api/delete_logs', async (req, res) => {
-  res.status(200);
   const user = await UserApiController.get_user(req.session.username);
-  if (user !== null) {
-    if (user.role == 1) {
-      const project = await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
-      if (project == null) {
-        res.send('NOK')
-      } else {
-        const response = await ProjectApiController.delete_logs(req.body.projectid);
-        console.log(`Deleted logs: ${response}`);
-        res.send(response);
-      }
-    } else {
-      res.send('NOK');
-    }
-  } else {
-    res.send('NOK');
+  if (user.role !== 1) {
+    throw TilBotUserIsAdminError(req.session.username);
   }
+  await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
+  await ProjectApiController.delete_logs(req.body.projectid);
+  console.log(`Deleted logs: ${req.body.projectid}`);
 });
 
 app.get('/api/sesh', (req, res) => {
-  res.status(200);
   console.log(req.session);
 });
 
