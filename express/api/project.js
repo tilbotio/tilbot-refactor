@@ -26,12 +26,13 @@ export class ProjectApiController {
     /**
      * Import a project, replacing the existing one
      *
-     * @param {string} project - The project to import (JSON string).
+     * @param {string} project_json - The project to import (JSON string).
+     * @param {string} project_id - The project id to import.
      * @param {string} username - The username that owns the project.
      */
-    static async import_project(project, project_id, username) {
+    static async import_project(project_json, project_id, username) {
         const project = this.get_project(project_id, { user_id: username });
-        project.fromModel(JSON.parse(project));
+        project.fromModel(JSON.parse(project_json));
         await newschema.save();
     }
 

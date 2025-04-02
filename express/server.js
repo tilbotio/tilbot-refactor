@@ -99,25 +99,6 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use('/api', (err, req, res, next) => {
-  if (res.headersSent) {
-    // Not much we can do now that (some) data has already been sent.
-    next();
-  } else if (err instanceof TilBotError) {
-    res.send(err.api_status_code);
-  } else {
-    console.log(err);
-    res.send('NOK');
-  }
-});
-
-app.use('/api', (req, res, next) => {
-  next();
-  if (!res.headersSent) {
-    res.send('OK');
-  }
-});
-
 // Set up the MongoDB connection
 const dbPath = process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot';
 
@@ -176,6 +157,7 @@ app.post('/api/login', async (req, res) => {
   await UserApiController.login(req.body.username, req.body.password);
   req.session.username = req.body.username;
   req.session.save();
+  res.send('OK');
 });
 
 app.get('/api/admin_account_exists', async (req, res) => {
@@ -189,6 +171,7 @@ app.get('/api/admin_account_exists', async (req, res) => {
 
 app.post('/api/logout', (req, res) => {
   req.session.destroy();
+  res.send('OK');
 });
 
 app.post('/api/change_pass', async (req, res) => {
@@ -197,21 +180,23 @@ app.post('/api/change_pass', async (req, res) => {
     req.body.oldpass,
     req.body.newpass,
   );
+  res.send('OK');
 });
 
 app.post('/api/create_user_account', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   // Check if user is admin
   if (user.role != 99) {
-    throw TilBotUserNotAdminError();
+    throw new TilBotUserNotAdminError();
   }
   await UserApiController.create_account(req.body.username, req.body.password, 1);
+  res.send('OK');
 });
 
 app.post('/api/set_user_active', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user.role != 99) {
-    throw TilBotUserNotAdminError();
+    throw new TilBotUserNotAdminError();
   }
 
   await UserApiController.set_user_active(req.body.username, req.body.active);
@@ -223,12 +208,13 @@ app.post('/api/set_user_active', async (req, res) => {
       stop_bot(p.id);
     }
   }
+  res.send('OK');
 });
 
 app.get('/api/get_dashboard', async (req, res) => {
   // Return error message if not logged in
   if (req.session.username == undefined) {
-    throw TilBotNotLoggedInError();
+    throw new TilBotNotLoggedInError();
   }
   const data = { 'username': req.session.username };
   const user = await UserApiController.get_user(req.session.username);
@@ -257,7 +243,7 @@ app.post('/api/create_project', async (req, res) => {
 app.post('/api/set_project_active', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user.role != 1) {
-    throw TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(req.session.username);
   }
 
   const project = await ProjectApiController.get_project(req.body.projectid, req.session.username, { active: true });
@@ -268,11 +254,12 @@ app.post('/api/set_project_active', async (req, res) => {
 
   if (req.body.active) {
     // @TODO: maybe at some point also make it possible to set the project back to active.
-    throw TilBotError();
+    throw new TilBotError();
   } else {
     // Make the project inactive
     await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
   }
+  res.send('OK');
 });
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
@@ -283,10 +270,9 @@ app.get('/api/get_socket', async (req, res) => {
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
-  res.status(200);
   const user = await UserApiController.get_user(req.session.username);
   if (user.role != 1) {
-    throw TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(req.session.username);
   }
 
   // Ensure that this project is owned by the user who is logged in:
@@ -301,6 +287,7 @@ app.post('/api/set_project_status', async (req, res) => {
       stop_bot(req.body.projectid);
     }
   }
+  res.send('OK');
 });
 
 /**
@@ -319,7 +306,7 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
 
     // Be extra careful because we're going to do filesystem operations here!
     if (!/^[0-9a-f]{32}$/.test(project_id)) {
-      throw TilBotProjectNotFoundError(project_id);
+      throw new TilBotProjectNotFoundError(project_id);
     }
 
     // Ensure that the project exists and is owned by the user:
@@ -355,7 +342,7 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
     });
 
     if (project_data == null) {
-      throw TilBotNoProjectFileError();
+      throw new TilBotNoProjectFileError();
     }
 
     console.log('project file found');
@@ -373,6 +360,7 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
     // Remove the temporary file
     fs.rmSync(req.file.path);
   }
+  res.send('OK');
 });
 
 /**
@@ -381,21 +369,22 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
 app.post('/api/save_settings', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user.role !== 1) {
-    throw TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(req.session.username);
   }
   await SettingsApiController.update_settings(req.session.username, req.body.settings);
+  res.send('OK');
 });
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user.role !== 1) {
-    throw TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(req.session.username);
   }
   if (!req.query.projectid) {
-    throw TilBotProjectNotFoundError();
+    throw new TilBotProjectNotFoundError();
   }
-  const project = await ProjectApiController.get_project(req.query.projectid, { user_id: req.session.username, active: true });
+  await ProjectApiController.get_project(req.query.projectid, { user_id: req.session.username, active: true });
   const response = ProjectApiController.get_logs(req.query.projectid);
   res.send(response);
 });
@@ -404,15 +393,17 @@ app.get('/api/get_logs', async (req, res) => {
 app.post('/api/delete_logs', async (req, res) => {
   const user = await UserApiController.get_user(req.session.username);
   if (user.role !== 1) {
-    throw TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(req.session.username);
   }
   await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
   await ProjectApiController.delete_logs(req.body.projectid);
   console.log(`Deleted logs: ${req.body.projectid}`);
+  res.send('OK');
 });
 
 app.get('/api/sesh', (req, res) => {
   console.log(req.session);
+  res.send('OK');
 });
 
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
@@ -427,6 +418,20 @@ if (fs.existsSync('./build/handler.js')) {
     }
   })();
 }
+
+// Must be last in order to catch errors from all routes
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    // Not much we can do now that (some) data has already been sent.
+    console.log(err);
+    next();
+  } else if (err instanceof TilBotError) {
+    res.send(err.api_status_code);
+  } else {
+    console.log(err);
+    res.send('NOK');
+  }
+});
 
 server.listen(port, '0.0.0.0', () => {
   console.log('listening on port ' + port);

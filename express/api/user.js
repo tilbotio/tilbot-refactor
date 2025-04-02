@@ -4,7 +4,7 @@ import {
     TilBotUserNotFoundError,
     TilBotBadPasswordError,
     TilBotUserExistsError,
-} from './errors';
+} from '../errors.js';
 
 const MongoError = mongoose.mongo.MongoError;
 
@@ -20,7 +20,7 @@ export class UserApiController {
     static async get_user(username) {
         const user = await this.UserDetails.findOne({ username: username, active: true});
         if (user == null) {
-            throw TilBotUserNotFoundError(username);
+            throw new TilBotUserNotFoundError(username);
         }
         return user;
     }
@@ -64,7 +64,7 @@ export class UserApiController {
     static async login(username, password) {
         const user = await this.get_user(username);
         if(!(await username.verifyPassword(password))) {
-            throw TilBotBadPasswordError(username);
+            throw new TilBotBadPasswordError(username);
         }
     }
 
@@ -85,7 +85,7 @@ export class UserApiController {
         } catch (error) {
             if (error instanceof MongoError && error.code == 11000) {
                 // duplicate key error
-                throw TilBotUserExistsError(user);
+                throw new TilBotUserExistsError(user);
             } else {
                 throw error;
             }
