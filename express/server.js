@@ -29,29 +29,28 @@ const upload = multer({ dest: 'tmp_upload/' });
 function start_bot(projectid) {
   console.log('starting ' + projectid);
   // Check whether we are running in Docker or not
-  if (process.env.TILBOT_PORT != undefined) {
-    // @TODO: Docker not implemented yet.
-    //this.botlauncher.write('start ' + projectid);
-  } else {
+  if (process.env.TILBOT_PORT == undefined) {
     // Stop the bot if it is currently already running (Docker does this too further down the line)
     if (running_bots[projectid] !== undefined) {
       stop_bot(projectid);
     }
     running_bots[projectid] = child_process.fork('../socket-io/server.js', [projectid]);
+  } else {
+    // @TODO: Docker not implemented yet.
+    //this.botlauncher.write('start ' + projectid);
   }
 }
 
 async function stop_bot(projectid) {
   console.log('stopping ' + projectid);
   // Check whether we are running in Docker or not
-  if (process.env.TILBOT_PORT != undefined) {
+  if (process.env.TILBOT_PORT == undefined) {
+    if (running_bots[projectid] !== undefined) {
+      running_bots[projectid].send('exit', undefined, undefined, e => {});
+    }
+  } else {
     // @TODO: Docker not implemented yet
     //this.botlauncher.write('stop ' + projectid);
-  } else {
-    if (running_bots[projectid] !== undefined) {
-      running_bots[projectid].send('exit', undefined, undefined, (e) => {
-      });
-    }
   }
 
   try {
