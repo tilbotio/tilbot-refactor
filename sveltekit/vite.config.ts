@@ -6,8 +6,9 @@ const API_URL = process.env.VITE_API_URL || 'http://localhost:8000';
 export default defineConfig({
   plugins: [sveltekit()],
   server: {
-    host: '0.0.0.0',
+    host: true,
     port: 5173,
+    allowedHosts: true,
     strictPort: true,
     fs: {
       allow: ['proj_pub']

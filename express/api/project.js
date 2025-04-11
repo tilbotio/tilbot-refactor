@@ -1,58 +1,39 @@
 import { ProjectSchema } from '../db/project.js';
 import { LogSchema } from '../db/log.js';
+import { TilBotProjectNotFoundError } from '../errors.js';
 import { mongoose } from 'mongoose';
 import crypto from 'crypto-js';
 
 export class ProjectApiController {
-
     static ProjectDetails = mongoose.model('projectschemas', ProjectSchema);
     static LogDetails = mongoose.model('logschemas', LogSchema);
 
     /**
-     * Managing users stored in the database.
-     * @constructor
-     */
-    constructor() {
-
-    }
-
-    /**
-     * Retrieve a project (@TODO: check for active only)
+     * Retrieve a project
      *
      * @param {string} id - The project id to search for.
-     * @param {string} username - The username that owns the project.
-     * @return {ProjectSchema} The project object from database if found, otherwise null.
+     * @param {Object} extra_filters  - Extra filters to apply to the query.
      */
-    static async get_project(id, username) {
-        return await this.ProjectDetails.findOne({ id: id, user_id: username, active: true });
+    static async get_project(id, extra_filters) {
+        const query = { id: id, ...(extra_filters ?? {}) };
+        const project = await this.ProjectDetails.findOne(query);
+        if (!project) {
+            throw new TilBotProjectNotFoundError();
+        }
+        return project;
     }
 
     /**
      * Import a project, replacing the existing one
      *
-     * @param {string} project - The project to import (JSON string).
+     * @param {string} project_json - The project to import (JSON string).
+     * @param {string} project_id - The project id to import.
      * @param {string} username - The username that owns the project.
-     * @return {boolean} True if success, false if failed.
      */
-    static async import_project(project, project_id, username) {
-        const res = await this.ProjectDetails.deleteOne({ id: project_id, user_id: username });
-
-        if (res.deletedCount == 0) {
-            return false;
-        } else {
-            // Add new project
-            let newschema = this.ProjectDetails.fromModel(JSON.parse(project));
-            newschema.id = project_id;
-            newschema.user_id = username;
-
-            try {
-                await newschema.save();
-                return true;
-            } catch (error) {
-                console.log(error);
-                return false;
-            }
-        }
+    static async import_project(project_json, project_id, username) {
+        const project = await this.get_project(project_id, { user_id: username });
+        project.fromModel(JSON.parse(project_json));
+        await project.save();
     }
 
     /**
@@ -110,32 +91,22 @@ export class ProjectApiController {
      */
     static async create_project(user) {
         const p = new this.ProjectDetails();
-        p.id = crypto.MD5('tb' + user + Date.now());
+        p.id = crypto.randomBytes(16).toString('hex');
         p.user_id = user;
         p.status = 0; // Paused by default
         p.settings.project_name = 'New project';
-
-        try {
-            await p.save();
-            return 'OK';
-        } catch (error) {
-            return error;
-        }
+        await p.save();
     }
 
     /**
      * Retrieve the socket for a particular project.
      *
      * @param {string} project_id - Project ID
-     * @return {integer} Socket of the retrieved project, or -1 if the project is not found.
+     * @return {integer} Socket of the retrieved project.
      */
     static async get_socket(project_id) {
-        const project = await this.ProjectDetails.findOne({ id: project_id, status: 1, active: true});
-        if (project === null) {
-            return '-1';
-        } else {
-            return project.socket.toString();
-        }
+        const project = await this.get_project(project_id, { active: true, status: 1 });
+        return project.socket.toString();
     }
 
     /**
@@ -151,17 +122,11 @@ export class ProjectApiController {
      * Set the status of a project (running or paused).
      *
      * @param {string} project_id - Project ID
-     * @return {integer} The status that the project should be set to (0 = paused, 1 = running)
      */
     static async set_project_status(project_id, status) {
-        const project = await this.ProjectDetails.findOne({ id: project_id, active: true });
-        if (project === null) {
-            return 'NOK';
-        } else {
-            project.status = status;
-            project.save();
-            return 'OK';
-        }
+        const project = await this.get_project(project_id, { active: true });
+        project.status = status;
+        project.save();
     }
 
     /**
@@ -173,12 +138,9 @@ export class ProjectApiController {
      * @param {boolean} active - true if needs to be set to active, false for inactive
      */
     static async set_project_active(project_id, active) {
-        const schema = await this.ProjectDetails.findOne({ id: project_id });
-        if (schema != null) {
-            schema.active = active;
-            await schema.save();
-            return active;
-        }
+        const project = await this.get_project(project_id);
+        project.active = active;
+        await project.save();
     }
 
     /**
@@ -210,10 +172,8 @@ export class ProjectApiController {
      * Delete a project's logs
      *
      * @param {string} id - The project id to search for.
-     * @return {boolean} True if success, false if failed.
      */
     static async delete_logs(id) {
         await this.LogDetails.deleteMany({ project_id: id });
-        return true;
     }
 }

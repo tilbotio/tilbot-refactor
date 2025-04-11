@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-  
+
 let ProjectSchema = new Schema({
     id: {type: String, unique: true, required: true},
     name: {type: String, default: 'New project'},
@@ -17,21 +17,17 @@ let ProjectSchema = new Schema({
     socket: {type: Number},
     active: {type: Boolean, default: true}
 }, {minimize: false});
-  
-ProjectSchema.statics.fromModel = function(model) {
-    var schema = new this();
-  
-    schema.name = model.name;
-    schema.current_block_id = model.current_block_id;
-    schema.starting_block_id = model.starting_block_id;
-    schema.canvas_width = model.canvas_width;
-    schema.canvas_height = model.canvas_height;
-    schema.bot_name = model.bot_name;
-    schema.variables = model.variables;
-    schema.settings = model.settings;
-    schema.blocks = model.blocks;    
-  
-    return schema;
+
+ProjectSchema.methods.fromModel = function(model) {
+    this.name = model.name;
+    this.current_block_id = model.current_block_id;
+    this.starting_block_id = model.starting_block_id;
+    this.canvas_width = model.canvas_width;
+    this.canvas_height = model.canvas_height;
+    this.bot_name = model.bot_name;
+    this.variables = model.variables;
+    this.settings = model.settings;
+    this.blocks = model.blocks;
 }
-  
-export { ProjectSchema };  
+
+export { ProjectSchema };
