@@ -246,7 +246,7 @@ app.post('/api/set_project_active', async (req, res) => {
     throw new TilBotUserIsAdminError(req.session.username);
   }
 
-  const project = await ProjectApiController.get_project(req.body.projectid, req.session.username, { active: true });
+  const project = await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
   if (project.status == 1) {
     // Stop project from running first
     stop_bot(req.body.projectid);

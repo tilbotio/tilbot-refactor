@@ -57,6 +57,6 @@ export class SettingsApiController {
                 settings[key] = new_settings[key];
             }
         });
-        await new_settings.save();
+        await settings.save();
     }
 }

@@ -31,9 +31,9 @@ export class ProjectApiController {
      * @param {string} username - The username that owns the project.
      */
     static async import_project(project_json, project_id, username) {
-        const project = this.get_project(project_id, { user_id: username });
+        const project = await this.get_project(project_id, { user_id: username });
         project.fromModel(JSON.parse(project_json));
-        await newschema.save();
+        await project.save();
     }
 
     /**

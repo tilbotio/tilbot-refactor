@@ -77,7 +77,7 @@ export class UserApiController {
      */
     static async create_account(username, password, role) {
         const user = new this.UserDetails();
-        user.username = user;
+        user.username = username;
         user.password = password;
         user.role = role;
         try {
