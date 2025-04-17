@@ -46,7 +46,7 @@ export const SettingsSchema = new Schema({
         },
 
         /**
-        * Update a user's settings.
+        * Update a user's settings, only accepting permitted keys.
         *
         * @param {string} new_settings - JSON structure of settings
         */

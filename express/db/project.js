@@ -88,10 +88,12 @@ export const ProjectSchema = new Schema({
         /**
         * Retrieve this project's logs
         *
-        * @return {string[]} The logs in .csv format (2 files, one containing user's text one containing bot's text)
+        * @return {string} The logs in .csv format
         */
         async getLogs() {
-            const to_return = ["project_id;session_id;participant_id;session_start;session_end;message_source;message_time;message_content"];
+            const to_return = [
+                "project_id;session_id;participant_id;session_start;session_end;message_source;message_time;message_content",
+            ];
 
             const logs = await LogSchema.find({ project_id: this.id });
             for (const log of logs) {
