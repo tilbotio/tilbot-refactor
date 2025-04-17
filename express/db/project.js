@@ -1,71 +1,24 @@
 import { Schema } from 'mongoose';
+import { LogSchema } from './log.js';
 import { TilBotProjectNotFoundError } from '../errors.js';
 import crypto from 'crypto-js';
 
-const ProjectSchema = new Schema({
-    id: {type: String, unique: true, required: true},
-    name: {type: String, default: 'New project'},
-    status: {type: Number, default: 0}, // 0 = paused, 1 = running
-    current_block_id: {type: Number, default: 1},
+export const ProjectSchema = new Schema({
+    id: { type: String, unique: true, required: true },
+    name: { type: String, default: 'New project' },
+    status: { type: Number, default: 0 }, // 0 = paused, 1 = running
+    current_block_id: { type: Number, default: 1 },
     // Blocks are stored as JSON because they can have many different classes
-    blocks: {type: Schema.Types.Mixed, default: {}},
-    starting_block_id: {type: Number, default: -1},
-    canvas_width: {type: Number, default: -1},
-    canvas_height: {type: Number, default: -1},
-    bot_name: {type: String, default: 'Tilbot'},
-    variables: {type: [Schema.Types.Mixed], default: []},
-    settings: {type: Schema.Types.Mixed, default: {}},
-    user_id: {type: String, required: true},
-    socket: {type: Number},
-    active: {type: Boolean, default: true},
-    methods: {
-        /**
-         * Import a project, replacing the existing values
-         *
-         * @param {Object} model - The project values to import (plain Object).
-         */
-        fromModel(model) {
-            this.name = model.name;
-            this.current_block_id = model.current_block_id;
-            this.starting_block_id = model.starting_block_id;
-            this.canvas_width = model.canvas_width;
-            this.canvas_height = model.canvas_height;
-            this.bot_name = model.bot_name;
-            this.variables = model.variables;
-            this.settings = model.settings;
-            this.blocks = model.blocks;
-        },
-
-        async getLogs() {
-            const to_return = ["project_id;session_id;participant_id;session_start;session_end;message_source;message_time;message_content"];
-
-            const logs = await this.LogDetails.find({ project_id: this.id });
-            for(const log of logs) {
-                // I Sverige använder man standarden ISO-8601 och den kommer väl
-                // till pass här! :)
-                const log_fields = [
-                    this.id,
-                    log._id,
-                    log.participant_id,
-                    new Date(log.session_started).toLocaleString('sv'),
-                    new Date(log.session_closed).toLocaleString('sv'),
-                ];
-
-                for(const message of log.messages) {
-                    const message_fields = [
-                        ...log_fields,
-                        message.source,
-                        new Date(message.sent_at).toLocaleString('sv'),
-                        JSON.stringify(message.message),
-                    ];
-                    to_return.push(message_fields.join(';'));
-                }
-            }
-
-            to_return.push('') // to get a trailing \r\n
-            return to_return.join("\r\n");
-        },
-    },
+    blocks: { type: Schema.Types.Mixed, default: {} },
+    starting_block_id: { type: Number, default: -1 },
+    canvas_width: { type: Number, default: -1 },
+    canvas_height: { type: Number, default: -1 },
+    bot_name: { type: String, default: 'Tilbot' },
+    variables: { type: [Schema.Types.Mixed], default: [] },
+    settings: { type: Schema.Types.Mixed, default: {} },
+    user_id: { type: String, required: true },
+    socket: { type: Number },
+    active: { type: Boolean, default: true },
     statics: {
         /**
          * Create a new project and store it in the database.
@@ -98,25 +51,73 @@ const ProjectSchema = new Schema({
         },
 
         /**
-         * Retrieve summaries for all projects belonging to a given user from
-         * database.
+         * Retrieve summaries for all projects from database.
          *
-         * @param {string} username - The username that owns the projects.
          * @param {Object} filters - Filter conditions.
          * @return {Object[]} Array of summarized projects present in database.
          */
         async getSummaries(filters) {
             const projects = await this.find(filters ?? {});
-            const projects_return = Object.values(projects).map(project => ({
+            const summaries = projects.map(project => ({
                 id: project.id,
                 name: project.settings.project_name,
                 status: project.status,
             }));
-            projects_return.sort((a, b) => a.name > b.name ? 1 : -1);
-            return projects_return;
+            summaries.sort((a, b) => a.name < b.name ? -1 : 1);
+            return summaries;
         },
     },
-}, {minimize: false});
+    methods: {
+        /**
+         * Import a project, replacing the existing values
+         *
+         * @param {Object} model - The project values to import (plain Object).
+         */
+        fromModel(model) {
+            this.name = model.name;
+            this.current_block_id = model.current_block_id;
+            this.starting_block_id = model.starting_block_id;
+            this.canvas_width = model.canvas_width;
+            this.canvas_height = model.canvas_height;
+            this.bot_name = model.bot_name;
+            this.variables = model.variables;
+            this.settings = model.settings;
+            this.blocks = model.blocks;
+        },
 
+        /**
+        * Retrieve this project's logs
+        *
+        * @return {string[]} The logs in .csv format (2 files, one containing user's text one containing bot's text)
+        */
+        async getLogs() {
+            const to_return = ["project_id;session_id;participant_id;session_start;session_end;message_source;message_time;message_content"];
 
-export { ProjectSchema };
+            const logs = await LogSchema.find({ project_id: this.id });
+            for (const log of logs) {
+                // I Sverige använder man standarden ISO-8601 och den kommer väl
+                // till pass här! :)
+                const log_fields = [
+                    this.id,
+                    log._id,
+                    log.participant_id,
+                    new Date(log.session_started).toLocaleString('sv'),
+                    new Date(log.session_closed).toLocaleString('sv'),
+                ];
+
+                for (const message of log.messages) {
+                    const message_fields = [
+                        ...log_fields,
+                        message.source,
+                        new Date(message.sent_at).toLocaleString('sv'),
+                        JSON.stringify(message.message),
+                    ];
+                    to_return.push(message_fields.join(';'));
+                }
+            }
+
+            to_return.push(''); // to get a trailing \r\n
+            return to_return.join("\r\n");
+        },
+    },
+}, { minimize: false });
