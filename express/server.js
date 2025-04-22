@@ -12,7 +12,9 @@ import AdmZip from 'adm-zip';
 import fs from 'fs';
 import child_process from 'child_process';
 
+import { LogSchema } from './db/log.js';
 import { ProjectSchema } from './db/project.js';
+import { UserSchema } from './db/user.js';
 import {
   TilBotError,
   TilBotUserNotAdminError,
@@ -21,8 +23,6 @@ import {
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
 } from './errors.js';
-import { LogSchema } from './db/log.js';
-import { UserSchema } from './db/user.js';
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
