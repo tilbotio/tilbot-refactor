@@ -43,7 +43,7 @@ export const UserSchema = new Schema({
         *
         * @return {Object[]} Array of user info present in database.
         */
-        async getUserSummaries() {
+        async getSummaries() {
             const users = await UserSchema.find({ role: 1 });
             const summaries = users.map(user => ({
                 username: user.username,

@@ -52,7 +52,7 @@ export const SettingsSchema = new Schema({
         */
         async update(new_settings) {
             // Only update permitted attributes:
-            self.permittedSettings.forEach(key => {
+            this.permittedSettings.forEach(key => {
                 if (key in new_settings) {
                     this[key] = new_settings[key];
                 }

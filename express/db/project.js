@@ -41,8 +41,8 @@ export const ProjectSchema = new Schema({
          * @param {string} id - The project id to search for.
          * @param {Object} extra_filters  - Extra filters to apply to the query.
          */
-        async getById(id, extra_filters) {
-            const query = { id: id, ...(extra_filters ?? {}) };
+        async getById(id, extra_filters = {}) {
+            const query = { id: id, ...extra_filters };
             const project = await this.findOne(query);
             if (!project) {
                 throw new TilBotProjectNotFoundError();
@@ -56,8 +56,8 @@ export const ProjectSchema = new Schema({
          * @param {Object} filters - Filter conditions.
          * @return {Object[]} Array of summarized projects present in database.
          */
-        async getSummaries(filters) {
-            const projects = await this.find(filters ?? {});
+        async getSummaries(filters = {}) {
+            const projects = await this.find(filters);
             const summaries = projects.map(project => ({
                 id: project.id,
                 name: project.settings.project_name,
