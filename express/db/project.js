@@ -1,7 +1,7 @@
 import { Schema, mongoose } from 'mongoose';
 import { LogModel } from './log.js';
 import { TilBotProjectNotFoundError } from '../errors.js';
-import crypto from 'crypto-js';
+import crypto from 'crypto';
 
 export const ProjectSchema = new Schema({
     id: { type: String, unique: true, required: true },
@@ -15,10 +15,12 @@ export const ProjectSchema = new Schema({
     canvas_height: { type: Number, default: -1 },
     bot_name: { type: String, default: 'Tilbot' },
     variables: { type: [Schema.Types.Mixed], default: [] },
-    settings: { type: Schema.Types.Mixed, default: {} },
+    settings: { type: Schema.Types.Mixed, default: { project_name: 'New project' } },
     user_id: { type: String, required: true },
     socket: { type: Number },
     active: { type: Boolean, default: true },
+}, {
+    minimize: false,
     statics: {
         /**
          * Create a new project and store it in the database.
@@ -27,9 +29,10 @@ export const ProjectSchema = new Schema({
          * @return {ProjectModel} The created project.
          */
         async create(username) {
-            const project = new this();
-            project.id = crypto.randomBytes(16).toString('hex');
-            project.user_id = username;
+            const project = new this({
+                id: crypto.randomBytes(16).toString('hex'),
+                user_id: username,
+            });
             await project.save();
             return project;
         },
@@ -122,6 +125,6 @@ export const ProjectSchema = new Schema({
             return to_return.join("\r\n");
         },
     },
-}, { minimize: false });
+});
 
 export const ProjectModel = mongoose.model('projectschemas', ProjectSchema);

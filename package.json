@@ -1,29 +1,29 @@
 {
-	"name": "tilbot",
-	"version": "2.0.0",
-	"private": true,
-	"workspaces": [
-	  "sveltekit",
-	  "express",
-	  "socket-io",
-	  "electron"
-	],
-	"scripts": {
-	  "dev:sveltekit": "npm run dev --workspace=sveltekit",
-	  "dev:express": "npm run start --workspace=express",
-	  "dev": "concurrently \"npm run dev:sveltekit\" \"npm run dev:express\" \"npm run dev-vite --workspace=sveltekit\"",
-	  "prod": "concurrently \"npm run build --workspace=sveltekit\" \"npm run dev:express\"",
-	  "preview": "npm run preview --workspace=sveltekit",
-	  "check": "npm run check --workspace=sveltekit",
-	  "check:watch": "npm run check:watch --workspace=sveltekit",
-	  "electron": "npm run build --workspace=electron && npm run build:vite --workspace=sveltekit && npm run start --workspace=electron",
-	  "package-win": "npm run package-win --workspace=electron",
-	  "package-mac-x64": "npm run package-mac-x64 --workspace=electron",
-	  "package-mac-arm": "npm run package-mac-arm --workspace=electron"
-	},
-	"devDependencies": {
-    "concurrently": "^8.2.2",
-    "del-cli": "^5.1.0",
-    "tslib": "^2.3.1"
-  }
+    "name": "tilbot",
+    "version": "2.0.0",
+    "private": true,
+    "workspaces": [
+        "sveltekit",
+        "express",
+        "socket-io",
+        "electron"
+    ],
+    "scripts": {
+        "dev:sveltekit": "npm run dev --workspace=sveltekit",
+        "dev:express": "npm run start --workspace=express",
+        "dev": "concurrently \"npm run dev:sveltekit\" \"npm run dev:express\" \"npm run dev-vite --workspace=sveltekit\"",
+        "prod": "concurrently \"npm run build --workspace=sveltekit\" \"npm run dev:express\"",
+        "preview": "npm run preview --workspace=sveltekit",
+        "check": "npm run check --workspace=sveltekit",
+        "check:watch": "npm run check:watch --workspace=sveltekit",
+        "electron": "npm run build --workspace=electron && npm run build:vite --workspace=sveltekit && npm run start --workspace=electron",
+        "package-win": "npm run package-win --workspace=electron",
+        "package-mac-x64": "npm run package-mac-x64 --workspace=electron",
+        "package-mac-arm": "npm run package-mac-arm --workspace=electron"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "del-cli": "^5.1.0",
+        "tslib": "^2.3.1"
+    }
 }

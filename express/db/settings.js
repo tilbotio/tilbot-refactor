@@ -6,6 +6,7 @@ export const SettingsSchema = new Schema({
     llm_setting: { type: String, default: 'chatgpt' },
     llm_api_address: { type: String, default: '' },
     user_id: { type: String, required: true, unique: true },
+}, {
     statics: {
         // Settings that the user is allowed to see.
         permittedSettings: [
@@ -39,9 +40,9 @@ export const SettingsSchema = new Schema({
         */
         getPermitted() {
             const summary = {};
-            this.permittedSettings.forEach(key => {
+            for(const key of this.constructor.permittedSettings) {
                 summary[key] = this[key];
-            });
+            }
             return summary;
         },
 
@@ -52,12 +53,12 @@ export const SettingsSchema = new Schema({
         */
         async update(new_settings) {
             // Only update permitted attributes:
-            this.permittedSettings.forEach(key => {
+            for(const key of this.constructor.permittedSettings) {
                 if (key in new_settings) {
                     this[key] = new_settings[key];
                 }
-            });
-            await settings.save();
+            }
+            await this.save();
         },
     },
 });

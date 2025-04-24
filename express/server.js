@@ -158,7 +158,7 @@ app.use(session({
 
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
-  const user = await UserModel.getById(req.body.username);
+  const user = await UserModel.getByUsername(req.body.username);
   await user.checkPassword(req.body.password);
   req.session.username = req.body.username;
   req.session.save();
@@ -180,13 +180,13 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.post('/api/change_pass', async (req, res) => {
-  const user = UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   await user.updatePassword(req.body.oldpass, req.body.newpass);
   res.send('OK');
 });
 
 app.post('/api/create_user_account', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   // Check if user is admin
   if (user.role != 99) {
     throw new TilBotUserNotAdminError();
@@ -196,7 +196,7 @@ app.post('/api/create_user_account', async (req, res) => {
 });
 
 app.post('/api/set_user_active', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role != 99) {
     throw new TilBotUserNotAdminError();
   }
@@ -225,7 +225,7 @@ app.get('/api/get_dashboard', async (req, res) => {
     throw new TilBotNotLoggedInError();
   }
   const data = { 'username': req.session.username };
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role == 99) { // admin, retrieve user accounts
     const users = await UserModel.getSummaries();
     for (const user of users) {
@@ -248,15 +248,15 @@ app.get('/api/get_dashboard', async (req, res) => {
 });
 
 app.post('/api/create_project', async (req, res) => {
-  const response = await ProjectModel.create(req.session.username);
-  res.send(response);
+  await ProjectModel.create(req.session.username);
+  res.send('OK');
 });
 
 /**
  * API call: change a project's status (active/inactive)
  */
 app.post('/api/set_project_active', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role != 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
@@ -286,7 +286,7 @@ app.get('/api/get_socket', async (req, res) => {
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role != 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
@@ -383,18 +383,18 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
  * API call: save a user's settings
  */
 app.post('/api/save_settings', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role !== 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
-  const settings = await user.getSetting();
-  await settings.update(req.body.settings);
+  const settings = await user.getSettings();
+  await settings.update(JSON.parse(req.body.settings));
   res.send('OK');
 });
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role !== 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
@@ -410,7 +410,7 @@ app.get('/api/get_logs', async (req, res) => {
 
 // API call: delete a project's log files
 app.post('/api/delete_logs', async (req, res) => {
-  const user = await UserModel.getById(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role !== 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
@@ -419,7 +419,7 @@ app.post('/api/delete_logs', async (req, res) => {
     user_id: req.session.username,
     active: true,
   });
-  await LogModel.deleteMany({ project_id: id });
+  await LogModel.deleteMany({ project_id: req.body.projectid });
   console.log(`Deleted logs: ${req.body.projectid}`);
   res.send('OK');
 });

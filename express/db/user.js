@@ -12,6 +12,7 @@ export const UserSchema = new Schema({
     password: { type: String, required: true, bcrypt: true },
     role: { type: Number, required: true, default: 1 },
     active: { type: Boolean, default: true },
+}, {
     statics: {
         /**
         * Retrieve active user by username
