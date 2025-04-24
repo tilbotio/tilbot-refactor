@@ -1,5 +1,5 @@
-import { Schema } from 'mongoose';
-import { SettingsSchema } from './settings.js';
+import { Schema, mongoose } from 'mongoose';
+import { SettingsModel } from './settings.js';
 import pkg from 'mongoose-bcrypt';
 import {
     TilBotUserNotFoundError,
@@ -17,10 +17,10 @@ export const UserSchema = new Schema({
         * Retrieve active user by username
         *
         * @param {String} username - The username to search for.
-        * @return {UserSchema} The user object from database.
+        * @return {UserModel} The user object from database.
         */
         async getByUsername(username) {
-            const user = await UserSchema.findOne({ username, active: true });
+            const user = await UserModel.findOne({ username, active: true });
             if (user == null) {
                 throw new TilBotUserNotFoundError(username);
             }
@@ -34,7 +34,7 @@ export const UserSchema = new Schema({
         */
         async adminAccountExists() {
             return (
-                await UserSchema.findOne({ role: 99, active: true })
+                await UserModel.findOne({ role: 99, active: true })
             ) != null;
         },
 
@@ -44,7 +44,7 @@ export const UserSchema = new Schema({
         * @return {Object[]} Array of user info present in database.
         */
         async getSummaries() {
-            const users = await UserSchema.find({ role: 1 });
+            const users = await UserModel.find({ role: 1 });
             const summaries = users.map(user => ({
                 username: user.username,
                 active: user.active,
@@ -61,7 +61,7 @@ export const UserSchema = new Schema({
         * @param {Number} role - User role: 99 = admin; 1 = user
         */
         async create(username, password, role) {
-            const user = new UserSchema({ username, password, role });
+            const user = new UserModel({ username, password, role });
             try {
                 await user.save();
             } catch (error) {
@@ -103,10 +103,10 @@ export const UserSchema = new Schema({
         * Retrieve the settings belonging to the current user from database.
         * If no settings are found, create a new row and return that.
         *
-        * @return {SettingsSchema} Settings present in database.
+        * @return {SettingsModel} Settings present in database.
         */
         async getSettings() {
-            return await SettingsSchema.getOrCreate(this.username);
+            return await SettingsModel.getOrCreate(this.username);
         },
 
         /**
@@ -124,3 +124,5 @@ export const UserSchema = new Schema({
 });
 
 UserSchema.plugin(pkg);
+
+export const UserModel = mongoose.model('userschemas', UserSchema);

@@ -1,14 +1,9 @@
-import { LogSchema } from '../express/db/log.js';
-import { MessageSchema } from '../express/db/message.js';
-import { mongoose } from 'mongoose';
+import { LogModel } from '../express/db/log.js';
+import { MessageModel } from '../express/db/message.js';
 
 export class Logger {
-
-    static LogDetails = mongoose.model('logschemas', LogSchema);
-    static MessageDetails = mongoose.model('messageschemas', MessageSchema);
-
     constructor(project_id) {
-        this._log = new Logger.LogDetails();
+        this._log = new LogModel();
         this._log.project_id = project_id;
         this._log.save((err) => {
             if (err) {
@@ -17,11 +12,10 @@ export class Logger {
         });
     }
 
-
     log(event, detail = '') {
         if (event == 'message_bot' || event == 'message_user') {
 
-            let msg = new Logger.MessageDetails();
+            let msg = new MessageModel();
             msg.source = 'bot';
             if (event == 'message_user') {
                 msg.source = 'user';

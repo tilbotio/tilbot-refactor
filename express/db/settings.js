@@ -1,4 +1,4 @@
-import { Schema } from 'mongoose';
+import { Schema, mongoose } from 'mongoose';
 
 export const SettingsSchema = new Schema({
     chatgpt_api_key: { type: String, default: '' },
@@ -20,10 +20,10 @@ export const SettingsSchema = new Schema({
         * If no settings are found, create a new row and return that.
         *
         * @param {string} username - The username that owns the settings.
-        * @return {SettingsSchema} Settings present in database.
+        * @return {SettingsModel} Settings present in database.
         */
         async getOrCreate(username) {
-            return await SettingsSchema.findOneAndUpdate(
+            return await SettingsModel.findOneAndUpdate(
                 { user_id: username },
                 {},
                 { upsert: true, new: true },
@@ -61,3 +61,5 @@ export const SettingsSchema = new Schema({
         },
     },
 });
+
+export const SettingsModel = mongoose.model('settingsschemas', SettingsSchema);

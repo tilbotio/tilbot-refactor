@@ -1,13 +1,12 @@
 import http from 'http';
 import https from 'https';
 import {Server} from 'socket.io';
-import path from 'path';
 import fs from 'fs';
 import ProjectController from '../electron/projectcontroller.cjs';
 import ChatGPT from '../electron/chatgpt.cjs';
 import LocalLLM from '../electron/localllm.cjs';
-import { ProjectSchema } from '../express/db/project.js';
-import { SettingsSchema } from '../express/db/settings.js';
+import { ProjectModel } from '../express/db/project.js';
+import { SettingsModel } from '../express/db/settings.js';
 import { mongoose } from 'mongoose';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -59,9 +58,7 @@ await mongoose.connect(dbPath, options);
 // Main MongoDB connection
 console.log('MongoDB connected');
 
-const ProjectDetails = mongoose.model('projectschemas', ProjectSchema);
-
-const project = await ProjectDetails.findOne({'id': project_id});
+const project = await ProjectModel.findOne({'id': project_id});
 if (project === null) {
     console.log('Project not found -- exiting');
     process.exit();
@@ -75,9 +72,8 @@ if (project === null) {
     // Retrieve general user settings for ChatGPT API key and local LLM settings
     // @TODO: also retrieve ChatGPT version setting -- now forced to 4.0
     // NOTE: ChatGPT currently is set up to be a static class, so it takes the last API that it was initiated with, not one API per user/project!
-    const SettingsDetails = mongoose.model('settingsschemas', SettingsSchema);
 
-    const settings = await SettingsDetails.findOne({'user_id': project.user_id});
+    const settings = await SettingsModel.findOne({'user_id': project.user_id});
     let llm_setting = 'chatgpt';
     if (settings != null) {
       if (settings.llm_setting != null) {

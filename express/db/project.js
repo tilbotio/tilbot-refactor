@@ -1,5 +1,5 @@
-import { Schema } from 'mongoose';
-import { LogSchema } from './log.js';
+import { Schema, mongoose } from 'mongoose';
+import { LogModel } from './log.js';
 import { TilBotProjectNotFoundError } from '../errors.js';
 import crypto from 'crypto-js';
 
@@ -24,7 +24,7 @@ export const ProjectSchema = new Schema({
          * Create a new project and store it in the database.
          *
          * @param {string} username - Username
-         * @return {ProjectSchema} The created project.
+         * @return {ProjectModel} The created project.
          */
         async create(username) {
             const project = new this();
@@ -95,7 +95,7 @@ export const ProjectSchema = new Schema({
                 "project_id;session_id;participant_id;session_start;session_end;message_source;message_time;message_content",
             ];
 
-            const logs = await LogSchema.find({ project_id: this.id });
+            const logs = await LogModel.find({ project_id: this.id });
             for (const log of logs) {
                 // I Sverige använder man standarden ISO-8601 och den kommer väl
                 // till pass här! :)
@@ -123,3 +123,5 @@ export const ProjectSchema = new Schema({
         },
     },
 }, { minimize: false });
+
+export const ProjectModel = mongoose.model('projectschemas', ProjectSchema);
