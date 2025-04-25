@@ -106,7 +106,7 @@ app.use(cors({
 // Set up the MongoDB connection
 const dbPath = process.env.MONGO_USERNAME
   ? `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@mongo:${process.env.MONGO_PORT ?? 27017}/${process.env.MONGO_DB ?? 'tilbot'}`
-  : (process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot')
+  : (process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot');
 
 const options = { useNewUrlParser: true, useUnifiedTopology: true };
 await mongoose.connect(dbPath, options);
