@@ -1,10 +1,9 @@
-import { Schema } from 'mongoose';
+import { Schema, mongoose } from 'mongoose';
 
-let MessageSchema = new Schema({
+export const MessageSchema = new Schema({
     message: { type: String },
     source: { type: String },
     sent_at: { type: Date, default: Date.now }
 });
 
-export { MessageSchema };
-  
+export const MessageModel = mongoose.model('messageschemas', MessageSchema);

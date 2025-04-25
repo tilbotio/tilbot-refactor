@@ -11,9 +11,10 @@ import multer from 'multer';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 import child_process from 'child_process';
-import { UserApiController } from './api/user.js';
-import { ProjectApiController } from './api/project.js';
-import { SettingsApiController } from './api/settings.js';
+
+import { LogModel } from './db/log.js';
+import { ProjectModel } from './db/project.js';
+import { UserModel } from './db/user.js';
 import {
   TilBotError,
   TilBotUserNotAdminError,
@@ -22,6 +23,7 @@ import {
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
 } from './errors.js';
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const upload = multer({ dest: 'tmp_upload/' });
@@ -46,7 +48,7 @@ async function stop_bot(projectid) {
   // Check whether we are running in Docker or not
   if (process.env.TILBOT_PORT == undefined) {
     if (running_bots[projectid] !== undefined) {
-      running_bots[projectid].send('exit', undefined, undefined, e => {});
+      running_bots[projectid].send('exit', undefined, undefined, e => { });
     }
   } else {
     // @TODO: Docker not implemented yet
@@ -54,7 +56,9 @@ async function stop_bot(projectid) {
   }
 
   try {
-    await ProjectApiController.set_project_status(projectid, 0);
+    const project = await ProjectModel.getById(projectid);
+    project.status = 0;
+    await project.save();
   } catch (error) {
     console.error(`Error stopping bot: ${error}`);
   }
@@ -146,7 +150,7 @@ app.use(session({
 
 // Launch all running bots (IIFE to run it in the background)
 (async () => {
-  const projects = await ProjectApiController.get_running_projects();
+  const projects = await ProjectModel.getSummaries({ active: true, status: 1 });
   for (const project of projects) {
     start_bot(project.id);
   }
@@ -154,17 +158,18 @@ app.use(session({
 
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
-  await UserApiController.login(req.body.username, req.body.password);
+  const user = await UserModel.getByUsername(req.body.username);
+  await user.checkPassword(req.body.password);
   req.session.username = req.body.username;
   req.session.save();
   res.send('OK');
 });
 
 app.get('/api/admin_account_exists', async (req, res) => {
-  if (await UserApiController.admin_account_exists()) {
+  if (await UserModel.adminAccountExists()) {
     res.send('EXISTS');
   } else {
-    UserApiController.create_account('admin', 'admin', 99);
+    await UserModel.create('admin', 'admin', 99);
     res.send('CREATED');
   }
 });
@@ -175,37 +180,40 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.post('/api/change_pass', async (req, res) => {
-  await UserApiController.update_password(
-    req.session.username,
-    req.body.oldpass,
-    req.body.newpass,
-  );
+  const user = await UserModel.getByUsername(req.session.username);
+  await user.updatePassword(req.body.oldpass, req.body.newpass);
   res.send('OK');
 });
 
 app.post('/api/create_user_account', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   // Check if user is admin
   if (user.role != 99) {
     throw new TilBotUserNotAdminError();
   }
-  await UserApiController.create_account(req.body.username, req.body.password, 1);
+  await UserModel.create(req.body.username, req.body.password, 1);
   res.send('OK');
 });
 
 app.post('/api/set_user_active', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role != 99) {
     throw new TilBotUserNotAdminError();
   }
 
-  await UserApiController.set_user_active(req.body.username, req.body.active);
+  user.active = req.body.active;
+  await user.save();
   // If a user was set to inactive, stop all of their running projects.
-  if (req.body.active == 'false') {
-    const projects = await ProjectApiController.get_running_projects_user(req.body.username);
-    for (const p of projects) {
-      await ProjectApiController.set_project_status(p.id, 0);
-      stop_bot(p.id);
+  if (!req.body.active) {
+    const projects = await ProjectModel.find({
+      user_id: req.body.username,
+      active: true,
+      status: 1,
+    });
+    for (const project of projects) {
+      project.status = 0;
+      await project.save();
+      stop_bot(project.id);
     }
   }
   res.send('OK');
@@ -217,36 +225,43 @@ app.get('/api/get_dashboard', async (req, res) => {
     throw new TilBotNotLoggedInError();
   }
   const data = { 'username': req.session.username };
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role == 99) { // admin, retrieve user accounts
-    const users = await UserApiController.get_users();
-    for (const u in users) {
-      const projects = await ProjectApiController.get_running_projects_user(users[u].username);
-      users[u].running_projects = projects.length;
+    const users = await UserModel.getSummaries();
+    for (const user of users) {
+      const projects = await ProjectModel.getSummaries({
+        user_id: user.username,
+        active: true,
+        status: 1,
+      });
+      user.running_projects = projects.length;
     }
     data.users = users;
   } else { // regular user, retrieve projects and settings
-    data.projects = await ProjectApiController.get_projects(req.session.username);
-    data.settings = await SettingsApiController.get_permitted_settings(req.session.username);
+    data.projects = await ProjectModel.getSummaries({
+      user_id: req.session.username,
+      active: true,
+    });
+    data.settings = await user.getPermittedSettings();
   }
   res.send(JSON.stringify(data));
 });
 
 app.post('/api/create_project', async (req, res) => {
-  const response = await ProjectApiController.create_project(req.session.username);
-  res.send(response);
+  await ProjectModel.create(req.session.username);
+  res.send('OK');
 });
 
 /**
  * API call: change a project's status (active/inactive)
  */
 app.post('/api/set_project_active', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role != 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
 
-  const project = await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
+  const project = await ProjectModel.getById(req.body.projectid, { user_id: req.session.username, active: true });
   if (project.status == 1) {
     // Stop project from running first
     stop_bot(req.body.projectid);
@@ -257,36 +272,42 @@ app.post('/api/set_project_active', async (req, res) => {
     throw new TilBotError();
   } else {
     // Make the project inactive
-    await ProjectApiController.set_project_active(req.body.projectid, req.body.active);
+    project.active = req.body.active;
+    await project.save();
   }
   res.send('OK');
 });
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
 app.get('/api/get_socket', async (req, res) => {
-  const socket = await ProjectApiController.get_socket(req.query.id);
-  res.send(socket);
+  const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
+  res.send(project.socket.toString());
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role != 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
 
   // Ensure that this project is owned by the user who is logged in:
-  await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
+  const project = await ProjectModel.getById(req.body.projectid, {
+    user_id: req.session.username,
+    active: true,
+  });
 
-  const response = await ProjectApiController.set_project_status(project.id, req.body.status);
-  if (response) {
-    console.log(req.body.status);
-    if (req.body.status == 1) {
-      start_bot(req.body.projectid);
-    } else {
-      stop_bot(req.body.projectid);
-    }
+  console.log(req.body.status);
+  const status = req.body.status ? 1 : 0;
+  project.status = status;
+  project.save();
+
+  if (status) {
+    start_bot(req.body.projectid);
+  } else {
+    stop_bot(req.body.projectid);
   }
+
   res.send('OK');
 });
 
@@ -296,8 +317,6 @@ app.post('/api/set_project_status', async (req, res) => {
 app.post('/api/import_project', upload.single('file'), async (req, res) => {
   try {
     // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
-
-    const user = await UserApiController.get_user(req.session.username);
 
     console.log('=== IMPORT PROJECT ===');
     console.log(req.body);
@@ -310,7 +329,7 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
     }
 
     // Ensure that the project exists and is owned by the user:
-    await ProjectApiController.get_project(project_id, { user_id: req.session.username });
+    const project = await ProjectModel.getById(project_id, { user_id: req.session.username });
 
     const priv_dir = 'projects/' + project_id;
     const pub_dir = 'proj_pub/' + project_id;
@@ -335,7 +354,7 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
         // @TODO: import project file into database
         //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
       } else if (zipEntry.entryName.startsWith('var/')) {
-        zip.extractEntryTo(zipEntry, priv_dir)
+        zip.extractEntryTo(zipEntry, priv_dir);
       } else {
         zip.extractEntryTo(zipEntry, pub_dir);
       }
@@ -351,11 +370,8 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
       await stop_bot(project_id);
     }
 
-    await ProjectApiController.import_project(
-      project_data,
-      project_id,
-      req.session.username
-    );
+    project.fromModel(JSON.parse(project_data));
+    await project.save();
   } finally {
     // Remove the temporary file
     fs.rmSync(req.file.path);
@@ -367,36 +383,43 @@ app.post('/api/import_project', upload.single('file'), async (req, res) => {
  * API call: save a user's settings
  */
 app.post('/api/save_settings', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role !== 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
-  await SettingsApiController.update_settings(req.session.username, req.body.settings);
+  const settings = await user.getSettings();
+  await settings.update(JSON.parse(req.body.settings));
   res.send('OK');
 });
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role !== 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
   if (!req.query.projectid) {
     throw new TilBotProjectNotFoundError();
   }
-  await ProjectApiController.get_project(req.query.projectid, { user_id: req.session.username, active: true });
-  const response = ProjectApiController.get_logs(req.query.projectid);
-  res.send(response);
+  const project = await ProjectModel.getById(req.query.projectid, {
+    user_id: req.session.username,
+    active: true,
+  });
+  res.send(project.getLogs());
 });
 
 // API call: delete a project's log files
 app.post('/api/delete_logs', async (req, res) => {
-  const user = await UserApiController.get_user(req.session.username);
+  const user = await UserModel.getByUsername(req.session.username);
   if (user.role !== 1) {
     throw new TilBotUserIsAdminError(req.session.username);
   }
-  await ProjectApiController.get_project(req.body.projectid, { user_id: req.session.username, active: true });
-  await ProjectApiController.delete_logs(req.body.projectid);
+  // Ensure the project exists and is owned by the current user
+  await ProjectModel.getById(req.body.projectid, {
+    user_id: req.session.username,
+    active: true,
+  });
+  await LogModel.deleteMany({ project_id: req.body.projectid });
   console.log(`Deleted logs: ${req.body.projectid}`);
   res.send('OK');
 });

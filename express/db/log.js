@@ -1,13 +1,12 @@
-import { Schema } from 'mongoose';
+import { Schema, mongoose } from 'mongoose';
 import { MessageSchema } from './message.js';
 
-let LogSchema = new Schema({
+export const LogSchema = new Schema({
     messages: [MessageSchema],
-    session_started: {type: Date, default: Date.now},
-    session_closed: {type: Date, default: Date.now},
-    project_id: {type: String, required: true},
-    participant_id: {type: String, default: ""}
+    session_started: { type: Date, default: Date.now },
+    session_closed: { type: Date, default: Date.now },
+    project_id: { type: String, required: true },
+    participant_id: { type: String, default: "" }
 });
 
-export { LogSchema };
-  
+export const LogModel = mongoose.model('logschemas', LogSchema);
