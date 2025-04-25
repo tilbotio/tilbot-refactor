@@ -196,11 +196,12 @@ app.post('/api/create_user_account', async (req, res) => {
 });
 
 app.post('/api/set_user_active', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
-  if (user.role != 99) {
+  const session_user = await UserModel.getByUsername(req.session.username);
+  if (session_user.role != 99) {
     throw new TilBotUserNotAdminError();
   }
 
+  const user = await UserModel.getByUsername(req.body.username);
   user.active = req.body.active;
   await user.save();
   // If a user was set to inactive, stop all of their running projects.
