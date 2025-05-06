@@ -20,23 +20,6 @@ function app(req, res) {
 
 };
 
-if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
-
-  const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
-  const cert = fs.readFileSync(__dirname + '/../certs/pubkey.pem');
-  var ssloptions = {
-    key: key,
-    cert: cert
-  };
-
-  server = https.createServer(ssloptions, app);
-  is_https = true;
-}
-
-else {
-  server = http.createServer(app);
-}
-
 let project_id = process.argv[2];
 console.log('Project id: ' + project_id);
 const io = new Server(server, {
@@ -89,14 +72,25 @@ if (project === null) {
     let clients = {};
 
     function tryNextPort(port, ...listenArgs) {
+      if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
+        const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
+        const cert = fs.readFileSync(__dirname + '/../certs/pubkey.pem');
+        var ssloptions = {
+          key: key,
+          cert: cert
+        };
+
+        server = https.createServer(ssloptions, app);
+        is_https = true;
+      } else {
+        server = http.createServer(app);
+      }
+
       server.listen(port, ...listenArgs).on('error', err => {
         if (err.code === 'EADDRINUSE') {
           if (port < 65535) {
-            // Don't try to pass the callback parameter again, apparently
-            // the server stores it each time you call .listen() and you would
-            // end up with a thundering herd of callback invocations (one for
-            // each attempt) when it finally finds a free port.
-            tryNextPort(port + 1);
+            server.close();
+            tryNextPort(port + 1, ...listenArgs);
           } else {
             throw new Error("Unable to bind any port");
           }
