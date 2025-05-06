@@ -1,5 +1,3 @@
-import http from 'http';
-import https from 'https';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import Fastify from 'fastify';
@@ -8,6 +6,7 @@ import { fastifyCookie } from '@fastify/cookie';
 import fastifyCORS from '@fastify/cors';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyFileUpload from 'fastify-file-upload';
+import fastifyMultiPart from '@fastify/multipart';
 import MongoStore from 'connect-mongo';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
@@ -63,6 +62,9 @@ app.register(fastifyCookie, {
 });
 
 app.register(fastifySession, {
+  cookie: {
+    secure: Boolean(process.env.HTTPS),
+  },
   secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
   store: MongoStore.create({
     client: mongoose.connection.getClient(),
@@ -89,6 +91,8 @@ app.register(fastifyFileUpload, {
   useTempFiles: true,
   tempFileDir: '/tmp',
 });
+
+app.register(fastifyMultiPart);
 
 // Keep track of running external processes for bots.
 const running_bots = {};
@@ -143,27 +147,24 @@ app.post('/api/login', async (req, res) => {
   await user.checkPassword(req.body.password);
   req.session.username = req.body.username;
   req.session.save();
-  res.send('OK');
 });
 
 app.get('/api/admin_account_exists', async (req, res) => {
   if (await UserModel.adminAccountExists()) {
-    res.send('EXISTS');
+    return 'EXISTS';
   } else {
     await UserModel.create('admin', 'admin', 99);
-    res.send('CREATED');
+    return 'CREATED';
   }
 });
 
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', async (req, res) => {
   req.session.destroy();
-  res.send('OK');
 });
 
 app.post('/api/change_pass', async (req, res) => {
   const user = await UserModel.getByUsername(req.session.username);
   await user.updatePassword(req.body.oldpass, req.body.newpass);
-  res.send('OK');
 });
 
 app.post('/api/create_user_account', async (req, res) => {
@@ -173,7 +174,6 @@ app.post('/api/create_user_account', async (req, res) => {
     throw new TilBotUserNotAdminError();
   }
   await UserModel.create(req.body.username, req.body.password, 1);
-  res.send('OK');
 });
 
 app.post('/api/set_user_active', async (req, res) => {
@@ -198,7 +198,6 @@ app.post('/api/set_user_active', async (req, res) => {
       stop_bot(project.id);
     }
   }
-  res.send('OK');
 });
 
 app.get('/api/get_dashboard', async (req, res) => {
@@ -226,12 +225,11 @@ app.get('/api/get_dashboard', async (req, res) => {
     });
     data.settings = await user.getPermittedSettings();
   }
-  res.send(JSON.stringify(data));
+  return JSON.stringify(data);
 });
 
 app.post('/api/create_project', async (req, res) => {
   await ProjectModel.create(req.session.username);
-  res.send('OK');
 });
 
 /**
@@ -257,13 +255,12 @@ app.post('/api/set_project_active', async (req, res) => {
     project.active = req.body.active;
     await project.save();
   }
-  res.send('OK');
 });
 
 // API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
 app.get('/api/get_socket', async (req, res) => {
   const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
-  res.send(project.socket.toString());
+  return project.socket.toString();
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
@@ -289,8 +286,6 @@ app.post('/api/set_project_status', async (req, res) => {
   } else {
     stop_bot(req.body.projectid);
   }
-
-  res.send('OK');
 });
 
 /**
@@ -310,6 +305,7 @@ app.post('/api/import_project', async (req, res) => {
   }
 
   // Ensure that the project exists and is owned by the user:
+  console.log(`project id: '${project_id}' user: '${req.session.username}'`);
   const project = await ProjectModel.getById(project_id, { user_id: req.session.username });
 
   const priv_dir = 'projects/' + project_id;
@@ -353,8 +349,6 @@ app.post('/api/import_project', async (req, res) => {
 
   project.fromModel(JSON.parse(project_data));
   await project.save();
-
-  res.send('OK');
 });
 
 /**
@@ -367,7 +361,6 @@ app.post('/api/save_settings', async (req, res) => {
   }
   const settings = await user.getSettings();
   await settings.update(JSON.parse(req.body.settings));
-  res.send('OK');
 });
 
 // API call: get a project's log files
@@ -383,7 +376,7 @@ app.get('/api/get_logs', async (req, res) => {
     user_id: req.session.username,
     active: true,
   });
-  res.send(project.getLogs());
+  return project.getLogs();
 });
 
 // API call: delete a project's log files
@@ -399,12 +392,10 @@ app.post('/api/delete_logs', async (req, res) => {
   });
   await LogModel.deleteMany({ project_id: req.body.projectid });
   console.log(`Deleted logs: ${req.body.projectid}`);
-  res.send('OK');
 });
 
-app.get('/api/sesh', (req, res) => {
+app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
-  res.send('OK');
 });
 
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
@@ -420,16 +411,22 @@ if (existsSync('./build/handler.js')) {
   })();
 }
 
+// Implement the default response for successful requests
+app.addHook('onSend', async (req, res, payload) => {
+  if (!res.sent && payload === undefined) {
+    return 'OK';
+  }
+});
+
+// Handle TilbotErrors by sending their api_status_code as the response
 app.setErrorHandler((err, req, res) => {
+  console.log(err);
   if (res.sent) {
     // Not much we can do now that data has already been sent.
-    console.log(err);
-    next();
   } else if (err instanceof TilBotError) {
     res.status(200);
     res.send(err.api_status_code);
   } else {
-    console.log(err);
     res.send('NOK');
   }
 });
