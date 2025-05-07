@@ -4,8 +4,7 @@ const express = require('express');
 const socket = require('socket.io');
 const path = require('path');
 const fs = require('fs');
-const ChatGPT = require('./chatgpt.cjs');
-const LocalLLM = require('./localllm.cjs');
+const LLM = require('./llm.cjs');
 const ProjectController = require('./projectcontroller.cjs');
 
 const app = express();
@@ -19,10 +18,10 @@ if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirnam
   var ssloptions = {
     key: key,
     cert: cert
-  };   
+  };
 
   app.use(express.static(path.join(__dirname, '/../certs/')));
-  
+
   server = https.createServer(ssloptions, app);
 }
 
@@ -46,11 +45,7 @@ if (fs.existsSync(p + '/settings.json')) {
   settings = JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'));
 }
 
-// Init ChatGPT
-ChatGPT.init(settings.chatgpt_api_key);
-
-// Init Local LLM
-LocalLLM.init(settings.llm_api_address);
+const llm = LLM.fromSettings(settings);
 
 let clients = {};
 
@@ -69,8 +64,8 @@ server.listen(2801, () => {
 io.on('connection', (socket) => {
     console.log('a user connected');
 
-    clients[socket.id] = new ProjectController(io, project, socket.id, p, settings.llm_setting);
-  
+    clients[socket.id] = new ProjectController(project, socket, p, llm);
+
     socket.on('message sent', () => {
       clients[socket.id].message_sent_event();
     });

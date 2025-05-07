@@ -48,4 +48,3 @@ export class Logger {
     }
 }
 
-//export { Logger }

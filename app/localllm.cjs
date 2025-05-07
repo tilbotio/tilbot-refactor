@@ -1,15 +1,12 @@
 const fetch = require("node-fetch");
+const LLM = require("./llm.cjs");
 
-class LocalLLM {
-
-    static url;
-
+class LocalLLM extends LLM {
     static init(url) {
-
-        LocalLLM.url = url;
+        this.url = url;
     }
 
-    static async get_variation(content, prompt, is_mem = false, mem = undefined) {
+    async get_variation(content, prompt, is_mem = false, mem = undefined) {
         let var_msgs = mem;
 
         if (is_mem) {
@@ -40,8 +37,8 @@ class LocalLLM {
 
         console.log(var_msgs);
 
-        let url = LocalLLM.url;
-        if (LocalLLM.url.indexOf('http') == -1) {
+        let url = this.url;
+        if (url.indexOf('http') == -1) {
             url = 'http://' + url;
         }
 

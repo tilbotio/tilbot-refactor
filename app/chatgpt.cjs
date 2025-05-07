@@ -1,18 +1,16 @@
 const { Configuration, OpenAIApi } = require("openai");
+const LLM = require("./llm.cjs");
 
-class ChatGPT {
-    static openai;
-
-    static init(api_key) {
-
+class ChatGPT extends LLM {
+    constructor(api_key) {
         let configuration = new Configuration({
             apiKey: api_key
-        });        
-        
-        ChatGPT.openai = new OpenAIApi(configuration);
+        });
+
+        this.openai = new OpenAIApi(configuration);
     }
 
-    static async get_variation(content, prompt, is_mem = false, mem = undefined) {
+    async get_variation(content, prompt, is_mem = false, mem = undefined) {
         let var_msgs = mem;
 
         if (is_mem) {
@@ -20,43 +18,43 @@ class ChatGPT {
                 var_msgs = [{
                     role: "system",
                     content: prompt
-                }];                
+                }];
             }
             else {
                 var_msgs[0] = {
                     role: "system",
                     content: prompt
-                };    
+                };
             }
         }
         else {
             var_msgs = [{
                 role: "system",
                 content: prompt
-            }];             
+            }];
         }
-        
+
         var_msgs.push({
             role: "user",
             content: content
         });
-        
+
         console.log(var_msgs);
-       
-        const completion = await ChatGPT.openai.createChatCompletion({
+
+        const completion = await this.openai.createChatCompletion({
                 //model: "gpt-3.5-turbo",
                 model: "gpt-4-1106-preview",
                 messages: var_msgs,
                 temperature: 0.5
         });
-        
+
         console.log(completion);
 
         console.log(completion.data.usage.total_tokens);
 
         if (completion.data.usage.total_tokens >= 3500) {
             var_msgs.splice(1, 2);
-        }        
+        }
 
         let resp = completion.data.choices[0].message.content;
 
@@ -66,8 +64,8 @@ class ChatGPT {
                 content: resp
             });
         }
-        
-        return [var_msgs, resp];        
+
+        return [var_msgs, resp];
     }
 }
 

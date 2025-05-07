@@ -7,11 +7,11 @@ import fastifyCORS from '@fastify/cors';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyFileUpload from 'fastify-file-upload';
 import fastifyMultiPart from '@fastify/multipart';
+import fastifyWebSocket from '@fastify/websocket';
 import MongoStore from 'connect-mongo';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
-import child_process from 'child_process';
 import { randomBytes } from 'crypto';
 import { LogModel } from './db/log.js';
 import { ProjectModel } from './db/project.js';
@@ -24,6 +24,8 @@ import {
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
 } from './errors.js';
+import ProjectController from '../app/projectcontroller.cjs';
+import LLM from '../app/llm.cjs';
 
 // Generate a somewhat persistent token:
 function getOrCreateToken(tokenPath) {
@@ -94,52 +96,8 @@ app.register(fastifyFileUpload, {
 
 app.register(fastifyMultiPart);
 
-// Keep track of running external processes for bots.
-const running_bots = {};
+app.register(fastifyWebSocket);
 
-function start_bot(projectid) {
-  console.log('starting ' + projectid);
-  // Check whether we are running in Docker or not
-  if (process.env.TILBOT_PORT == undefined) {
-    // Stop the bot if it is currently already running (Docker does this too further down the line)
-    if (running_bots[projectid] !== undefined) {
-      stop_bot(projectid);
-    }
-    running_bots[projectid] = child_process.fork('../socket-io/server.js', [projectid]);
-  } else {
-    // @TODO: Docker not implemented yet.
-    //this.botlauncher.write('start ' + projectid);
-  }
-}
-
-async function stop_bot(projectid) {
-  console.log('stopping ' + projectid);
-  // Check whether we are running in Docker or not
-  if (process.env.TILBOT_PORT == undefined) {
-    if (running_bots[projectid] !== undefined) {
-      running_bots[projectid].send('exit', undefined, undefined, e => { });
-    }
-  } else {
-    // @TODO: Docker not implemented yet
-    //this.botlauncher.write('stop ' + projectid);
-  }
-
-  try {
-    const project = await ProjectModel.getById(projectid);
-    project.status = 0;
-    await project.save();
-  } catch (error) {
-    console.error(`Error stopping bot: ${error}`);
-  }
-};
-
-// Launch all running bots (IIFE to run it in the background)
-(async () => {
-  const projects = await ProjectModel.getSummaries({ active: true, status: 1 });
-  for (const project of projects) {
-    start_bot(project.id);
-  }
-})();
 
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
@@ -281,9 +239,7 @@ app.post('/api/set_project_status', async (req, res) => {
   project.status = status;
   project.save();
 
-  if (status) {
-    start_bot(req.body.projectid);
-  } else {
+  if (status == 0) {
     stop_bot(req.body.projectid);
   }
 });
@@ -343,7 +299,7 @@ app.post('/api/import_project', async (req, res) => {
 
   console.log('project file found');
 
-  if (running_bots[project_id] !== undefined) {
+  if (project.status == 1) {
     await stop_bot(project_id);
   }
 
@@ -398,6 +354,79 @@ app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
 });
 
+let socketIdGenerator = 0;
+const socketClients = {};
+
+app.route({
+  method: 'GET',
+  url: '/api/chat/:projectId',
+  preValidation: async (req, res) => {
+    const { projectId } = req.params;
+    const project = await ProjectModel.getById(projectId, { status: 1 });
+    const settings = await SettingsModel.findOne({ user_id: project.user_id });
+    req.tilbotProject = project;
+    req.tilbotSettings = settings;
+  },
+  wsHandler: async (socket, req) => {
+    const socketId = (socketIdGenerator++).toString();
+
+    const project = req.tilbotProject;
+    const settings = req.tilbotSettings;
+
+    const projectId = project._id;
+
+    const llm = LLM.fromSettings(settings);
+
+    const projectController = new ProjectController(
+      project,
+      socket,
+      __dirname + '/../projects/' + project.id,
+      llm,
+    );
+
+    const projectClients = socketClients[projectId] ??= {};
+    projectClients[socketId] = socket;
+
+    socket.on('message sent', () => {
+      projectController.message_sent_event();
+    });
+
+    socket.on('user_message', (str) => {
+      projectController.receive_message(str);
+    });
+
+    socket.on('close', () => {
+      projectController.disconnected();
+      delete socketClients[projectId][socketId];
+    });
+
+    socket.on('log', (str) => {
+      projectController.log(str);
+    });
+
+    socket.on('pid', (pid) => {
+      projectController.set_participant_id(pid);
+    });
+  },
+});
+
+async function stop_bot(projectId) {
+  console.log(`stopping ${projectId}`);
+
+  try {
+    const project = await ProjectModel.getById(projectid);
+    project.status = 0;
+    await project.save();
+  } catch (error) {
+    console.error(`Error stopping bot: ${error}`);
+  }
+
+  for(const socket of Object.values(socketClients[projectId] ?? {})) {
+    socket.close();
+  }
+};
+
+// FIXME: this needs to be updated for Fastify as well:
 // In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
 if (existsSync('./build/handler.js')) {
   (async () => {
