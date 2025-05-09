@@ -1,5 +1,5 @@
-import { LogModel } from '../express/db/log.js';
-import { MessageModel } from '../express/db/message.js';
+import { LogModel } from './db/log.js';
+import { MessageModel } from './db/message.js';
 
 export class Logger {
     constructor(project_id) {
@@ -47,4 +47,3 @@ export class Logger {
         });
     }
 }
-

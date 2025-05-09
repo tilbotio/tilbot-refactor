@@ -1,9 +1,10 @@
 const CsvData = require('./csvdata.cjs');
 
 class ProjectController {
-    constructor(project, socket, p, llm) {
+    constructor(project, p, llm) {
         this.project = project;
-        this.socket = socket;
+        this.socket = null;
+        this.pending = [];
         this.llm = llm;
         this.current_block_id = this.project.starting_block_id;
         this.logger = undefined;
@@ -44,7 +45,7 @@ class ProjectController {
           }
         }
 
-
+        // FIXME: this should be part of the mongoose schema definition
         if (this.project.settings === undefined) {
             this.project.settings = {
               'typing_style': 'fixed',
@@ -55,9 +56,19 @@ class ProjectController {
               'name': 'Tilbot'
             }
         }
+    }
 
-        this.socket.emit('settings', this.project.settings);
-
+    emit(...message) {
+      const socket = this.socket;
+      if (socket == null) {
+        this.pending.push(JSON.stringify(message));
+      } else {
+        for(const p of this.pending) {
+          socket.send(p);
+        }
+        this.pending.length = 0;
+        socket.send(JSON.stringify(message));
+      }
     }
 
     get_path() {
@@ -94,7 +105,7 @@ class ProjectController {
           let prompt = this.check_variables(block.variation_prompt);
 
           // Send a typing indicator enabling message to the client
-          this.socket.emit('typing indicator');
+          this.emit('typing indicator');
 
           let resp = null;
 
@@ -221,7 +232,7 @@ class ProjectController {
                   let db = csv_parts[0];
                   let col = csv_parts[1];
 
-                  this.socket.emit('window message', {content: connector.events[c].content.replace('[' + db + '.' + col + ']', input_str[col])});
+                  this.emit('window message', {content: connector.events[c].content.replace('[' + db + '.' + col + ']', input_str[col])});
                 }
 
               }
@@ -240,14 +251,14 @@ class ProjectController {
                   let db = csv_parts[0];
                   let col = csv_parts[1];
 
-                  this.socket.emit('window message', {content: connector.events[c].content.replace('[' + matches[1] + ']', this.client_vars[db][col])});
+                  this.emit('window message', {content: connector.events[c].content.replace('[' + matches[1] + ']', this.client_vars[db][col])});
                 }
                 else {
-                  this.socket.emit('window message', {content: connector.events[c].content.replace('[input]', input_str)});
+                  this.emit('window message', {content: connector.events[c].content.replace('[input]', input_str)});
                 }
               }
               else {
-                this.socket.emit('window message', {content: connector.events[c].content});
+                this.emit('window message', {content: connector.events[c].content});
               }
             }
 
@@ -320,7 +331,7 @@ class ProjectController {
 
         console.log(params);
 
-        this.socket.emit('bot message', {type: block.type, content: content, params: params});
+        this.emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'List') {
@@ -328,7 +339,7 @@ class ProjectController {
         params.text_input = block.text_input;
         params.number_input = block.number_input;
 
-        this.socket.emit('bot message', {type: block.type, content: content, params: params});
+        this.emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Group') {
@@ -339,7 +350,7 @@ class ProjectController {
       else if (block.type == 'AutoComplete') {
         params.options = block.options;
 
-        this.socket.emit('bot message', {type: block.type, content: content, params: params});
+        this.emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else if (block.type == 'Auto') {
@@ -347,11 +358,11 @@ class ProjectController {
           // This one must rely on triggers, so we should accept input -- especially useful for triggering voice input to listen.
           params.expect_input = true;
         }
-        this.socket.emit('bot message', {type: block.type, content: content, params: params});
+        this.emit('bot message', {type: block.type, content: content, params: params});
         this.logger.log('message_bot', block.content);
       }
       else {
-          this.socket.emit('bot message', {type: block.type, content: content, params: params});
+          this.emit('bot message', {type: block.type, content: content, params: params});
           this.logger.log('message_bot', block.content);
       }
     }
@@ -585,10 +596,6 @@ class ProjectController {
         this.send_events(block.connectors[else_connector_id], str);
         this._send_current_message(str);
       }
-    }
-
-    disconnected() {
-      this.logger.log('session_end');
     }
 
     log(str) {

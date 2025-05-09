@@ -16,6 +16,7 @@ import { randomBytes } from 'crypto';
 import { LogModel } from './db/log.js';
 import { ProjectModel } from './db/project.js';
 import { UserModel } from './db/user.js';
+import { SettingsModel } from './db/settings.js';
 import {
   TilBotError,
   TilBotUserNotAdminError,
@@ -46,57 +47,60 @@ function getOrCreateToken(tokenPath) {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Set up the MongoDB connection
+// For the MongoDB connection
 const dbPath = process.env.MONGO_USERNAME
   ? `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@mongo:${process.env.MONGO_PORT ?? 27017}/${process.env.MONGO_DB ?? 'tilbot'}`
   : (process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot');
 
-await mongoose.connect(dbPath, { useNewUrlParser: true, useUnifiedTopology: true });
-
 const app = Fastify({ logger: true });
 
-app.register(fastifyCookie, {
-  secret: process.env.COOKIE_SECRET || getOrCreateToken('/tmp/cookie-secret'),
-  maxAge: 60 * 60 * 24 * 7, // 1 week
-  secure: Boolean(process.env.HTTPS),
-  httpOnly: true,
-  sameSite: 'none',
-});
+// Do initialization work in parallel (because why not):
+await Promise.all([
+  mongoose.connect(dbPath, { useNewUrlParser: true, useUnifiedTopology: true }),
 
-app.register(fastifySession, {
-  cookie: {
+  app.register(fastifyWebSocket),
+
+  app.register(fastifyCookie, {
+    secret: process.env.COOKIE_SECRET || getOrCreateToken('/tmp/cookie-secret'),
+    maxAge: 60 * 60 * 24 * 7, // 1 week
     secure: Boolean(process.env.HTTPS),
-  },
-  secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
-  store: MongoStore.create({
-    client: mongoose.connection.getClient(),
-    stringify: false,
-    autoRemoveInterval: 600, // minutes
+    httpOnly: true,
+    sameSite: 'none',
   }),
-});
 
-// For CORS
-app.register(fastifyCORS, {
-  allowedHeaders: ['Content-Type'],
-  origin: 'http://localhost:5173',
-  preflightContinue: true,
-  credentials: true,
-});
+  app.register(fastifySession, {
+    cookie: {
+      secure: Boolean(process.env.HTTPS),
+    },
+    secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
+    store: MongoStore.create({
+      client: mongoose.connection.getClient(),
+      stringify: false,
+      autoRemoveInterval: 600, // minutes
+    }),
+  }),
 
-// parse application/x-www-form-urlencoded
-app.register(fastifyFormBody);
+  // For CORS
+  app.register(fastifyCORS, {
+    allowedHeaders: ['Content-Type'],
+    origin: 'http://localhost:5173',
+    preflightContinue: true,
+    credentials: true,
+  }),
 
-// File uploads
-app.register(fastifyFileUpload, {
-  safeFileNames: true,
-  abortOnLimit: true,
-  useTempFiles: true,
-  tempFileDir: '/tmp',
-});
+  // parse application/x-www-form-urlencoded
+  app.register(fastifyFormBody),
 
-app.register(fastifyMultiPart);
+  // File uploads
+  app.register(fastifyFileUpload, {
+    safeFileNames: true,
+    abortOnLimit: true,
+    useTempFiles: true,
+    tempFileDir: '/tmp',
+  }),
 
-app.register(fastifyWebSocket);
+  app.register(fastifyMultiPart),
+]);
 
 
 // add a route that lives separately from the SvelteKit app
@@ -213,12 +217,6 @@ app.post('/api/set_project_active', async (req, res) => {
     project.active = req.body.active;
     await project.save();
   }
-});
-
-// API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
-app.get('/api/get_socket', async (req, res) => {
-  const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
-  return project.socket.toString();
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
@@ -354,60 +352,72 @@ app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
 });
 
-let socketIdGenerator = 0;
-const socketClients = {};
+const projectControllers = new Map();
 
-app.route({
-  method: 'GET',
-  url: '/api/chat/:projectId',
-  preValidation: async (req, res) => {
-    const { projectId } = req.params;
-    const project = await ProjectModel.getById(projectId, { status: 1 });
-    const settings = await SettingsModel.findOne({ user_id: project.user_id });
-    req.tilbotProject = project;
-    req.tilbotSettings = settings;
-  },
-  wsHandler: async (socket, req) => {
-    const socketId = (socketIdGenerator++).toString();
+// API call: create a new conversation for a project -- anyone can do this, no need to be logged in.
+app.get('/api/create_conversation', async (req, res) => {
+  const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
+  const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
-    const project = req.tilbotProject;
-    const settings = req.tilbotSettings;
+  const projectController = new ProjectController(
+    project,
+    __dirname + '/../projects/' + project.id,
+    LLM.fromSettings(settings),
+  );
 
-    const projectId = project._id;
+  const controllerId = randomBytes(16).toString('hex');
 
-    const llm = LLM.fromSettings(settings);
+  projectControllers.set(controllerId, projectController);
 
-    const projectController = new ProjectController(
-      project,
-      socket,
-      __dirname + '/../projects/' + project.id,
-      llm,
-    );
+  return { conversation: controllerId, settings: project.settings };
+});
 
-    const projectClients = socketClients[projectId] ??= {};
-    projectClients[socketId] = socket;
+app.get('/ws/chat', { websocket: true }, async (socket, req) => {
+  const projectController = projectControllers.get(req.query.conversation);
+  if (!projectController) {
+    throw new Error(`Conversation '${req.query.conversation}' not found`);
+  }
 
-    socket.on('message sent', () => {
-      projectController.message_sent_event();
-    });
+  if (projectController.socket) {
+    projectController.socket.close();
+    projectController.socket = null;
+  }
 
-    socket.on('user_message', (str) => {
-      projectController.receive_message(str);
-    });
+  socket.addEventListener('open', () => {
+    if (projectController.socket) {
+      // We're late to the party.
+      socket.close();
+    } else {
+      projectController.socket = socket;
+    }
+  });
 
-    socket.on('close', () => {
-      projectController.disconnected();
-      delete socketClients[projectId][socketId];
-    });
+  socket.addEventListener('close', () => {
+    if (projectController.socket === socket) {
+      projectController.socket = null;
+    }
+  });
 
-    socket.on('log', (str) => {
-      projectController.log(str);
-    });
+  socket.addEventListener('message', e => {
+    const [command, ...args] = JSON.parse(e.data);
+    switch (command) {
+      case 'message sent':
+        projectController.message_sent_event(...args);
+        break;
 
-    socket.on('pid', (pid) => {
-      projectController.set_participant_id(pid);
-    });
-  },
+      case 'user_message':
+        projectController.receive_message(...args);
+        break;
+
+      case 'log':
+        projectController.log(...args);
+        break;
+
+      case 'pid':
+        projectController.set_participant_id(...args);
+        break;
+    }
+  });
 });
 
 async function stop_bot(projectId) {
@@ -421,7 +431,7 @@ async function stop_bot(projectId) {
     console.error(`Error stopping bot: ${error}`);
   }
 
-  for(const socket of Object.values(socketClients[projectId] ?? {})) {
+  for (const socket of Object.values(socketClients[projectId] ?? {})) {
     socket.close();
   }
 };

@@ -3,6 +3,8 @@ const LLM = require("./llm.cjs");
 
 class ChatGPT extends LLM {
     constructor(api_key) {
+        super();
+
         let configuration = new Configuration({
             apiKey: api_key
         });

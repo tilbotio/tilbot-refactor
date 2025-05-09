@@ -161,6 +161,7 @@ let current_message_type: string = 'Auto';
 let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let isTilbotEditor = true;
+let conversation_id: string | null = null;
 let participant_id: string | null = '';
 
 let path: string = '';
@@ -215,9 +216,26 @@ onMount(async () => {
       // cast to string to avoid type errors
       projectId = url.searchParams.get('project') as string;
       path = `/proj_pub/${projectId}/`;
+      try {
+        const response = await fetch(
+          `/api/create_conversation?id=${encodeURIComponent(projectId)}`
+        );
+        ({ conversation: conversation_id, settings } = await response.json());
+        console.log(settings)
+      } catch(err) {
+        console.log(err);
+      }
+
+      const remoteController = new RemoteProjectController(chatbot_message, chatbot_settings, set_typing_indicator);
+      controller = remoteController;
+
+      if (participant_id != null && participant_id !== '') {
+          remoteController.set_participant_id(participant_id);
+      }
+
+      create_websocket();
     }
 
-    create_websocket();
 });
 
 function firstletter(str: string) {
@@ -225,19 +243,29 @@ function firstletter(str: string) {
 }
 
 function create_websocket() {
+  let restarting = false;
+
+  function restart() {
+    if (!restarting) {
+      restarting = true;
+      setTimeout(create_websocket, 1000);
+    }
+    socket.close();
+  }
+
+  if (!(controller instanceof RemoteProjectController)) {
+    restart();
+    return;
+  }
+
   const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-  const url = `${proto}${window.location.host}/api/chat/${projectId}`;
+  const url = `${proto}${window.location.host}/ws/chat?conversation=${encodeURIComponent(conversation_id)}`;
 
   const socket = new WebSocket(url);
+  controller.socket = socket;
 
-  socket.onopen = () => {
-    const remoteController = new RemoteProjectController(socket, chatbot_message, chatbot_settings, set_typing_indicator);
-    controller = remoteController;
-
-    if (participant_id != null && participant_id !== '') {
-        remoteController.set_participant_id(participant_id);
-    }
-  };
+  socket.addEventListener('close', restart);
+  socket.addEventListener('error', restart);
 }
 
 async function message_received(event: MessageEvent) {

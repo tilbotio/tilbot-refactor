@@ -3,6 +3,7 @@ const LLM = require("./llm.cjs");
 
 class LocalLLM extends LLM {
     static init(url) {
+        super();
         this.url = url;
     }
 
