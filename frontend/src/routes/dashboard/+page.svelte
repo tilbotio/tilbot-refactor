@@ -491,9 +491,6 @@ import { SvelteComponent, onMount } from 'svelte';
             const response = await fetch("/api/create_project", {
                 method: 'post',
                 credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
             });
             const txt = await response.text();
             if (txt == 'OK') {

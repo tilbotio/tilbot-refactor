@@ -2,11 +2,11 @@ import http from 'http';
 import https from 'https';
 import {Server} from 'socket.io';
 import fs from 'fs';
-import ProjectController from '../electron/projectcontroller.cjs';
-import ChatGPT from '../electron/chatgpt.cjs';
-import LocalLLM from '../electron/localllm.cjs';
-import { ProjectModel } from '../express/db/project.js';
-import { SettingsModel } from '../express/db/settings.js';
+import ProjectController from '../app/projectcontroller.cjs';
+import ChatGPT from '../app/chatgpt.cjs';
+import LocalLLM from '../app/localllm.cjs';
+import { ProjectModel } from '../backend/db/project.js';
+import { SettingsModel } from '../backend/db/settings.js';
 import { mongoose } from 'mongoose';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -19,23 +19,6 @@ let is_https = false;
 function app(req, res) {
 
 };
-
-if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
-
-  const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
-  const cert = fs.readFileSync(__dirname + '/../certs/pubkey.pem');
-  var ssloptions = {
-    key: key,
-    cert: cert
-  };
-
-  server = https.createServer(ssloptions, app);
-  is_https = true;
-}
-
-else {
-  server = http.createServer(app);
-}
 
 let project_id = process.argv[2];
 console.log('Project id: ' + project_id);
@@ -89,14 +72,25 @@ if (project === null) {
     let clients = {};
 
     function tryNextPort(port, ...listenArgs) {
+      if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
+        const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
+        const cert = fs.readFileSync(__dirname + '/../certs/pubkey.pem');
+        var ssloptions = {
+          key: key,
+          cert: cert
+        };
+
+        server = https.createServer(ssloptions, app);
+        is_https = true;
+      } else {
+        server = http.createServer(app);
+      }
+
       server.listen(port, ...listenArgs).on('error', err => {
         if (err.code === 'EADDRINUSE') {
           if (port < 65535) {
-            // Don't try to pass the callback parameter again, apparently
-            // the server stores it each time you call .listen() and you would
-            // end up with a thundering herd of callback invocations (one for
-            // each attempt) when it finally finds a free port.
-            tryNextPort(port + 1);
+            server.close();
+            tryNextPort(port + 1, ...listenArgs);
           } else {
             throw new Error("Unable to bind any port");
           }

@@ -1,0 +1,63 @@
+#! /bin/sh
+
+# Usage: ENTRYPOINT ["altuid", "<username>"]
+
+# Changes the specified user to have the same numeric user id and group id
+# as the current directory, then runs the given command with the given arguments
+# as that user. Preserves the environment. Clears the inherited capability set.
+
+# Use this script as the entrypoint for your container IF:
+# 1) You are mounting a directory as a volume into your container that is owned
+#    by the invoking user (common in development containers);
+# 2) You are on Linux or WSL2 (specifically not MacOS);
+# 3) Your local numeric user ID is not 1000 (or you wish to publish this image
+#    for use by others).
+
+set -eu
+
+_user=$1
+shift
+
+_passwd=$(getent passwd $_user || exec)
+case $_passwd in '')
+	_passwd_uid=
+	_passwd_gid=
+	_passwd_home=/home/$_user
+;; *)
+	_passwd=${_passwd#*:*:}
+	_passwd_uid=${_passwd%%:*}
+	_passwd=${_passwd#*:}
+	_passwd_gid=${_passwd%%:*}
+	_passwd=${_passwd#*:*:}
+	_passwd_home=${_passwd%%:*}
+esac
+
+_stat=$(stat -c %u:%g .)
+_stat_uid=${_stat%:*}
+_stat_gid=${_stat#*:}
+
+case $_stat_uid in 0)
+	_stat_uid=1000
+esac
+
+case $_stat_gid in 0)
+	_stat_gid=$_stat_uid
+esac
+
+case $_stat_uid:$_stat_gid in $_passwd_uid:$_passwd_gid) ;; *)
+	sed -ri "s/^UID_MIN[ 	].*/UID_MIN 1/; s/^UID_MAX[ 	].*/UID_MAX 2147483647/;" /etc/login.defs
+
+	case $_passwd_uid in ?*)
+		userdel $_user
+	esac
+	groupdel $_user 2>/dev/null || exec
+
+	groupadd --gid $_stat_gid $_user
+	useradd --uid $_stat_uid --gid $_user --home-dir "$_passwd_home" --no-create-home $_user
+esac
+
+case $# in 0)
+	set -- bash -l
+esac
+
+exec setpriv --reuid $_stat_uid --regid $_stat_gid --init-groups --inh-caps=-all env -u MAIL -- "LOGNAME=$_user" "USER=$_user" "HOME=$_passwd_home" "$@"

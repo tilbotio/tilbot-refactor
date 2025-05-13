@@ -14,9 +14,6 @@ services:
         condition: service_completed_successfully
     ports:
     - 5173:5173
-    read_only: true
-    tmpfs:
-    - /tmp
     restart: unless-stopped
     volumes:
     - .:/home/node
@@ -33,9 +30,6 @@ services:
         condition: service_completed_successfully
     ports:
     - 8000-8010:8000-8010
-    read_only: true
-    tmpfs:
-    - /tmp
     restart: unless-stopped
     volumes:
     - .:/home/node
