@@ -1,0 +1,58 @@
+version: "3.8"
+services:
+  npm-ci:
+    build: .
+    command: ["npm", "ci"]
+    volumes:
+    - .:/home/node
+
+  frontend:
+    build: .
+    working_dir: /home/node/frontend
+    depends_on:
+      npm-ci:
+        condition: service_completed_successfully
+    ports:
+    - 5173:5173
+    read_only: true
+    tmpfs:
+    - /tmp
+    restart: unless-stopped
+    volumes:
+    - .:/home/node
+    environment:
+    - VITE_API_URL=http://backend:8000
+    - MONGO_DB=mongodb://mongo/tilbot
+    command: ["npm", "run", "dev-vite"]
+
+  backend:
+    build: .
+    working_dir: /home/node/backend
+    depends_on:
+      npm-ci:
+        condition: service_completed_successfully
+    ports:
+    - 8000-8010:8000-8010
+    read_only: true
+    tmpfs:
+    - /tmp
+    restart: unless-stopped
+    volumes:
+    - .:/home/node
+    environment:
+      LISTEN_PORT: 8000
+      MONGO_DB: mongodb://mongo/tilbot
+    command: ["npm", "run", "start"]
+
+  mongo:
+    image: mongo
+    ports:
+    - 27017:27017
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: tilbot
+    volumes:
+    - mongodb:/data/db
+
+volumes:
+  mongodb:

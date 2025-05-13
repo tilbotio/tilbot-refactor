@@ -50,29 +50,22 @@
     let info = false;
     let info_txt = '';
 
-    onMount(() => {
-      // Check if an admin account exists, if not create one.
-      fetch(location.protocol + '//' + window.location.hostname + "/api/admin_account_exists", {
-            method: 'get',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-        })
-        .then(response => {
-            response.text().then(txt => {
-              if (txt == 'CREATED') {
+    onMount(async () => {
+        // Check if an admin account exists, if not create one.
+        try {
+            const response = await fetch("/api/admin_account_exists");
+            const txt = await response.text();
+            if (txt == 'CREATED') {
                 info_txt = 'No admin account was found, so I created it. Log in with username "admin", password "admin"';
                 info = true;
-              }
-            });            
-        })
-        .catch(err => {
+            }
+        } catch(err) {
             error_txt = 'Unknown error occurred. Please contact your administrator and try again later.';
             error = true;
-        });      
+        }
     });
 
-    function login(e: any) {
+    async function login(e: any) {
         error = false;
         info = false;
 
@@ -85,30 +78,26 @@
             data[key] = value;
         }
 
-        fetch(location.protocol + '//' + window.location.hostname + "/api/login", {
-            method: 'post',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            response.text().then(txt => {
-              if (txt == 'OK') {
+        try {
+            const response = await fetch("/api/login", {
+                method: 'post',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+            const txt = await response.text();
+            if (txt == 'OK') {
                 window.location.replace('/dashboard');
-
-              }
-              else {
+            } else {
                 error_txt = 'Incorrect username or password.';
                 error = true;
-              }
-            });            
-        })
-        .catch(err => {
+            }
+        } catch(err) {
             error_txt = 'Unknown error occurred. Please contact your administrator and try again later.';
             error = true;
             console.log(err);
-        });
+        }
     }
 </script>
