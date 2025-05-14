@@ -48,6 +48,8 @@ Changes are monitored on the Mongo database using `db.collection.watch()`.
 
 Rather than sending explicit commands over the websocket, the websockets only send diffs of the conversation document using RFC 6902 JSON patch commands (the initial patch command should send the full document).
 
+Clients then update their display based on the new version of the document (reactive frameworks like Svelte make this easy to do).
+
 Advantages:
 1. Proper scaling to large numbers of users
 1. Users can (re)connect to a conversation and continue where they left off
