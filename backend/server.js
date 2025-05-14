@@ -8,6 +8,7 @@ import fastifyFormBody from '@fastify/formbody';
 import fastifyFileUpload from 'fastify-file-upload';
 import fastifyMultiPart from '@fastify/multipart';
 import fastifyWebSocket from '@fastify/websocket';
+import fastifyStatic from '@fastify/static';
 import MongoStore from 'connect-mongo';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
@@ -436,19 +437,11 @@ async function stop_bot(projectId) {
   }
 };
 
-// FIXME: this needs to be updated for Fastify as well:
-// In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
-if (existsSync('./build/handler.js')) {
-  (async () => {
-    try {
-      const m = await import('./build/handler.js');
-      app.use('/proj_pub', express.static('./proj_pub'));
-      app.use(m.handler);
-    } catch (error) {
-      console.error(`Error importing Sveltekit handler`);
-    }
-  })();
-}
+// Serve the static public files from projects.
+// FIXME: also serve the compiled Svelte files.
+await app.register(fastifyStatic, {
+  root: 'proj_pub',
+});
 
 // Implement the default response for successful requests
 app.addHook('onSend', async (req, res, payload) => {

@@ -244,13 +244,22 @@ function firstletter(str: string) {
 
 function create_websocket() {
   let restarting = false;
+  let socket: WebSocket | null = null;
 
   function restart() {
     if (!restarting) {
       restarting = true;
       setTimeout(create_websocket, 1000);
     }
-    socket.close();
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+  }
+
+  if (!conversation_id) {
+    restart();
+    return;
   }
 
   if (!(controller instanceof RemoteProjectController)) {
@@ -261,7 +270,7 @@ function create_websocket() {
   const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
   const url = `${proto}${window.location.host}/ws/chat?conversation=${encodeURIComponent(conversation_id)}`;
 
-  const socket = new WebSocket(url);
+  socket = new WebSocket(url);
   controller.socket = socket;
 
   socket.addEventListener('close', restart);
