@@ -137,19 +137,12 @@
   {/if}
 </div>
 
-{#if !isTilbotEditor}
-  <!-- https://stackoverflow.com/questions/54676405/where-is-socket-io-socket-io-js-location -->
-  {#if socket_addr !== null && socket_addr != ''}
-  <script src="{socket_addr + '/socket.io/socket.io.js'}" on:load="{socket_script_loaded}"></script>
-  {:else if socket_addr !== null && socket_addr == ''}
-  <script src="/socket.io/socket.io.js" on:load="{socket_script_loaded}"></script>
-  {/if}
-{/if}
-
 <script lang="ts">
 import { onMount, tick } from "svelte";
 import { page } from '$app/stores';
+import { BasicProjectController} from "../shared/controllers/basicproject";
 import { LocalProjectController} from "../client/controllers/localproject";
+import { RemoteProjectController} from "../client/controllers/remoteproject";
 import { Html5Qrcode } from "html5-qrcode";
 
 let message_container: HTMLElement;
@@ -161,17 +154,18 @@ let scan_overlay: HTMLElement;
 let html5Qrcode: any = undefined;
 
 let input_text: HTMLTextAreaElement;
-let controller: LocalProjectController;
+let controller: BasicProjectController;
 
 let messages: Array<any> = [];
 let current_message_type: string = 'Auto';
 let mc_options: Array<any> = [];
 let show_typing_indicator: boolean = false;
 let isTilbotEditor = true;
-let socket_addr = null;
+let conversation_id: string | null = null;
 let participant_id: string | null = '';
 
 let path: string = '';
+let projectId: string = '';
 
 let settings: any = {
                 'typing_style': 'fixed',
@@ -188,8 +182,7 @@ onMount(async () => {
       if (window.parent.isTilbotEditor === undefined) {
         console.log('not Tilbot editor');
         isTilbotEditor = false;
-        //let socket = io();
-        }
+      }
     }
     catch {
       console.log('not Tilbot editor --- catch');
@@ -220,51 +213,68 @@ onMount(async () => {
     }
 
     if (url.searchParams.get('project') !== null && url.searchParams.get('project') != '') {
-
-      path = '/proj_pub/' + url.searchParams.get('project') + '/';
-
+      // cast to string to avoid type errors
+      projectId = url.searchParams.get('project') as string;
+      path = `/proj_pub/${projectId}/`;
       try {
         const response = await fetch(
-          '/api/get_socket?id='
-          + url.searchParams.get('project')
+          `/api/create_conversation?id=${encodeURIComponent(projectId)}`
         );
-        const socket_id = await response.text();
-        if(socket_id !== '-1') {
-          socket_addr = `${url.protocol}//${url.hostname}:${socket_id}`;
-          console.log('Socket address', socket_addr);
-        }
+        ({ conversation: conversation_id, settings } = await response.json());
+        console.log(settings)
       } catch(err) {
         console.log(err);
       }
-    } else {
-      socket_addr = '';
+
+      const remoteController = new RemoteProjectController(chatbot_message, chatbot_settings, set_typing_indicator);
+      controller = remoteController;
+
+      if (participant_id != null && participant_id !== '') {
+          remoteController.set_participant_id(participant_id);
+      }
+
+      create_websocket();
     }
+
 });
 
 function firstletter(str: string) {
   return str.charAt(0).toUpperCase();
 }
 
-function socket_script_loaded(event: Event) {
-  let socket = null;
+function create_websocket() {
+  let restarting = false;
+  let socket: WebSocket | null = null;
 
-  if (socket_addr !== '') {
-    socket = io(socket_addr);
-  }
-  else {
-    socket = io();
-  }
-  import("../client/controllers/remoteproject").then(function(m: any) {
-    controller = new m.RemoteProjectController(socket, chatbot_message, chatbot_settings, set_typing_indicator);
-
-    if (participant_id !== '') {
-      // Add a delay because the socket needs time to set up.
-      setTimeout(function() {
-        controller.set_participant_id(participant_id);
-      }, 2500);
+  function restart() {
+    if (!restarting) {
+      restarting = true;
+      setTimeout(create_websocket, 1000);
     }
-  });
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+  }
 
+  if (!conversation_id) {
+    restart();
+    return;
+  }
+
+  if (!(controller instanceof RemoteProjectController)) {
+    restart();
+    return;
+  }
+
+  const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+  const url = `${proto}${window.location.host}/ws/chat?conversation=${encodeURIComponent(conversation_id)}`;
+
+  socket = new WebSocket(url);
+  controller.socket = socket;
+
+  socket.addEventListener('close', restart);
+  socket.addEventListener('error', restart);
 }
 
 async function message_received(event: MessageEvent) {

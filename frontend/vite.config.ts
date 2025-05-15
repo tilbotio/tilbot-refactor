@@ -7,13 +7,14 @@ export default defineConfig({
   plugins: [sveltekit()],
   server: {
     host: true,
-    port: 5173,
     allowedHosts: true,
-    strictPort: true,
+    // port: 5173,
+    // strictPort: true,
     fs: {
       allow: ['proj_pub']
     },
     proxy: {
+      '/ws': API_URL.replace(/^http(s?):/, 'ws$1:'),
       '/api': {
         target: API_URL,
         changeOrigin: true,
