@@ -32,7 +32,9 @@ The above differs from the previous setup, where a new process would be started 
 
 This was harder to implement because of TCP port management issues.
 Additionally, modern container based hosting platforms have the best practice to put processes in separate containers.
-This is a problem because these containers are expected to be started and stopped externally, based on load.
+This is a problem because containers are expected to be started and stopped externally, based on load.
+
+Another difference is that previously, chat sessions would be implicitly maintained by socket.io.
 
 ## Future
 
