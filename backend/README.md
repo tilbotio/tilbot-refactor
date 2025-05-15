@@ -15,7 +15,7 @@ For convenience, Fastify is configured to send `NOK` if an exception occurs and 
 
 ### WebSockets
 
-The frontend uses websockets for chat sessions. The basic flow is:
+The frontend uses websockets for "conversations". The basic flow is:
 
 1. Request a conversation ID (which will create a ProjectController behind the scenes)
 1. Connect a websocket to a URL based on the conversation ID.
@@ -34,7 +34,7 @@ This was harder to implement because of TCP port management issues.
 Additionally, modern container based hosting platforms have the best practice to put processes in separate containers.
 This is a problem because containers are expected to be started and stopped externally, based on load.
 
-Another difference is that previously, chat sessions would be implicitly maintained by socket.io.
+Another difference is that previously, "conversations" would be implicitly maintained by socket.io.
 
 ## Future
 
@@ -42,7 +42,7 @@ In the future, conversations need to be their own collection in the Mongo databa
 This would finally enable us to scale the server containers horizontally.
 
 These conversations would be "living documents".
-Chat clients send commands to the server, causing the server to modify these documents.
+Chat clients (webbrowsers) send commands to the server, causing the server to modify these documents.
 These commands could be sent over the normal API or over the WebSocket.
 
 The server also monitors changes to these documents and sends updates to clients connected over a websocket.
