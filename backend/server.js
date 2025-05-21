@@ -7,15 +7,17 @@ import fastifyCORS from '@fastify/cors';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyFileUpload from 'fastify-file-upload';
 import fastifyMultiPart from '@fastify/multipart';
+import fastifyWebSocket from '@fastify/websocket';
+import fastifyStatic from '@fastify/static';
 import MongoStore from 'connect-mongo';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
-import child_process from 'child_process';
 import { randomBytes } from 'crypto';
 import { LogModel } from './db/log.js';
 import { ProjectModel } from './db/project.js';
 import { UserModel } from './db/user.js';
+import { SettingsModel } from './db/settings.js';
 import {
   TilBotError,
   TilBotUserNotAdminError,
@@ -24,6 +26,8 @@ import {
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
 } from './errors.js';
+import ProjectController from '../app/projectcontroller.cjs';
+import LLM from '../app/llm.cjs';
 
 // Generate a somewhat persistent token:
 function getOrCreateToken(tokenPath) {
@@ -44,102 +48,61 @@ function getOrCreateToken(tokenPath) {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Set up the MongoDB connection
+// For the MongoDB connection
 const dbPath = process.env.MONGO_USERNAME
   ? `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@mongo:${process.env.MONGO_PORT ?? 27017}/${process.env.MONGO_DB ?? 'tilbot'}`
   : (process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot');
 
-await mongoose.connect(dbPath, { useNewUrlParser: true, useUnifiedTopology: true });
-
 const app = Fastify({ logger: true });
 
-app.register(fastifyCookie, {
-  secret: process.env.COOKIE_SECRET || getOrCreateToken('/tmp/cookie-secret'),
-  maxAge: 60 * 60 * 24 * 7, // 1 week
-  secure: Boolean(process.env.HTTPS),
-  httpOnly: true,
-  sameSite: 'none',
-});
+// Do initialization work in parallel (because why not):
+await Promise.all([
+  mongoose.connect(dbPath, { useNewUrlParser: true, useUnifiedTopology: true }),
 
-app.register(fastifySession, {
-  cookie: {
+  app.register(fastifyWebSocket),
+
+  app.register(fastifyCookie, {
+    secret: process.env.COOKIE_SECRET || getOrCreateToken('/tmp/cookie-secret'),
+    maxAge: 60 * 60 * 24 * 7, // 1 week
     secure: Boolean(process.env.HTTPS),
-  },
-  secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
-  store: MongoStore.create({
-    client: mongoose.connection.getClient(),
-    stringify: false,
-    autoRemoveInterval: 600, // minutes
+    httpOnly: true,
+    sameSite: 'none',
   }),
-});
 
-// For CORS
-app.register(fastifyCORS, {
-  allowedHeaders: ['Content-Type'],
-  origin: 'http://localhost:5173',
-  preflightContinue: true,
-  credentials: true,
-});
+  app.register(fastifySession, {
+    cookie: {
+      secure: Boolean(process.env.HTTPS),
+    },
+    secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
+    store: MongoStore.create({
+      client: mongoose.connection.getClient(),
+      stringify: false,
+      autoRemoveInterval: 600, // minutes
+    }),
+  }),
 
-// parse application/x-www-form-urlencoded
-app.register(fastifyFormBody);
+  // For CORS
+  app.register(fastifyCORS, {
+    allowedHeaders: ['Content-Type'],
+    origin: 'http://localhost:5173',
+    preflightContinue: true,
+    credentials: true,
+  }),
 
-// File uploads
-app.register(fastifyFileUpload, {
-  safeFileNames: true,
-  abortOnLimit: true,
-  useTempFiles: true,
-  tempFileDir: '/tmp',
-});
+  // parse application/x-www-form-urlencoded
+  app.register(fastifyFormBody),
 
-app.register(fastifyMultiPart);
+  // File uploads
+  app.register(fastifyFileUpload, {
+    safeFileNames: true,
+    abortOnLimit: true,
+    useTempFiles: true,
+    tempFileDir: '/tmp',
+  }),
 
-// Keep track of running external processes for bots.
-const running_bots = {};
+  app.register(fastifyMultiPart),
+]);
 
-function start_bot(projectid) {
-  console.log('starting ' + projectid);
-  // Check whether we are running in Docker or not
-  if (process.env.TILBOT_PORT == undefined) {
-    // Stop the bot if it is currently already running (Docker does this too further down the line)
-    if (running_bots[projectid] !== undefined) {
-      stop_bot(projectid);
-    }
-    running_bots[projectid] = child_process.fork('../socket-io/server.js', [projectid]);
-  } else {
-    // @TODO: Docker not implemented yet.
-    //this.botlauncher.write('start ' + projectid);
-  }
-}
-
-async function stop_bot(projectid) {
-  console.log('stopping ' + projectid);
-  // Check whether we are running in Docker or not
-  if (process.env.TILBOT_PORT == undefined) {
-    if (running_bots[projectid] !== undefined) {
-      running_bots[projectid].send('exit', undefined, undefined, e => { });
-    }
-  } else {
-    // @TODO: Docker not implemented yet
-    //this.botlauncher.write('stop ' + projectid);
-  }
-
-  try {
-    const project = await ProjectModel.getById(projectid);
-    project.status = 0;
-    await project.save();
-  } catch (error) {
-    console.error(`Error stopping bot: ${error}`);
-  }
-};
-
-// Launch all running bots (IIFE to run it in the background)
-(async () => {
-  const projects = await ProjectModel.getSummaries({ active: true, status: 1 });
-  for (const project of projects) {
-    start_bot(project.id);
-  }
-})();
 
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
@@ -257,12 +220,6 @@ app.post('/api/set_project_active', async (req, res) => {
   }
 });
 
-// API call: retrieve a project's socket if active -- anyone can do this, no need to be logged in.
-app.get('/api/get_socket', async (req, res) => {
-  const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
-  return project.socket.toString();
-});
-
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
   const user = await UserModel.getByUsername(req.session.username);
@@ -281,9 +238,7 @@ app.post('/api/set_project_status', async (req, res) => {
   project.status = status;
   project.save();
 
-  if (status) {
-    start_bot(req.body.projectid);
-  } else {
+  if (status == 0) {
     stop_bot(req.body.projectid);
   }
 });
@@ -343,7 +298,7 @@ app.post('/api/import_project', async (req, res) => {
 
   console.log('project file found');
 
-  if (running_bots[project_id] !== undefined) {
+  if (project.status == 1) {
     await stop_bot(project_id);
   }
 
@@ -398,18 +353,95 @@ app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
 });
 
-// In production, let SvelteKit handle everything else, including serving prerendered pages and static assets
-if (existsSync('./build/handler.js')) {
-  (async () => {
-    try {
-      const m = await import('./build/handler.js');
-      app.use('/proj_pub', express.static('./proj_pub'));
-      app.use(m.handler);
-    } catch (error) {
-      console.error(`Error importing Sveltekit handler`);
+const projectControllers = new Map();
+
+// API call: create a new conversation for a project -- anyone can do this, no need to be logged in.
+app.get('/api/create_conversation', async (req, res) => {
+  const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
+  const settings = await SettingsModel.findOne({ user_id: project.user_id });
+
+  const projectController = new ProjectController(
+    project,
+    __dirname + '/../projects/' + project.id,
+    LLM.fromSettings(settings),
+  );
+
+  const controllerId = randomBytes(16).toString('hex');
+
+  projectControllers.set(controllerId, projectController);
+
+  return { conversation: controllerId, settings: project.settings };
+});
+
+app.get('/ws/chat', { websocket: true }, async (socket, req) => {
+  const projectController = projectControllers.get(req.query.conversation);
+  if (!projectController) {
+    throw new Error(`Conversation '${req.query.conversation}' not found`);
+  }
+
+  if (projectController.socket) {
+    projectController.socket.close();
+    projectController.socket = null;
+  }
+
+  socket.addEventListener('open', () => {
+    if (projectController.socket) {
+      // We're late to the party.
+      socket.close();
+    } else {
+      projectController.socket = socket;
     }
-  })();
-}
+  });
+
+  socket.addEventListener('close', () => {
+    if (projectController.socket === socket) {
+      projectController.socket = null;
+    }
+  });
+
+  socket.addEventListener('message', e => {
+    const [command, ...args] = JSON.parse(e.data);
+    switch (command) {
+      case 'message sent':
+        projectController.message_sent_event(...args);
+        break;
+
+      case 'user_message':
+        projectController.receive_message(...args);
+        break;
+
+      case 'log':
+        projectController.log(...args);
+        break;
+
+      case 'pid':
+        projectController.set_participant_id(...args);
+        break;
+    }
+  });
+});
+
+async function stop_bot(projectId) {
+  console.log(`stopping ${projectId}`);
+
+  try {
+    const project = await ProjectModel.getById(projectid);
+    project.status = 0;
+    await project.save();
+  } catch (error) {
+    console.error(`Error stopping bot: ${error}`);
+  }
+
+  for (const socket of Object.values(socketClients[projectId] ?? {})) {
+    socket.close();
+  }
+};
+
+// Serve the static public files from projects.
+// FIXME: also serve the compiled Svelte files.
+await app.register(fastifyStatic, {
+  root: 'proj_pub',
+});
 
 // Implement the default response for successful requests
 app.addHook('onSend', async (req, res, payload) => {

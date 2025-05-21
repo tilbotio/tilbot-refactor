@@ -1,23 +1,83 @@
-import {BasicProjectController} from '../../shared/controllers/basicproject';
+import { BasicProjectController } from '../../shared/controllers/basicproject';
 
 class RemoteProjectController extends BasicProjectController {
 
     private chatbot_message_callback: Function;
     private chatbot_settings_callback: Function;
     private typing_indicator_callback: Function;
-    private socket: any;
+    private pending: string[] = [];
+    private _socket: any = null;
 
-    constructor(socket: any, chatbot_message_callback: Function, chatbot_settings_callback: Function, typing_indicator_callback: Function) {
+    constructor(chatbot_message_callback: Function, chatbot_settings_callback: Function, typing_indicator_callback: Function) {
         super();
 
         this.chatbot_message_callback = chatbot_message_callback;
         this.chatbot_settings_callback = chatbot_settings_callback;
         this.typing_indicator_callback = typing_indicator_callback;
-        this.socket = socket;
-        socket.on('bot message', this.send_message.bind(this)); 
-        socket.on('window message', this.window_message.bind(this));
-        socket.on('settings', this.send_settings.bind(this));
-        socket.on('typing indicator', this.send_typing_indicator.bind(this));
+    }
+
+    emit(...message: string[]) {
+        const socket = this._socket;
+        if (socket == null) {
+            this.pending.push(JSON.stringify(message));
+        } else {
+            for (const p of this.pending) {
+                socket.send(p);
+            }
+            this.pending.length = 0;
+            socket.send(JSON.stringify(message));
+        }
+    }
+
+    get socket() {
+        return this._socket;
+    }
+
+    set socket(socket: any) {
+        if (socket == null) {
+            this._socket = null;
+            return;
+        }
+
+        socket.addEventListener('open', () => {
+            if (this.socket) {
+                // We're late to the party.
+                socket.close();
+            } else {
+                this._socket = socket;
+                for (const p of this.pending) {
+                    socket.send(JSON.stringify(p));
+                }
+                this.pending.length = 0;
+            }
+        });
+
+        socket.addEventListener('close', () => {
+            if (this._socket === socket) {
+                this._socket = null;
+            }
+        });
+
+        socket.addEventListener('message', (e: MessageEvent) => {
+            const [command, ...args] = JSON.parse(e.data);
+            switch (command) {
+                case 'bot message':
+                    this.send_message(...(args as [any]));
+                    break;
+
+                case 'window message':
+                    this.window_message(...(args as [any]));
+                    break;
+
+                case 'settings':
+                    this.send_settings(...(args as [any, string]));
+                    break;
+
+                case 'typing indicator':
+                    this.send_typing_indicator();
+                    break;
+            }
+        });
     }
 
     send_message(block: any) {
@@ -39,27 +99,27 @@ class RemoteProjectController extends BasicProjectController {
     }
 
     message_sent_event() {
-        this.socket.emit('message sent');
+        this.emit('message sent');
     }
 
     receive_message(str: string) {
-        this.socket.emit('user_message', str);
+        this.emit('user_message', str);
     }
 
     log(str: string) {
-        this.socket.emit('log', str);
+        this.emit('log', str);
     }
 
     set_participant_id(pid: string) {
-        this.socket.emit('pid', pid);
+        this.emit('pid', pid);
     }
 
     /*check_group_exit(id: number) {
         var path = this.get_path();
 
-        if (id == -1) {            
+        if (id == -1) {
             var group_block_id = path[path.length-1];
-            this.move_level_up();            
+            this.move_level_up();
 
             path = this.get_path();
 
@@ -94,7 +154,7 @@ class RemoteProjectController extends BasicProjectController {
             if (this.project.blocks[this.current_block_id.toString()].type == 'Auto') {
                 this.current_block_id = this.project.blocks[this.current_block_id.toString()].connectors[0].targets[0];
                 this._send_current_message();
-            }  
+            }
         }
 
         else {
@@ -107,8 +167,8 @@ class RemoteProjectController extends BasicProjectController {
             if (block.blocks[this.current_block_id.toString()].type == 'Auto') {
                 var new_id = block.blocks[this.current_block_id.toString()].connectors[0].targets[0];
                 this.check_group_exit(new_id);
-            }                  
-        }      
+            }
+        }
     }
 
     _send_current_message() {
@@ -122,8 +182,8 @@ class RemoteProjectController extends BasicProjectController {
             for (var i = 1; i < path.length; i++) {
             block = block.blocks[path[i]];
             }
-        }       
-        
+        }
+
         block = block.blocks[this.current_block_id.toString()];
 
         setTimeout(function() {
@@ -154,6 +214,6 @@ class RemoteProjectController extends BasicProjectController {
     }*/
 
 }
-  
 
-export {RemoteProjectController};
+
+export { RemoteProjectController };

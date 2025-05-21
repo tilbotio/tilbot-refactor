@@ -1,92 +1,121 @@
-const http = require('http');
-const https = require('https');
-const express = require('express');
-const socket = require('socket.io');
+const Fastify = require('fastify');
+const fastifyWebSocket = require('fastify-websocket');
+const fastifyStatic = require('@fastify/static');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
-const ChatGPT = require('./chatgpt.cjs');
-const LocalLLM = require('./localllm.cjs');
+const LLM = require('./llm.cjs');
 const ProjectController = require('./projectcontroller.cjs');
-
-const app = express();
-
-var server = null;
-
-if (fs.existsSync(__dirname + '/../certs/privkey.pem') && fs.existsSync(__dirname + '/../certs/pubkey.pem')) {
-
-  const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
-  const cert = fs.readFileSync(__dirname + '/../certs/pubkey.pem');
-  var ssloptions = {
-    key: key,
-    cert: cert
-  };   
-
-  app.use(express.static(path.join(__dirname, '/../certs/')));
-  
-  server = https.createServer(ssloptions, app);
-}
-
-else {
-  server = http.createServer(app);
-}
 
 let p = process.argv[2].substring(3);
 
-const io = socket(server);
-
-let project = fs.readFileSync(p + '/currentproject/electron-project.json');
+let project = fs.readFileSync(path.join(p, 'currentproject/electron-project.json'));
 project = JSON.parse(project);
 console.log(project);
 
 // Load settings
-let settings = {
-  chatgpt_api_key: ''
+let settings = { chatgpt_api_key: '' };
+try {
+  settings = JSON.parse(fs.readFileSync(path.join(p, 'settings.json'), 'utf8'));
+} catch (err) {
+  if (err.code != 'ENOENT') {
+    throw err;
+  }
 }
-if (fs.existsSync(p + '/settings.json')) {
-  settings = JSON.parse(fs.readFileSync(p + '/settings.json', 'utf8'));
+
+const llm = LLM.fromSettings(settings);
+
+let https = null;
+try {
+  https = {
+    key: fs.readFileSync(path.join(__dirname, '../certs/privkey.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../certs/pubkey.pem')),
+  };
+} catch (err) {
+  if (err.code != 'ENOENT') {
+    throw err;
+  }
 }
 
-// Init ChatGPT
-ChatGPT.init(settings.chatgpt_api_key);
+const app = Fastify({ https });
+await app.register(fastifyWebSocket);
 
-// Init Local LLM
-LocalLLM.init(settings.llm_api_address);
-
-let clients = {};
-
-app.use(express.static(path.join(__dirname, '/../build/')));
-app.use(express.static(path.join(p, '/currentproject/')));
+await app.register(fastifyStatic, {
+  root: [
+    path.join(__dirname, '../build'),
+    path.join(p, 'currentproject'),
+  ],
+});
 
 app.get('/', (req, res) => {
-    res.status(200);
-    res.sendFile(path.join(__dirname, '/../build/index.html'));
+  res.status(200);
+  res.sendFile(path.join(__dirname, '../build/index.html'));
 });
 
-server.listen(2801, () => {
-    console.log('listening on port 2801');
+const projectControllers = new Map();
+
+// API call: create a new conversation for the project.
+app.get('/api/create_conversation', async (req, res) => {
+  const projectController = new ProjectController(project, p, llm);
+  const controllerId = crypto.randomBytes(16).toString('hex');
+  projectControllers.set(controllerId, projectController);
+  return { conversation: controllerId, settings: project.settings };
 });
 
-io.on('connection', (socket) => {
-    console.log('a user connected');
 
-    clients[socket.id] = new ProjectController(io, project, socket.id, p, settings.llm_setting);
-  
-    socket.on('message sent', () => {
-      clients[socket.id].message_sent_event();
-    });
+app.get('/ws/chat', { websocket: true }, async (socket, req) => {
+  const projectController = projectControllers.get(req.query.conversation);
+  if (!projectController) {
+    throw new Error(`Conversation '${req.query.conversation}' not found`);
+  }
 
-    socket.on('user_message', (str) => {
-      clients[socket.id].receive_message(str);
-    });
+  if (projectController.socket) {
+    projectController.socket.close();
+    projectController.socket = null;
+  }
 
-    socket.on('disconnect', () => {
-      clients[socket.id].disconnected();
-      delete clients[socket.id];
-      console.log('disconnected');
-    });
+  socket.addEventListener('open', () => {
+    if (projectController.socket) {
+      // We're late to the party.
+      socket.close();
+    } else {
+      projectController.socket = socket;
+    }
+  });
 
-    socket.on('log', (str) => {
-      clients[socket.id].log(str);
-    });
+  socket.addEventListener('close', () => {
+    if (projectController.socket === socket) {
+      projectController.socket = null;
+    }
+  });
 
+  socket.addEventListener('message', e => {
+    const [command, ...args] = JSON.parse(e.data);
+    switch (command) {
+      case 'message sent':
+        projectController.message_sent_event(...args);
+        break;
+
+      case 'user_message':
+        projectController.receive_message(...args);
+        break;
+
+      case 'log':
+        projectController.log(...args);
+        break;
+
+      case 'pid':
+        projectController.set_participant_id(...args);
+        break;
+    }
+  });
+});
+
+app.listen({ port: 2801, host: '0.0.0.0' }, (err, addr) => {
+  if (err) {
+    app.log.error(err);
+    process.exit(1);
+  } else {
+    console.log(`listening on ${addr}`);
+  }
 });
