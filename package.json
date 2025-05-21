@@ -6,7 +6,8 @@
         "frontend",
         "backend",
         "socket-io",
-        "app"
+        "app",
+        "tests"
     ],
     "scripts": {
         "dev:frontend": "npm run dev --workspace=frontend",
@@ -19,7 +20,10 @@
         "app": "npm run build --workspace=app && npm run build:vite --workspace=frontend && npm run start --workspace=app",
         "package-win": "npm run package-win --workspace=app",
         "package-mac-x64": "npm run package-mac-x64 --workspace=app",
-        "package-mac-arm": "npm run package-mac-arm --workspace=app"
+        "package-mac-arm": "npm run package-mac-arm --workspace=app",
+        "test": "npm run test --workspace=tests",
+        "test-unit": "npm run test-unit --workspace=tests",
+        "test-integration": "npm run test-integration --workspace=tests"        
     },
     "devDependencies": {
         "concurrently": "^8.2.2",

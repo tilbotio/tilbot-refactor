@@ -1,0 +1,13 @@
+{
+    "name": "tests",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "test": "vitest run",
+        "test-unit": "vitest run unit",
+        "test-integration": "vitest run integration"
+    },
+    "devDependencies": {
+        "vitest": "^3.1.4"
+    }
+}
