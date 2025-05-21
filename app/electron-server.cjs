@@ -1,6 +1,7 @@
 const Fastify = require('fastify');
 const fastifyWebSocket = require('fastify-websocket');
 const fastifyStatic = require('@fastify/static');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const LLM = require('./llm.cjs');
@@ -15,7 +16,7 @@ console.log(project);
 // Load settings
 let settings = { chatgpt_api_key: '' };
 try {
-  settings = JSON.parse(fs.readFileSync(path.join(p, 'settings.json', 'utf8')));
+  settings = JSON.parse(fs.readFileSync(path.join(p, 'settings.json'), 'utf8'));
 } catch (err) {
   if (err.code != 'ENOENT') {
     throw err;
@@ -30,7 +31,7 @@ try {
     key: fs.readFileSync(path.join(__dirname, '../certs/privkey.pem')),
     cert: fs.readFileSync(path.join(__dirname, '../certs/pubkey.pem')),
   };
-} catch {
+} catch (err) {
   if (err.code != 'ENOENT') {
     throw err;
   }
@@ -56,7 +57,7 @@ const projectControllers = new Map();
 // API call: create a new conversation for the project.
 app.get('/api/create_conversation', async (req, res) => {
   const projectController = new ProjectController(project, p, llm);
-  const controllerId = randomBytes(16).toString('hex');
+  const controllerId = crypto.randomBytes(16).toString('hex');
   projectControllers.set(controllerId, projectController);
   return { conversation: controllerId, settings: project.settings };
 });
