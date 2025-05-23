@@ -11,9 +11,9 @@ export default defineConfig({
     allowedHosts: true,
     // port: 5173,
     // strictPort: true,
-    fs: {
-      allow: ["proj_pub"],
-    },
+    //fs: {
+    // allow: ["proj_pub"],
+    //},
     proxy: {
       "/ws": API_URL.replace(/^http(s?):/, "ws$1:"),
       "/api": {
