@@ -1,4 +1,4 @@
-import { dirname } from 'path';
+import  { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import Fastify from 'fastify';
 import { fastifySession } from '@fastify/session';
@@ -440,7 +440,7 @@ async function stop_bot(projectId) {
 // Serve the static public files from projects.
 // FIXME: also serve the compiled Svelte files.
 await app.register(fastifyStatic, {
-  root: 'proj_pub',
+  root: resolve(__dirname, 'proj_pub'),
 });
 
 // Implement the default response for successful requests
