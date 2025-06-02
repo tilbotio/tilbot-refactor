@@ -1,7 +1,6 @@
 "use strict";
 
 /*
-
 Define an ad-hoc parser for text with nested brackets.
 It does not attach any meaning to the parsed text, it just returns nested
 arrays of strings. Odd elements of the arrays are strings, even elements
@@ -21,12 +20,11 @@ Examples:
 
 All of this is used for parsing block connector labels, as well as connector
 output. It's a step up from the old code that tried to match bits using
-regular expressions in an ad-hoc fashion (which failed to do proper nesting).
+regular expressions in an ad-hoc fashion (and failed to do proper nesting).
 
 In the long term we should represent such label logic in the JSON itself,
 rather than in some ad-hoc DSL. However, even if that happens we still need
 this parsing for compatibility with old projects.
-
 */
 
 export class TilBotParseBracketsError extends Error {
@@ -46,24 +44,27 @@ export function parseBrackets(str) {
     let current = [];
     const stack = [];
 
+    // Split the string into parts, alternating between text and brackets.
+    // string.split() keeps the separators because we used a regex group.
+    // In the resulting array, even elements are text, odd elements are
+    // brackets.
     const parts = str.split(/([\[\]])/);
 
-    for (; ;) {
-        current.push(parts.shift());
-        if (!parts.length) {
-            break;
-        }
-        const bracket = parts.shift();
-        if (bracket === '[') {
-            stack.push(current);
-            const previous = current;
-            current = [];
-            previous.push(current);
-        } else if (bracket === ']') {
-            if (!stack.length) {
-                throw new TilbotParseBracketsUnmatchedCloseError();
+    for (const [index, part] of Object.entries(parts)) {
+        if (index & 1) {
+            if (part === '[') {
+                stack.push(current);
+                const parent = current;
+                current = [];
+                parent.push(current);
+            } else if (part === ']') {
+                if (!stack.length) {
+                    throw new TilbotParseBracketsUnmatchedCloseError();
+                }
+                current = stack.pop();
             }
-            current = stack.pop();
+        } else {
+            current.push(part);
         }
     }
 
