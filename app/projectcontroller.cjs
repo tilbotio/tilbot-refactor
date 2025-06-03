@@ -557,7 +557,7 @@ class ProjectController {
     let best = { found: false, connector: null, output: null };
 
     const blocks = this.project.blocks;
-    if (this.current_block_id === undefined || this.current_block_id === -1) {
+    if (this.current_block_id !== undefined && this.current_block_id !== -1) {
       const current_block = blocks[this.current_block_id.toString()];
       if (current_block.type !== 'Auto') {
         best = this.find_best_connector(current_block, str, str);
@@ -568,7 +568,7 @@ class ProjectController {
       let else_connector = null;
       // Check if we need to fire a trigger -- after checking responses to query by the bot!
       for (const block of blocks) {
-        if (block.type == 'Trigger') {
+        if (block.type === 'Trigger') {
           const candidate = this.find_best_connector(block, str, str);
           if (candidate.connector) {
             // Might be a real match or just an [else] connector
