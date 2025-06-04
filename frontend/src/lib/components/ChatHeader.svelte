@@ -1,8 +1,8 @@
 <script lang="ts">
   // Props:
-  //  • show: whether to render the header at all
-  //  • settings: an object containing show_avatar, avatar_file, and name
-  //  • path: base URL path used to build the <img> src when an avatar file exists
+  //  - show: whether to render the header at all
+  //  - settings: an object containing show_avatar, avatar_file, and name. Defaults to yes, blank, Tilbot
+  //  - path: base URL path used to build the <img> src when an avatar file exists. Expected to end in /
   export let show = true;
   export let settings: {
     show_avatar: 'yes' | 'no';
@@ -15,7 +15,7 @@
   };
   export let path = '';
 
-  function firstletter(str: string) {
+  function firstLetter(str: string) {
     return str.charAt(0).toUpperCase();
   }
 </script>
@@ -26,11 +26,11 @@
       <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
         {#if settings.avatar_file === ''}
           <div class="bg-neutral-focus text-neutral-content rounded-full w-12 h-12 flex items-center justify-center">
-            <span>{firstletter(settings.name)}</span>
+            <span>{firstLetter(settings.name)}</span>
           </div>
         {:else}
           <div class="rounded-full w-12 h-12 overflow-hidden">
-            <img src="{path + 'avatar/' + settings.avatar_file}" alt="avatar" class="w-full h-full object-cover" />
+            <img src="{path}avatar/{settings.avatar_file}" alt="avatar" class="w-full h-full object-cover" />
           </div>
         {/if}
       </div>
