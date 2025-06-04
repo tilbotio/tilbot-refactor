@@ -20,6 +20,40 @@ function splitAnds(label) {
   return result;
 }
 
+// RegExp.escape() is a bit new
+function regexEscape(str) {
+  return str.replace(/[\\^$*+?.()|\[\]{}]/g, '\\$&');
+}
+
+function findOperator(label, ...ops) {
+  // Given a label and a list of operators (an array of strings) find the first
+  // operator that matches and return the parts of label before the operator, the
+  // matched operator, and the parts of label after the operator. If none of the
+  // operators are present, return null.
+
+  // findOperator(["foo"], ["="]) -> null
+  // findOperator(["foo = bar"], ["="]) -> [["foo"], "=", ["bar"]]
+  // findOperator(["x", ["y"], "z = a", ["b"], "x"], ["="]) -> [["x", ["y"], "z"], "=", ["a", ["b"], "c"]]
+  const opExpr = Array.from(ops).map(regexEscape).join('|');
+  const re = new RegExp(`\s*\b(?:${opExpr})\b\s*`);
+  for (let i = 0; i < label.length; i += 2) {
+    const match = re.exec(label[i]);
+    if (match) {
+      const operatorStart = match.index;
+      const matchedOperator = match[0];
+      const beforeOperator = str.slice(0, operatorStart);
+      const afterOperator = str.slice(operatorStart + matchedOperator.length);
+
+      const firstOperand = label.slice(0, i);
+      firstOperand.push(beforeOperator);
+      const secondOperand = label.slice(i + 1);
+      secondOperand.unshift(afterOperator);
+      return [firstOperand, matchedOperator, secondOperand];
+    }
+  }
+  return null;
+}
+
 class ProjectController {
   constructor(project, p, llm) {
     this.project = project;
@@ -168,15 +202,23 @@ class ProjectController {
 
     if (matches !== null) {
       if (matches[1].indexOf(' = ') !== -1) {
+        // Supposing content is:
+        // _[x = y]_[z]_
+        // matches will have matched [x = y]
+        // matches2 will have matched [z]
         let matches2 = regExp.exec(content);
 
         let parts = matches[1].split(' = ');
         if (parts[0] in this.client_vars && this.client_vars[parts[0]] == parts[1]) {
           content = content.substring(matches2.index + 1, matches2.index + 1 + matches2[1].length) + content.substring(matches2.index + matches2[0].length);
+          // content is now (note how everything before the z is lost):
+          // z_
           return this.check_variables(content, input);
         }
         else {
           content = content.replace(matches[0], '').replace(matches2[0], '');
+          // content is now:
+          // ___
           return this.check_variables(content, input);
         }
       }

@@ -75,6 +75,23 @@ export function parseBrackets(str) {
     return current;
 }
 
+export function stringifyBrackets(brackets) {
+    const output = [];
+    function stringify(brackets) {
+        for (const [index, part] of Object.entries(brackets)) {
+            if (index & 1) {
+                output.push('[');
+                stringify(part);
+                output.push(']');
+            } else if (part) {
+                output.push(part);
+            }
+        }
+    }
+    stringify(brackets);
+    return output.join('');
+}
+
 export function isTrimmedBracketsEqual(a, b) {
     // Compare two bracket trees.
     // Return true if they are the same, false otherwise.
