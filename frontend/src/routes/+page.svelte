@@ -16,7 +16,7 @@
 <script lang="ts">
 import ChatHeader from "$lib/components/ChatHeader.svelte";
 import { onMount, tick } from "svelte";
-import { page } from '$app/state';
+import { page } from '$app/stores';
 import { BasicProjectController} from "../shared/controllers/basicproject";
 import { LocalProjectController} from "../client/controllers/localproject";
 import { RemoteProjectController} from "../client/controllers/remoteproject";
