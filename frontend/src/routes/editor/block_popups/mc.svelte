@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Unexpected token
+https://svelte.dev/e/js_parse_error -->
 <input type="checkbox" id="modal-event" class="modal-toggle" bind:this={modal_event}/>
 <div class="modal">
   <div class="modal-box max-w-3xl">

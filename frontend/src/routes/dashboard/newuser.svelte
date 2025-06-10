@@ -27,7 +27,7 @@
         </div>
         <div class="h-24 text-right">
             <div class="divider"></div>
-            <button class="btn btn-active" on:click={save}>Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline" on:click={cancel}>Cancel</button>
+            <button class="btn btn-active" onclick={save}>Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline" onclick={cancel}>Cancel</button>
         </div>
     </div>
 </div>
@@ -37,10 +37,10 @@
 
     const dispatch = createEventDispatcher();
 
-    let toggle: HTMLElement;
-    let error: string = '';
+    let toggle: HTMLElement = $state();
+    let error: string = $state('');
 
-    let user: any = {};
+    let user: any = $state({});
 
     export const newuserwindow = {
         show() {

@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Unexpected token
+https://svelte.dev/e/js_parse_error -->
 <div bind:this={draggable} style="left: {objAttributes.x}px; top: {objAttributes.y}px" on:mousedown={mouse_down} on:mouseup={mouse_up} on:mousemove={mouse_move} on:mouseleave={mouse_move} class="select-none absolute">
     <slot></slot>
 </div>

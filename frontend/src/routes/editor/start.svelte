@@ -4,5 +4,5 @@
 </div>
 
 <script type="ts">
-    export let el;
+    let { el = $bindable() } = $props();
 </script>

@@ -1,5 +1,5 @@
 <div class="fixed top-0 left-0 w-full h-full bg-tilbot-secondary-purple z-50 hidden flex flex-col justify-center text-white" bind:this={scan_overlay}>
-  <button class="btn btn-circle absolute right-4 top-4 z-10 bg-white text-tilbot-secondary-purple hover:bg-white" on:click={close_scan_overlay}>
+  <button class="btn btn-circle absolute right-4 top-4 z-10 bg-white text-tilbot-secondary-purple hover:bg-white" onclick={close_scan_overlay}>
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
   </button>
   <div id="barcodereader" class="!border-0 z-0">
@@ -92,10 +92,10 @@
   <div class="bg-gray-100 w-full drop-shadow-md">
     <div class="p-3 mr-16 text-center">
     {#each mc_options as mc_option}
-      <button class="btn btn-outline m-1" on:click={mc_submit}>{mc_option.content}</button>
+      <button class="btn btn-outline m-1" onclick={mc_submit}>{mc_option.content}</button>
     {/each}
     </div>
-    <button class="btn btn-circle absolute bottom-4 right-4" on:click={mc_submit}>
+    <button class="btn btn-circle absolute bottom-4 right-4" onclick={mc_submit}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
         </svg>
@@ -104,8 +104,8 @@
 
   {:else}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md">
-      <textarea class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]" placeholder="" bind:this={input_text} on:keydown={input_key_down} on:keyup={input_key_up}></textarea>
-      <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text !== null && input_text.value == '') ? 'hidden' : ''}" on:click={text_submit_button}>
+      <textarea class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]" placeholder="" bind:this={input_text} onkeydown={input_key_down} onkeyup={input_key_up}></textarea>
+      <button class="btn btn-circle absolute bottom-4 right-4 {(input_text !== undefined && input_text !== null && input_text.value == '') ? 'hidden' : ''}" onclick={text_submit_button}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
           </svg>
@@ -121,7 +121,7 @@
               <ul class="bg-slate-100 shadow-md -top-full">
                   <div class="tooltip tooltip-left" data-tip="Scan barcode">
                     <li>
-                        <a class="active:bg-tilbot-secondary-hardpink" on:click={start_barcode}>
+                        <a class="active:bg-tilbot-secondary-hardpink" onclick={start_barcode}>
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
@@ -145,36 +145,36 @@ import { LocalProjectController} from "../client/controllers/localproject";
 import { RemoteProjectController} from "../client/controllers/remoteproject";
 import { Html5Qrcode } from "html5-qrcode";
 
-let message_container: HTMLElement;
-let header: HTMLElement;
-let show_header: boolean = true;
+let message_container: HTMLElement = $state();
+let header: HTMLElement = $state();
+let show_header: boolean = $state(true);
 
 // For the barcode scanner
-let scan_overlay: HTMLElement;
+let scan_overlay: HTMLElement = $state();
 let html5Qrcode: any = undefined;
 
-let input_text: HTMLTextAreaElement;
+let input_text: HTMLTextAreaElement = $state();
 let controller: BasicProjectController;
 
-let messages: Array<any> = [];
-let current_message_type: string = 'Auto';
-let mc_options: Array<any> = [];
-let show_typing_indicator: boolean = false;
+let messages: Array<any> = $state([]);
+let current_message_type: string = $state('Auto');
+let mc_options: Array<any> = $state([]);
+let show_typing_indicator: boolean = $state(false);
 let isTilbotEditor = true;
 let conversation_id: string | null = null;
 let participant_id: string | null = '';
 
-let path: string = '';
+let path: string = $state('');
 let projectId: string = '';
 
-let settings: any = {
+let settings: any = $state({
                 'typing_style': 'fixed',
                 'typing_time': 2,
                 'typing_charpsec': 40,
                 'show_avatar': 'yes',
                 'avatar_file': '',
                 'name': 'Tilbot'
-};
+});
 
 onMount(async () => {
     // Check if we're in the editor
