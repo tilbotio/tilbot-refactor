@@ -1,5 +1,4 @@
 <script>
-    let {children} = $props();
     import "../app.css";
   /**
    * @typedef {Object} Props
