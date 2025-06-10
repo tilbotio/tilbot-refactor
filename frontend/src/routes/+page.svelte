@@ -1,12 +1,3 @@
-<div class="fixed top-0 left-0 w-full h-full bg-tilbot-secondary-purple z-50 hidden flex flex-col justify-center text-white" bind:this={scan_overlay}>
-  <button class="btn btn-circle absolute right-4 top-4 z-10 bg-white text-tilbot-secondary-purple hover:bg-white" onclick={close_scan_overlay}>
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-  </button>
-  <div id="barcodereader" class="!border-0 z-0">
-
-  </div>
-</div>
-
 <div class="flex flex-col w-full h-full">
   {#if show_header}
   <div class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow" bind:this={header}>

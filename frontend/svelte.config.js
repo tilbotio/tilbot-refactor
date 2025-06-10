@@ -8,6 +8,9 @@ const config = {
 	preprocess: preprocess({
 		postcss: true
 	}),
+	compilerOptions: {
+		runes: true
+	},
 
 	kit: {
 		adapter: adapter()
