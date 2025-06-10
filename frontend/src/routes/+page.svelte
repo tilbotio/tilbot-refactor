@@ -1,6 +1,8 @@
 <script lang="ts">
   import BarcodeReader from "$lib/components/BarcodeReader.svelte";
+  import ChatHeader from "$lib/components/ChatHeader.svelte";
   import { onMount, tick } from "svelte";
+  import { firstLetter } from "$lib/utils/functions";
   import { page } from "$app/state";
   import { BasicProjectController } from "../shared/controllers/basicproject";
   import { LocalProjectController } from "../client/controllers/localproject";
@@ -9,7 +11,7 @@
 
   let message_container: HTMLElement = $state();
   let header: HTMLElement = $state();
-  let show_header: boolean = $state(true);
+  let showHeader: boolean = $state(true);
 
   // For the barcode scanner
   let showScanner = $state(false);
@@ -30,11 +32,11 @@
   let projectId: string = "";
 
   let settings: any = $state({
-    typing_style: "fixed",
-    typing_time: 2,
-    typing_charpsec: 40,
-    show_avatar: "yes",
-    avatar_file: "",
+    typingStyle: "fixed",
+    typingTime: 2,
+    typingCharpsec: 40,
+    showAvatar: true,
+    avatarFile: "",
     name: "Tilbot",
   });
 
@@ -116,10 +118,6 @@
 
   function openBarcodeReader() {
     showScanner = true;
-  }
-
-  function firstletter(str: string) {
-    return str.charAt(0).toUpperCase();
   }
 
   function create_websocket() {
@@ -242,15 +240,15 @@
     let timeout = 2000;
 
     if (
-      settings.typing_style !== undefined &&
-      settings.typing_style == "variable"
+      settings.typingStyle !== undefined &&
+      settings.typingStyle == "variable"
     ) {
-      timeout = (msg.content.length / settings.typing_charpsec) * 1000;
+      timeout = (msg.content.length / settings.typingCharpsec) * 1000;
     } else if (
-      settings.typing_style !== undefined &&
-      settings.typing_style == "fixed"
+      settings.typingStyle !== undefined &&
+      settings.typingStyle == "fixed"
     ) {
-      timeout = settings.typing_time * 1000;
+      timeout = settings.typingTime * 1000;
     }
 
     setTimeout(function () {
@@ -476,34 +474,15 @@
 </script>
 
 <BarcodeReader visible={showScanner} onClose={closeBarcodeReader} />
+<ChatHeader
+  visible={showHeader}
+  showAvatar={settings.showAvatar}
+  avatarFile={settings.avatarFile}
+  name={settings.name}
+  path={settings.path}
+/>
 
 <div class="flex flex-col w-full h-full">
-  {#if show_header}
-    <div
-      class="bg-gray-100 w-full top-0 h-20 left-0 drop-shadow"
-      bind:this={header}
-    >
-      {#if settings.show_avatar == "yes"}
-        <div class="avatar online placeholder mt-4 ml-4 w-12 float-left">
-          {#if settings.avatar_file == ""}
-            <div
-              class="bg-neutral-focus text-neutral-content rounded-full w-12"
-            >
-              <span>{firstletter(settings.name)}</span>
-            </div>
-          {:else}
-            <div class="rounded-full w-12">
-              <img src={path + "avatar/" + settings.avatar_file} />
-            </div>
-          {/if}
-        </div>
-      {/if}
-      <div class="text-lg font-medium mt-6 ml-4 float-left">
-        {settings.name}
-      </div>
-    </div>
-  {/if}
-
   <div
     class="w-full h-full flex-1 overflow-y-scroll py-2"
     bind:this={message_container}
@@ -517,7 +496,7 @@
                 <div
                   class="bg-neutral-focus text-neutral-content rounded-full w-10 !flex items-center justify-center"
                 >
-                  <div>{firstletter(settings.name)}</div>
+                  <div>{firstLetter(settings.name)}</div>
                 </div>
               </div>
             {:else}
@@ -556,7 +535,7 @@
               <div
                 class="bg-neutral-focus text-neutral-content rounded-full w-10 !flex items-center justify-center"
               >
-                <div>{firstletter(settings.name)}</div>
+                <div>{firstLetter(settings.name)}</div>
               </div>
             </div>
           {:else}
