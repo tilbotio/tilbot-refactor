@@ -10,7 +10,8 @@
     <div class="modal">
     <div class="modal-box relative max-w-4xl">
         {#if edit_block !== null}
-        <svelte:component this={block_popup_components[edit_block.type]} objAttributes={edit_block} on:message={handleEditBlockMessage} />
+        {@const SvelteComponent_1 = block_popup_components[edit_block.type]}
+        <SvelteComponent_1 objAttributes={edit_block} on:message={handleEditBlockMessage} />
         {/if}
     </div>
     </div>    
@@ -33,7 +34,7 @@
         <span class="text-sm">(make sure your router is set up to forward port 2801)</span></p>
         <br />
         <div class="divider"></div> 
-        <p><button class="btn btn-active" on:click={btn_close_server_click}>Close server</button></p>
+        <p><button class="btn btn-active" onclick={btn_close_server_click}>Close server</button></p>
     </div>
     </div>    
 
@@ -49,7 +50,7 @@
             <ul class="bg-slate-100">
                 <div class="tooltip tooltip-right" data-tip="Automatically proceed">
                 <li>
-                    <a class="active:bg-tilbot-secondary-hardpink" on:click={() => new_block('Auto')}>
+                    <a class="active:bg-tilbot-secondary-hardpink" onclick={() => new_block('Auto')}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>                          
@@ -68,7 +69,7 @@
                 </div>-->
                 <div class="tooltip tooltip-right" data-tip="Multiple choice">
                 <li>
-                    <a class="active:bg-tilbot-secondary-hardpink" on:click={() => new_block('MC')}>
+                    <a class="active:bg-tilbot-secondary-hardpink" onclick={() => new_block('MC')}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                         </svg>                          
@@ -86,7 +87,7 @@
                 </div>-->                  
                 <div class="tooltip tooltip-right" data-tip="Text">
                 <li>
-                    <a class="active:bg-tilbot-secondary-hardpink" on:click={() => new_block('Text')}>
+                    <a class="active:bg-tilbot-secondary-hardpink" onclick={() => new_block('Text')}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
                         </svg>
@@ -97,7 +98,7 @@
             </li>
             <div class="tooltip tooltip-right" data-tip="Add trigger">
                 <li>
-                <a class="active:bg-tilbot-secondary-hardpink" on:click={() => new_block('Trigger')}>
+                <a class="active:bg-tilbot-secondary-hardpink" onclick={() => new_block('Trigger')}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M3.124 7.5A8.969 8.969 0 015.292 3m13.416 0a8.969 8.969 0 012.168 4.5" />
                     </svg>
@@ -121,7 +122,7 @@
             </li>            
             <div class="tooltip tooltip-right" data-tip="Variables & data">
                 <li>
-                <a class="active:bg-tilbot-secondary-hardpink" on:click="{btn_variables_click}">
+                <a class="active:bg-tilbot-secondary-hardpink" onclick={btn_variables_click}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4.745 3A23.933 23.933 0 003 12c0 3.183.62 6.22 1.745 9M19.5 3c.967 2.78 1.5 5.817 1.5 9s-.533 6.22-1.5 9M8.25 8.885l1.444-.89a.75.75 0 011.105.402l2.402 7.206a.75.75 0 001.104.401l1.445-.889m-8.25.75l.213.09a1.687 1.687 0 002.062-.617l4.45-6.676a1.688 1.688 0 012.062-.618l.213.09" />
                       </svg>
@@ -130,7 +131,7 @@
             </div>              
             <div class="tooltip tooltip-right" data-tip="Settings">
                 <li>
-                <a class="active:bg-tilbot-secondary-hardpink" on:click="{btn_settings_click}">
+                <a class="active:bg-tilbot-secondary-hardpink" onclick={btn_settings_click}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -141,7 +142,7 @@
             {#if is_electron}
             <div class="tooltip tooltip-right" data-tip="Launch project">
                 <li>
-                <a class="active:bg-tilbot-secondary-hardpink" on:click="{btn_launch_click}">
+                <a class="active:bg-tilbot-secondary-hardpink" onclick={btn_launch_click}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                       </svg>
@@ -158,7 +159,7 @@
         
             <div class="tooltip tooltip-right" data-tip="Load project">
                 <li>
-                <a class="active:bg-tilbot-secondary-hardpink" on:click={btn_load_click}>
+                <a class="active:bg-tilbot-secondary-hardpink" onclick={btn_load_click}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" />
                     </svg>                      
@@ -167,7 +168,7 @@
             </div>    
             <div class="tooltip tooltip-right" data-tip="Save project">
                 <li>
-                <a class="active:bg-tilbot-secondary-hardpink" on:click={btn_save_click}>
+                <a class="active:bg-tilbot-secondary-hardpink" onclick={btn_save_click}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                     </svg>                                         
@@ -187,7 +188,7 @@
     </div>
 
     <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
-        <div id="editor_main" class="grow overflow-auto" style="max-width: calc(100vw - 24rem)" on:click={editor_clicked} on:mousedown={editor_mousedown} on:mousemove={editor_mousemove} on:mouseup={editor_mouseup}>
+        <div id="editor_main" class="grow overflow-auto" style="max-width: calc(100vw - 24rem)" onclick={editor_clicked} onmousedown={editor_mousedown} onmousemove={editor_mousemove} onmouseup={editor_mouseup}>
             <div class="relative" style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}">
                 <svg style="width: {project.canvas_width + 'px'}; height: {project.canvas_height + 'px'}" class="absolute pointer-events-none z-40">
                     {#if Object.entries(line_locations).length > 1}
@@ -211,7 +212,7 @@
                                     data-from-block="{id}" 
                                     data-from-connector="{cid}" 
                                     data-to-block="{target}" 
-                                    on:click={line_clicked} 
+                                    onclick={line_clicked} 
                                     class="pointer-events-auto stroke-tilbot-primary-300">
 
                                     </path>
@@ -236,7 +237,7 @@
                         fill="none" 
                         data-from-block="-1"  
                         data-to-block="{project.starting_block_id}" 
-                        on:click={line_clicked} 
+                        onclick={line_clicked} 
                         class="pointer-events-auto stroke-tilbot-primary-300">
     
                         </path>                    
@@ -250,7 +251,7 @@
                 </svg>
 
                 <div id="btn_del_line" class="absolute invisible">
-                    <button class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink" on:click={delete_selected_line}>
+                    <button class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink" onclick={delete_selected_line}>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                 </div>
@@ -260,7 +261,8 @@
                 {#if project.blocks !== undefined}
                     {#each Object.entries(project.blocks) as [id, block]}
                         <Draggable objAttributes={block} on:message={handleDraggableMessage} id={id}>
-                            <svelte:component this={block_components[block.type]} blockId={id} selectedId={selected_id} objAttributes={block} on:message={handleBlockMessage} />
+                            {@const SvelteComponent_2 = block_components[block.type]}
+                            <SvelteComponent_2 blockId={id} selectedId={selected_id} objAttributes={block} on:message={handleBlockMessage} />
                         </Draggable>
                     {/each}
                 {/if}
@@ -269,7 +271,7 @@
     
         <div class="flex flex-col w-full max-w-sm pr-1.5 pl-1.5 bottom-0">
             <div id="simulator_menu" class="w-full mr-1.5 mt-2 text-center">
-                <button class="btn gap-2" on:click={run_all}>
+                <button class="btn gap-2" onclick={run_all}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                     </svg>         
@@ -326,7 +328,7 @@
 
 
 <!-- Hidden file field to be able to load files -->
-<input name="upload" type="file" class="invisible" bind:this={jsonfileinput} on:change={import_project_file} />
+<input name="upload" type="file" class="invisible" bind:this={jsonfileinput} onchange={import_project_file} />
 
 
 <script lang="ts">
@@ -360,13 +362,13 @@
         'Trigger': TriggerBlockPopup
     }
 
-    let jsonfileinput: HTMLElement;
-    let simulator: HTMLIFrameElement;
-    let start: SvelteComponent;
-    let variables_window: SvelteComponent;
-    let settings_window: SvelteComponent;
+    let jsonfileinput: HTMLElement = $state();
+    let simulator: HTMLIFrameElement = $state();
+    let start: SvelteComponent = $state();
+    let variables_window: SvelteComponent = $state();
+    let settings_window: SvelteComponent = $state();
 
-    let project: any = {
+    let project: any = $state({
         'current_block_id': 1,
         'blocks': {},
         'starting_block_id': -1,
@@ -377,29 +379,29 @@
         'settings': {
             'project_name': 'New project'
         }
-    };
-    let modal_launch: HTMLInputElement;
-    let modal_edit: HTMLInputElement;
+    });
+    let modal_launch: HTMLInputElement = $state();
+    let modal_edit: HTMLInputElement = $state();
 
-    let selected_id = 0;
-    let edit_block = null;
+    let selected_id = $state(0);
+    let edit_block = $state(null);
 
     // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
-    let line_locations = {};
+    let line_locations = $state({});
 
     let num_draggable_loaded = 0;
     let is_loading = false;
 
-    let is_electron: boolean = false;
-    let local_ip = '';
-    let public_ip = '';
+    let is_electron: boolean = $state(false);
+    let local_ip = $state('');
+    let public_ip = $state('');
 
     // For creating lines
-    let dragging_connector = {};
+    let dragging_connector = $state({});
 
-    let gen_settings = {};
-    let path = '';
-    let chatgpt_running = false;
+    let gen_settings = $state({});
+    let path = $state('');
+    let chatgpt_running = $state(false);
 
     onMount(() => {
         // Set a property on the window so that the simulator knows it's part of the editor.

@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: `<th>` cannot be a child of `<thead>`. `<thead>` only allows these children: `<tr>`, `<style>`, `<script>`, `<template>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
+https://svelte.dev/e/node_invalid_placement -->
 <input type="checkbox" id="my-modal-settings" class="modal-toggle" bind:this={toggle} />
 <div class="modal">
     <div class="modal-box relative w-11/12 max-w-full h-5/6 max-h-full">

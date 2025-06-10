@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Unexpected block closing tag
+https://svelte.dev/e/block_unexpected_close -->
 <input type="checkbox" id="my-modal-3" class="modal-toggle" bind:this={toggle} />
 <div class="modal">
     <div class="modal-box relative w-11/12 max-w-full h-5/6 max-h-full">

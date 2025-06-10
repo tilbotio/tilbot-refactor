@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Unexpected token
+https://svelte.dev/e/js_parse_error -->
 <div class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selectedId == blockId ? 'scale-110 z-50' : ''}" id="block_{blockId}" on:click={click_event}>
     <span class="indicator-item indicator-middle indicator-start badge z-0 invisible" id="block_{blockId}_in" data-block-id="{blockId}"></span>
     {#if selectedId == blockId}

@@ -13,8 +13,14 @@
 </div>
 
 <script type="ts">
-    export let blockId = 0;
-    export let connectorId = 0;
-    export let hasEvents = false;
+    /**
+     * @typedef {Object} Props
+     * @property {number} [blockId]
+     * @property {number} [connectorId]
+     * @property {boolean} [hasEvents]
+     */
+
+    /** @type {Props} */
+    let { blockId = 0, connectorId = 0, hasEvents = false } = $props();
 
 </script>

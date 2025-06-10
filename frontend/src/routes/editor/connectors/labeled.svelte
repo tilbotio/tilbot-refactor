@@ -15,10 +15,21 @@
 <script type="ts">
     import { onMount, createEventDispatcher } from "svelte";
 
-    export let blockId = 0;
-    export let connectorId = 0;
-    export let label = '';
-    export let hasEvents = false;
+    /**
+     * @typedef {Object} Props
+     * @property {number} [blockId]
+     * @property {number} [connectorId]
+     * @property {string} [label]
+     * @property {boolean} [hasEvents]
+     */
+
+    /** @type {Props} */
+    let {
+        blockId = 0,
+        connectorId = 0,
+        label = '',
+        hasEvents = false
+    } = $props();
 
     const dispatch = createEventDispatcher();
 
