@@ -2,12 +2,62 @@
   /**
    * @prop visible: determine whether or not component is shown
    * @prop onClose: callback function, will be provided by parent component
+   * @prop onScan: callback function, will be provided by parent component
    */
   import { Icon, XMark } from "svelte-hero-icons";
+  import { Html5Qrcode } from "html5-qrcode";
+
   let {
     visible = false,
     onClose = () => {},
-  }: { visible: boolean; onClose: () => void } = $props();
+    onScan = (_decoded: string) => {},
+  }: {
+    visible: boolean;
+    onClose: () => void;
+    onScan: (decoded: string) => void;
+  } = $props();
+
+  let html5Qrcode: Html5Qrcode | null = null;
+
+  function qrboxFunction(viewfinderWidth: number, viewfinderHeight: number) {
+    const qrboxSize = Math.floor(
+      Math.min(viewfinderWidth, viewfinderHeight) * 0.9
+    );
+    return {
+      width: qrboxSize,
+      height: qrboxSize,
+    };
+  }
+
+  async function onScanSuccess(decodedText: string) {
+    onScan(decodedText);
+    try {
+      await html5Qrcode?.stop();
+    } catch (err) {
+      console.error("QR stopping error: ", err);
+    }
+    onClose();
+  }
+
+  $effect(() => {
+    if (visible && html5Qrcode === null) {
+      html5Qrcode = new Html5Qrcode("barcodereader");
+      html5Qrcode
+        .start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: qrboxFunction },
+          onScanSuccess,
+          undefined
+        )
+        .catch((err) => console.error("QR starting error: ", err));
+    }
+    return () => {
+      html5Qrcode?.stop().catch((err) => {
+        console.error("QR stopping error: ", err);
+      });
+      html5Qrcode = null;
+    };
+  });
 </script>
 
 {#if visible}

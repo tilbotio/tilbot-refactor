@@ -112,14 +112,6 @@
     }
   });
 
-  function closeBarcodeReader() {
-    showScanner = false;
-  }
-
-  function openBarcodeReader() {
-    showScanner = true;
-  }
-
   function create_websocket() {
     let restarting = false;
     let socket: WebSocket | null = null;
