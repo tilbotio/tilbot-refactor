@@ -31,11 +31,6 @@
 
   async function onScanSuccess(decodedText: string) {
     onScan(decodedText);
-    try {
-      await html5Qrcode?.stop();
-    } catch (err) {
-      console.error("QR stopping error: ", err);
-    }
     onClose();
   }
 

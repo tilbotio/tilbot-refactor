@@ -8,14 +8,13 @@
   import { LocalProjectController } from "../client/controllers/localproject";
   import { RemoteProjectController } from "../client/controllers/remoteproject";
 
-  let message_container: HTMLElement = $state();
-  let header: HTMLElement = $state();
+  let message_container: HTMLElement;
   let showHeader: boolean = $state(true);
 
   // For the barcode scanner
   let showScanner = $state(false);
 
-  let input_text: HTMLTextAreaElement = $state();
+  let input_text: HTMLTextAreaElement;
   let controller: BasicProjectController;
 
   let messages: Array<any> = $state([]);
@@ -175,7 +174,9 @@
   }
 
   function handleScannedCode(decoded: string) {
-    user_message(`barcode: ${decoded}`);
+    // Bug with receive_message not defined on BasicProjectController, hence this intermediate debug fix
+    // user_message(`barcode: ${decoded}`);
+    console.log(`Code scanned: ${decoded}`);
   }
 
   function project_received(data: any) {
@@ -569,7 +570,7 @@
         input_text !== null &&
         input_text.value == ''
           ? ''
-          : 'hidden'}"
+          : ''}"
       >
         <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
           <li>
