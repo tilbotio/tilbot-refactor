@@ -1,5 +1,10 @@
 const CsvData = require('./csvdata.cjs');
 
+// RegExp.escape() is a bit new
+const regexEscape = RegExp.escape || function (str) {
+  return str.replace(/[\\^$*+?.()|\[\]{}]/g, '\\$&');
+};
+
 class ProjectController {
   constructor(project, p, llm) {
     this.project = project;
@@ -393,103 +398,84 @@ class ProjectController {
   }
 
   async check_labeled_connector(connector, str) {
-    // Check if we should match a variable
-    if (connector.indexOf(' = ') !== -1) {
-      let parts = connector.split(' = ');
-
-      let key = parts[0] + ']';
-      let val = parts[1].substring(0, parts[1].length - 1);
-      let res = await this.check_labeled_connector(key, val);
-
-      if (res == val) {
-        return val;
-      }
-      else {
-        return null;
-      }
-    }
-    else if (connector.indexOf(' != ') !== -1) {
-      let parts = connector.split(' != ');
-
-      let key = parts[0] + ']';
-      let val = parts[1].substring(0, parts[1].length - 1);
-      let res = await this.check_labeled_connector(key, val);
-
-      if (res !== val) {
-        return val;
-      }
-      else {
-        return null;
-      }
-    }
-
     // Check for tags / special commands
     let regExp = /\[([^\]]+)\]/g;
     let matches = regExp.exec(connector);
 
-    if (matches !== null) {
-      let should_match = true;
+    if (matches) {
+      const bracketedText = matches[1].strip();
+
+      // Match an = or != comparison operator, flanked by either whitespace or
+      // word boundaries or the start/end of the string:
+      const comparisonMatch = /(?:\s|\b|^)(!?=)(?:\s|\b|$)/.exec(bracketedText);
+      if (comparisonMatch) {
+        const comparisonIndex = comparisonMatch.index;
+        const operator = comparisonMatch[1];
+
+        const key = `[${bracketedText.substring(0, comparisonIndex).trim()}]`;
+        const val = bracketedText.substring(comparisonIndex + comparisonMatch[0].length).trim();
+        const res = await this.check_labeled_connector(key, val);
+
+        const shouldBeEqual = operator === '=';
+        const isEqual = res === val;
+
+        return isEqual === shouldBeEqual ? val : null;
+      }
+
+      let shouldMatch = true;
       // @TODO: do something in case of multiple matches, and support [and] or [or]
       //let match = matches[0];
 
       // If it's a column from a CSV table, there should be a period.
       // Element 1 of the match contains the string without the brackets.
-      let csv_parts = matches[1].split('.');
+      let csv_parts = bracketedText.split('.');
 
       if (csv_parts.length == 2) {
         let db = csv_parts[0];
         let col = csv_parts[1];
 
         if (db.startsWith('!')) {
-          should_match = false;
+          shouldMatch = false;
           db = db.substring(1);
         }
 
         // Check if local variable
         if (db in this.client_vars) {
-          let var_options = this.client_vars[db][col].split('|');
+          const varOptions = this.client_vars[db][col].split('|');
 
-          for (var o in var_options) {
-            let opt = var_options[o].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-            if (str.match(new RegExp("\\b" + opt + "\\b", "i")) != null && should_match) {
-              return var_options[o];
+          for (const option of varOptions) {
+            let escapedOption = regexEscape(option);
+            if (str.match(new RegExp("\\b" + escapedOption + "\\b", "i")) != null) {
+              return shouldMatch ? option : null;
             }
           }
 
-          if (!should_match) {
-            return '';
+          return shouldMatch ? null : '';
+        } else {
+          const parts = str.split(' ');
+          const matchedParts = [];
+
+          for (const part of parts) {
+            const cleanedPart = part.replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
+            const res = await this.csv_datas[db].get(col, cleanedPart);
+            if (Boolean(res && res.length) === shouldMatch) {
+              matchedParts.push(part);
+            }
           }
+
+          return matchedParts.length ? matchedParts.join(' ') : null;
         }
-        else {
-          let parts = str.split(' ');
-
-          for (let part in parts) {
-
-            let res = await this.csv_datas[db].get(col, parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', ''));
-
-            if (res.length > 0 && should_match) {
-              return parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
-            }
-            else if (res.length == 0 && !should_match) {
-              return parts[part].replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
-            }
-          }
-        }
-      }
-
-      else {
-        if (matches[1] in this.client_vars && this.client_vars[matches[1]] == str) {
+      } else {
+        if (bracketedText in this.client_vars && this.client_vars[bracketedText] == str) {
           return str;
-        }
-        else {
+        } else {
           return '';
         }
       }
-    }
-
-    else {
-      let candidate = connector.toLowerCase().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      if ((candidate == str.replace('barcode:', '').toLowerCase()) || (str.replace('barcode:', '').toLowerCase().match(new RegExp("\\b" + candidate + "\\b", "i")) != null)) {
+    } else {
+      const candidate = connector.toLowerCase();
+      const cleanedStr = str.replace('barcode:', '').toLowerCase();
+      if (candidate === cleanedStr || cleanedStr.match(new RegExp("\\b" + regexEscape(candidate) + "\\b"))) {
         return str;
       }
     }
@@ -497,104 +483,75 @@ class ProjectController {
     return null;
   }
 
+  async find_best_connector(block, str, else_output) {
+    let else_connector = null;
+
+    for (const connector of block.connectors) {
+      const label = parseBrackets(connector.label);
+      const method = connector.method;
+
+      if (label.trim() === '[else]') {
+        else_connector = connector;
+      } else if (method !== 'barcode' || str.startsWith('barcode:')) {
+        // @TODO: distinguish between contains / exact match options
+        const ands = label.split(/\s*\[and\]\s*/);
+        let num_match = 0;
+        let last_found_output = null;
+
+        for (const and of ands) {
+          const output = await this.check_labeled_connector(and, str);
+          if (output !== null) {
+            num_match++;
+            last_found_output = output;
+          } else {
+            // break; // (or do we really need to evaluate all ANDs?)
+          }
+        }
+
+        if (num_match == ands.length) {
+          return { found: true, connector, output: last_found_output };
+        }
+      }
+    }
+
+    return { found: false, connector: else_connector, output: else_output };
+  }
+
   async receive_message(str) {
     console.log('receive!' + str);
 
-    let found = false;
-    let else_connector_id = '-1';
+    let best = { found: false, connector: null, output: null };
 
-    if (this.current_block_id !== undefined && this.current_block_id !== -1 && this.project.blocks[this.current_block_id.toString()].type !== 'Auto') {
-      var block = this.project.blocks[this.current_block_id.toString()];
+    const blocks = this.project.blocks;
+    if (this.current_block_id !== undefined && this.current_block_id !== -1) {
+      const current_block = blocks[this.current_block_id.toString()];
+      if (current_block.type !== 'Auto') {
+        best = this.find_best_connector(current_block, str, str);
+      }
+    }
 
-      this.logger.log('message_user', str);
-
-      for (var c in block.connectors) {
-        if (block.connectors[c].label == '[else]') {
-          else_connector_id = c;
-        }
-
-        else if ((block.connectors[c].method == 'barcode' && str.startsWith('barcode:')) || block.connectors[c].method !== 'barcode') {
-          // @TODO: distinguish between contains / exact match options
-          let ands = block.connectors[c].label.split(' [and] ');
-          let num_match = 0;
-          let last_found_output = null;
-
-          for (let and in ands) {
-            //for (let part in parts) {
-            let output = await this.check_labeled_connector(ands[and], str);
-            if (output !== null) {
-              num_match += 1;
-              last_found_output = output;
-            }
-            //}
+    if (!best.found) {
+      let else_connector = null;
+      // Check if we need to fire a trigger -- after checking responses to query by the bot!
+      for (const block of blocks) {
+        if (block.type === 'Trigger') {
+          const candidate = this.find_best_connector(block, str, str);
+          if (candidate.connector) {
+            // Might be a real match or just an [else] connector
+            best = candidate;
           }
-
-          if (num_match == ands.length) {
-            found = true;
-            this.current_block_id = block.connectors[c].targets[0];
-            this.send_events(block.connectors[c], last_found_output);
-            this._send_current_message(last_found_output);
+          if (candidate.found) {
             break;
           }
         }
       }
-
     }
 
-    if (!found) {
-      let else_connector = null;
-      // Check if we need to fire a trigger -- after checking responses to query by the bot!
-      for (var b in this.project.blocks) {
-        if (this.project.blocks[b].type == 'Trigger') {
-          for (var c in this.project.blocks[b].connectors) {
-            if (this.project.blocks[b].connectors[c].label == '[else]') {
-              else_connector = this.project.blocks[b].connectors[c];
-            }
-
-            else if ((this.project.blocks[b].connectors[c].method == 'barcode' && str.startsWith('barcode:')) || this.project.blocks[b].connectors[c].method !== 'barcode') {
-              // @TODO: distinguish between contains / exact match options
-              //let parts = str.split(' ');
-              let ands = this.project.blocks[b].connectors[c].label.split(' [and] ');
-              let num_match = 0;
-              let last_found_output = null;
-
-              for (let and in ands) {
-                //for (let part in parts) {
-                let output = await this.check_labeled_connector(ands[and], str);//parts[part].replace('?', ''));
-
-                if (output !== null) {
-                  num_match += 1;
-                  last_found_output = output;
-                }
-                //}
-              }
-
-              if (num_match == ands.length) {
-                found = true;
-                this.current_block_id = this.project.blocks[b].connectors[c].targets[0];
-                this.send_events(this.project.blocks[b].connectors[c], last_found_output);
-                this._send_current_message(last_found_output);
-                break;
-              }
-            }
-          }
-        }
-      }
-
-
-      if (else_connector !== null) {
-        found = true;
-        this.current_block_id = else_connector.targets[0];
-        this.send_events(else_connector, '');
-        this._send_current_message('');
-      }
-    }
-
-    if (!found && else_connector_id !== '-1') {
-      found = true;
-      this.current_block_id = block.connectors[else_connector_id].targets[0];
-      this.send_events(block.connectors[else_connector_id], str);
-      this._send_current_message(str);
+    if (best.connector) {
+      const { connector, output } = best;
+      this.current_block_id = connector.targets[0];
+      this.send_events(connector, output);
+      this._send_current_message(output);
     }
   }
 
