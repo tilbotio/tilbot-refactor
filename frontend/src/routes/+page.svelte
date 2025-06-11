@@ -3,7 +3,7 @@
   import ChatHeader from "$lib/components/ChatHeader.svelte";
   import { onMount, tick } from "svelte";
   import { firstLetter } from "$lib/utils/functions";
-  import { page } from "$app/state";
+  import { page } from "$app/stores";
   import { BasicProjectController } from "../shared/controllers/basicproject";
   import { LocalProjectController } from "../client/controllers/localproject";
   import { RemoteProjectController } from "../client/controllers/remoteproject";
@@ -61,13 +61,13 @@
     const url = $page.url;
 
     if (
-      url.searchParams.get("show_header") !== null &&
-      url.searchParams.get("show_header") != ""
+      url.searchParams.get("showHeader") !== null &&
+      url.searchParams.get("showHeader") != ""
     ) {
-      if (url.searchParams.get("show_header") == "1") {
-        show_header = true;
+      if (url.searchParams.get("showHeader") == "1") {
+        showHeader = true;
       } else {
-        show_header = false;
+        showHeader = false;
       }
     }
 
