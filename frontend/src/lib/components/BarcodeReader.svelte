@@ -30,6 +30,7 @@
   }
 
   async function onScanSuccess(decodedText: string) {
+    // https://joyofcode.xyz/avoid-async-effects-in-svelte hence the chaining.
     onScan(decodedText);
     try {
       await html5Qrcode?.stop();

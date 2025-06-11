@@ -7,7 +7,6 @@
   import { BasicProjectController } from "../shared/controllers/basicproject";
   import { LocalProjectController } from "../client/controllers/localproject";
   import { RemoteProjectController } from "../client/controllers/remoteproject";
-  import { Html5Qrcode } from "html5-qrcode";
 
   let message_container: HTMLElement = $state();
   let header: HTMLElement = $state();
@@ -15,7 +14,6 @@
 
   // For the barcode scanner
   let showScanner = $state(false);
-  let html5Qrcode: any = undefined;
 
   let input_text: HTMLTextAreaElement = $state();
   let controller: BasicProjectController;
@@ -172,6 +170,14 @@
     }
   }
 
+  function closeBarcodeReader() {
+    showScanner = false;
+  }
+
+  function handleScannedCode(decoded: string) {
+    user_message(`barcode: ${decoded}`);
+  }
+
   function project_received(data: any) {
     messages = [];
     current_message_type = "Auto";
@@ -269,58 +275,6 @@
   function input_key_up(event: KeyboardEvent) {
     // Refresh the value to trigger buttons to show/hide if needed
     input_text.value = input_text.value;
-  }
-
-  async function close_scan_overlay() {
-    try {
-      await html5Qrcode.stop();
-    } finally {
-      showScanner = false;
-    }
-  }
-
-  function qrboxFunction(viewfinderWidth: number, viewfinderHeight: number) {
-    let minEdgePercentage = 0.9; // 70%
-    let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-    let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-    return {
-      width: qrboxSize,
-      height: qrboxSize,
-    };
-  }
-
-  function start_barcode() {
-    html5Qrcode = new Html5Qrcode("barcodereader");
-
-    showScanner = true;
-
-    html5Qrcode.start(
-      {
-        facingMode: "environment",
-      },
-      {
-        fps: 10,
-        qrbox: qrboxFunction,
-      },
-      onScanSuccess
-    );
-
-    //html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-  }
-
-  async function onScanSuccess(decodedText: string, decodedResult: any) {
-    input_text.value = "barcode:" + decodedText;
-    try {
-      text_submit();
-    } finally {
-      input_text.value = "";
-      try {
-        await html5Qrcode.stop();
-      } finally {
-        message_container.dispatchEvent(new Event("mousedown"));
-        showScanner = false;
-      }
-    }
   }
 
   function text_submit_button() {
@@ -465,7 +419,11 @@
   }
 </script>
 
-<BarcodeReader visible={showScanner} onClose={closeBarcodeReader} />
+<BarcodeReader
+  visible={showScanner}
+  onClose={closeBarcodeReader}
+  onScan={handleScannedCode}
+/>
 <ChatHeader
   visible={showHeader}
   showAvatar={settings.showAvatar}
@@ -636,7 +594,7 @@
                 <li>
                   <a
                     class="active:bg-tilbot-secondary-hardpink"
-                    onclick={start_barcode}
+                    onclick={() => (showScanner = true)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
