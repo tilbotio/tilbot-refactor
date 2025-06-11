@@ -570,7 +570,7 @@
         input_text !== null &&
         input_text.value == ''
           ? ''
-          : ''}"
+          : 'hidden'}"
       >
         <ul class="menu menu-horizontal p-2 rounded-box ml-2 mt-2">
           <li>
