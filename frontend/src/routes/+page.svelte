@@ -10,8 +10,6 @@
 
   let message_container: HTMLElement;
   let showHeader: boolean = $state(true);
-
-  // For the barcode scanner
   let showScanner = $state(false);
 
   let input_text: HTMLTextAreaElement;
