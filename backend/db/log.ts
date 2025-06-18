@@ -1,5 +1,5 @@
-import { Schema, mongoose } from 'mongoose';
-import { MessageSchema } from './message.js';
+import { Schema, model } from 'mongoose';
+import { MessageSchema } from './message.ts';
 
 export const LogSchema = new Schema({
     messages: [MessageSchema],
@@ -9,4 +9,4 @@ export const LogSchema = new Schema({
     participant_id: { type: String, default: "" }
 });
 
-export const LogModel = mongoose.model('logschemas', LogSchema);
+export const LogModel = model('log', LogSchema);

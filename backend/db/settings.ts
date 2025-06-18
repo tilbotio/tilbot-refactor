@@ -1,4 +1,4 @@
-import { Schema, mongoose } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
 export const SettingsSchema = new Schema({
     chatgpt_api_key: { type: String, default: '' },
@@ -20,10 +20,10 @@ export const SettingsSchema = new Schema({
         * Retrieve the settings belonging to a user from database.
         * If no settings are found, create a new row and return that.
         *
-        * @param {string} username - The username that owns the settings.
-        * @return {SettingsModel} Settings present in database.
+        * @param username - The username that owns the settings.
+        * @return Settings present in database.
         */
-        async getOrCreate(username) {
+        async getOrCreate(username: string): Promise<any> {
             return await SettingsModel.findOneAndUpdate(
                 { user_id: username },
                 {},
@@ -38,9 +38,10 @@ export const SettingsSchema = new Schema({
         *
         * @return {Object} Settings present in database.
         */
-        getPermitted() {
+        getPermitted(): Object {
             const summary = {};
-            for(const key of this.constructor.permittedSettings) {
+            const constructor: any = this.constructor;
+            for(const key of constructor.permittedSettings) {
                 summary[key] = this[key];
             }
             return summary;
@@ -53,7 +54,8 @@ export const SettingsSchema = new Schema({
         */
         async update(new_settings) {
             // Only update permitted attributes:
-            for(const key of this.constructor.permittedSettings) {
+            const constructor: any = this.constructor;
+            for(const key of constructor.permittedSettings) {
                 if (key in new_settings) {
                     this[key] = new_settings[key];
                 }
@@ -63,4 +65,4 @@ export const SettingsSchema = new Schema({
     },
 });
 
-export const SettingsModel = mongoose.model('settingsschemas', SettingsSchema);
+export const SettingsModel = model('settings', SettingsSchema);

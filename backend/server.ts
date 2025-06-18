@@ -15,10 +15,10 @@ import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { randomBytes } from 'crypto';
-import { LogModel } from './db/log.js';
-import { ProjectModel } from './db/project.js';
-import { UserModel } from './db/user.js';
-import { SettingsModel } from './db/settings.js';
+import { LogModel } from './db/log.ts';
+import { ProjectModel } from './db/project.ts';
+import { UserModel } from './db/user.ts';
+import { SettingsModel } from './db/settings.ts';
 import {
   TilBotError,
   TilBotUserNotAdminError,

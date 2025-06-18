@@ -1,5 +1,6 @@
-import { Schema, mongoose } from 'mongoose';
-import { SettingsModel } from './settings.js';
+import { Schema, model } from 'mongoose';
+import { SettingsModel } from './settings.ts';
+import { MongoError } from 'mongodb';
 import pkg from 'mongoose-bcrypt';
 import {
     TilBotUserNotFoundError,
@@ -126,4 +127,4 @@ export const UserSchema = new Schema({
 
 UserSchema.plugin(pkg);
 
-export const UserModel = mongoose.model('userschemas', UserSchema);
+export const UserModel = model('userschemas', UserSchema);

@@ -1,8 +1,10 @@
-import { LogModel } from './db/log.js';
-import { MessageModel } from './db/message.js';
+import { LogModel } from './db/log.ts';
+import { MessageModel } from './db/message.ts';
 
 export class Logger {
-    constructor(project_id) {
+    private _log: any;
+
+    constructor(project_id: string) {
         this._log = new LogModel();
         this._log.project_id = project_id;
         this._log.save((err) => {

@@ -1,4 +1,4 @@
-import { Schema, mongoose } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
 export const MessageSchema = new Schema({
     message: { type: String },
@@ -6,4 +6,4 @@ export const MessageSchema = new Schema({
     sent_at: { type: Date, default: Date.now }
 });
 
-export const MessageModel = mongoose.model('messageschemas', MessageSchema);
+export const MessageModel = model('message', MessageSchema);

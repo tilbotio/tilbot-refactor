@@ -1,6 +1,6 @@
-import { Schema, mongoose } from 'mongoose';
-import { LogModel } from './log.js';
-import { TilBotProjectNotFoundError } from '../errors.js';
+import { Schema, model } from 'mongoose';
+import { LogModel } from './log.ts';
+import { TilBotProjectNotFoundError } from '../errors.ts';
 import crypto from 'crypto';
 
 export const ProjectSchema = new Schema({
@@ -127,4 +127,4 @@ export const ProjectSchema = new Schema({
     },
 });
 
-export const ProjectModel = mongoose.model('projectschemas', ProjectSchema);
+export const ProjectModel = model('project', ProjectSchema);
