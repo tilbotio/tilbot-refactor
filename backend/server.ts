@@ -337,7 +337,7 @@ app.post('/api/save_settings', async (req, res) => {
   }
   const settings = await user.getSettings();
   const body: any = req.body;
-  await settings.update(JSON.parse(body.settings));
+  await settings.updatePermitted(JSON.parse(body.settings));
 });
 
 // API call: get a project's log files

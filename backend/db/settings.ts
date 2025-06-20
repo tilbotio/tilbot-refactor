@@ -1,6 +1,23 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Document, Model, model } from 'mongoose';
 
-export const SettingsSchema = new Schema({
+
+interface SettingsSchemaInterface extends Document {
+  chatgpt_api_key: string;
+  chatgpt_version: string;
+  llm_setting: string;
+  llm_api_address: string;
+  user_id: string;
+  // Instance methods go here
+  updatePermitted(settings: Record<string, any>): Promise<void>;
+  getPermitted(): Promise<Record<string, any>>;
+}
+
+interface SettingsModelInterface extends Model<SettingsSchemaInterface> {
+  // Static methods go here
+  getOrCreate(username: string): Promise<SettingsSchemaInterface>;
+}
+
+export const SettingsSchema = new Schema<SettingsSchemaInterface>({
     chatgpt_api_key: { type: String, default: '' },
     chatgpt_version: { type: String, default: '3.5' },
     llm_setting: { type: String, default: 'chatgpt' },
@@ -23,7 +40,7 @@ export const SettingsSchema = new Schema({
         * @param username - The username that owns the settings.
         * @return Settings present in database.
         */
-        async getOrCreate(username: string): Promise<any> {
+        async getOrCreate(username: string): Promise<SettingsSchemaInterface> {
             return await SettingsModel.findOneAndUpdate(
                 { user_id: username },
                 {},
@@ -36,9 +53,9 @@ export const SettingsSchema = new Schema({
         * Create a summary of settings, containing only settings suitable for
         * exposing from the API.
         *
-        * @return {Object} Settings present in database.
+        * @return Settings present in database.
         */
-        getPermitted(): Object {
+        getPermitted(): Record<string, any> {
             const summary = {};
             const constructor: any = this.constructor;
             for(const key of constructor.permittedSettings) {
@@ -50,9 +67,9 @@ export const SettingsSchema = new Schema({
         /**
         * Update a user's settings, only accepting permitted keys.
         *
-        * @param {string} new_settings - JSON structure of settings
+        * @param new_settings - JSON structure of settings
         */
-        async update(new_settings) {
+        async updatePermitted(new_settings: Record<string, any>) {
             // Only update permitted attributes:
             const constructor: any = this.constructor;
             for(const key of constructor.permittedSettings) {
@@ -65,4 +82,4 @@ export const SettingsSchema = new Schema({
     },
 });
 
-export const SettingsModel = model('settings', SettingsSchema);
+export const SettingsModel = model<SettingsModelInterface>('settings', SettingsSchema);

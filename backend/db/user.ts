@@ -1,5 +1,5 @@
-import { Schema, model } from 'mongoose';
-import { SettingsModel } from './settings.ts';
+import { Schema, Model, model } from 'mongoose';
+import { SettingsModel, SettingsSchemaInterface } from './settings.ts';
 import { MongoError } from 'mongodb';
 import pkg from 'mongoose-bcrypt';
 import {
@@ -8,7 +8,24 @@ import {
     TilBotUserExistsError,
 } from '../errors.js';
 
-export const UserSchema = new Schema({
+
+interface UserSchemaInterface extends Document {
+  username: string;
+  password: string;
+  role: number;
+  active: boolean;
+  // Instance methods go here
+  verifyPassword(password: string): Promise<boolean>;
+  getSettings(): Promise<SettingsSchemaInterface>;
+}
+
+interface UserModelInterface extends Model<UserSchemaInterface> {
+  // Static methods go here
+  getByUsername(username: string): Promise<UserSchemaInterface>;
+}
+
+
+export const UserSchema = new Schema<UserSchemaInterface>({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true, bcrypt: true },
     role: { type: Number, required: true, default: 1 },
@@ -127,4 +144,4 @@ export const UserSchema = new Schema({
 
 UserSchema.plugin(pkg);
 
-export const UserModel = model('userschemas', UserSchema);
+export const UserModel = model<UserModelInterface>('userschemas', UserSchema);
