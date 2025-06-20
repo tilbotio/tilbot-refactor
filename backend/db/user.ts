@@ -9,19 +9,23 @@ import {
 } from '../errors.js';
 
 
-interface UserSchemaInterface extends Document {
-  username: string;
-  password: string;
-  role: number;
-  active: boolean;
-  // Instance methods go here
-  verifyPassword(password: string): Promise<boolean>;
-  getSettings(): Promise<SettingsSchemaInterface>;
+export interface UserSchemaInterface extends Document {
+    username: string;
+    password: string;
+    role: number;
+    active: boolean;
+    // Instance methods go here
+    verifyPassword(password: string): Promise<boolean>;
+    checkPassword(password: string): Promise<void>;
+    getSettings(): Promise<SettingsSchemaInterface>;
+    getSummaries(): Promise<Object[]>;
 }
 
-interface UserModelInterface extends Model<UserSchemaInterface> {
-  // Static methods go here
-  getByUsername(username: string): Promise<UserSchemaInterface>;
+export interface UserModelInterface extends Model<UserSchemaInterface> {
+    // Static methods go here
+    getByUsername(username: string): Promise<UserSchemaInterface>;
+    adminAccountExists(): Promise<boolean>;
+    register(username: string, password: string, role: number): Promise<SettingsSchemaInterface>;
 }
 
 
@@ -79,7 +83,7 @@ export const UserSchema = new Schema<UserSchemaInterface>({
         * @param {String} password - Password
         * @param {Number} role - User role: 99 = admin; 1 = user
         */
-        async create(username, password, role) {
+        async register(username, password, role) {
             const user = new UserModel({ username, password, role });
             try {
                 await user.save();
@@ -91,6 +95,7 @@ export const UserSchema = new Schema<UserSchemaInterface>({
                     throw error;
                 }
             }
+            return user;
         },
 
     },
@@ -144,4 +149,4 @@ export const UserSchema = new Schema<UserSchemaInterface>({
 
 UserSchema.plugin(pkg);
 
-export const UserModel = model<UserModelInterface>('userschemas', UserSchema);
+export const UserModel = model<UserSchemaInterface, UserModelInterface>('userschemas', UserSchema);

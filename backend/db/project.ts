@@ -1,9 +1,36 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Document, Model, model } from 'mongoose';
 import { LogModel } from './log.ts';
 import { TilBotProjectNotFoundError } from '../errors.ts';
 import crypto from 'crypto';
 
-export const ProjectSchema = new Schema({
+export interface ProjectSchemaInterface extends Document {
+    id: string;
+    name: string;
+    status: number;
+    current_block_id: number;
+    blocks: Object;
+    starting_block_id: number;
+    canvas_width: number;
+    canvas_height: number;
+    bot_name: string;
+    variables: any;
+    settings: any;
+    user_id: string;
+    socket: number;
+    active: boolean;
+    // Instance methods go here
+    fromModel(model: Object): void;
+    getLogs(): Promise<string[]>;
+}
+
+export interface ProjectModelInterface extends Model<ProjectSchemaInterface> {
+    // Static methods go here
+    register(username: string): Promise<ProjectSchemaInterface>;
+    getById(id: string, extra_filters?: Object): Promise<ProjectSchemaInterface>;
+    getSummaries(filters?: Object): Promise<Object[]>;
+}
+
+export const ProjectSchema = new Schema<ProjectSchemaInterface>({
     id: { type: String, unique: true, required: true },
     name: { type: String, default: 'New project' },
     status: { type: Number, default: 0 }, // 0 = paused, 1 = running
@@ -28,7 +55,7 @@ export const ProjectSchema = new Schema({
          * @param {string} username - Username
          * @return {ProjectModel} The created project.
          */
-        async create(username) {
+        async register(username) {
             const project = new this({
                 id: crypto.randomBytes(16).toString('hex'),
                 user_id: username,
@@ -127,4 +154,4 @@ export const ProjectSchema = new Schema({
     },
 });
 
-export const ProjectModel = model('project', ProjectSchema);
+export const ProjectModel = model<ProjectSchemaInterface, ProjectModelInterface>('project', ProjectSchema);

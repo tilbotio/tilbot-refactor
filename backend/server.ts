@@ -121,7 +121,7 @@ app.get('/api/admin_account_exists', async (req, res) => {
   if (await UserModel.adminAccountExists()) {
     return 'EXISTS';
   } else {
-    await UserModel.create('admin', 'admin', 99);
+    await UserModel.register('admin', 'admin', 99);
     return 'CREATED';
   }
 });
@@ -145,7 +145,7 @@ app.post('/api/create_user_account', async (req, res) => {
     throw new TilBotUserNotAdminError();
   }
   const body: any = req.body;
-  await UserModel.create(body.username, body.password, 1);
+  await UserModel.register(body.username, body.password, 1);
 });
 
 app.post('/api/set_user_active', async (req, res) => {
@@ -205,7 +205,7 @@ app.get('/api/get_dashboard', async (req, res) => {
 
 app.post('/api/create_project', async (req, res) => {
   const session: any = req.session;
-  await ProjectModel.create(session.username);
+  await ProjectModel.register(session.username);
 });
 
 /**

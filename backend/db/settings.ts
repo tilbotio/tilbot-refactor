@@ -1,20 +1,21 @@
 import { Schema, Document, Model, model } from 'mongoose';
 
 
-interface SettingsSchemaInterface extends Document {
-  chatgpt_api_key: string;
-  chatgpt_version: string;
-  llm_setting: string;
-  llm_api_address: string;
-  user_id: string;
-  // Instance methods go here
-  updatePermitted(settings: Record<string, any>): Promise<void>;
-  getPermitted(): Promise<Record<string, any>>;
+export interface SettingsSchemaInterface extends Document {
+    chatgpt_api_key: string;
+    chatgpt_version: string;
+    llm_setting: string;
+    llm_api_address: string;
+    user_id: string;
+    // Instance methods go here
+    updatePermitted(settings: Record<string, any>): Promise<void>;
+    getPermitted(): Promise<Record<string, any>>;
 }
 
-interface SettingsModelInterface extends Model<SettingsSchemaInterface> {
-  // Static methods go here
-  getOrCreate(username: string): Promise<SettingsSchemaInterface>;
+export interface SettingsModelInterface extends Model<SettingsSchemaInterface> {
+    permittedSettings: string[];
+    // Static methods go here
+    getOrCreate(username: string): Promise<SettingsSchemaInterface>;
 }
 
 export const SettingsSchema = new Schema<SettingsSchemaInterface>({
@@ -58,7 +59,7 @@ export const SettingsSchema = new Schema<SettingsSchemaInterface>({
         getPermitted(): Record<string, any> {
             const summary = {};
             const constructor: any = this.constructor;
-            for(const key of constructor.permittedSettings) {
+            for (const key of constructor.permittedSettings) {
                 summary[key] = this[key];
             }
             return summary;
@@ -72,7 +73,7 @@ export const SettingsSchema = new Schema<SettingsSchemaInterface>({
         async updatePermitted(new_settings: Record<string, any>) {
             // Only update permitted attributes:
             const constructor: any = this.constructor;
-            for(const key of constructor.permittedSettings) {
+            for (const key of constructor.permittedSettings) {
                 if (key in new_settings) {
                     this[key] = new_settings[key];
                 }
@@ -82,4 +83,4 @@ export const SettingsSchema = new Schema<SettingsSchemaInterface>({
     },
 });
 
-export const SettingsModel = model<SettingsModelInterface>('settings', SettingsSchema);
+export const SettingsModel = model<SettingsSchemaInterface, SettingsModelInterface>('settings', SettingsSchema);
