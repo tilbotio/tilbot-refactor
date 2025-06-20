@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { randomBytes } from 'crypto';
 import { LogModel } from './db/log.ts';
 import { ProjectModel } from './db/project.ts';
-import { UserModel } from './db/user.ts';
+import { UserModel, UserSchemaInterface } from './db/user.ts';
 import { SettingsModel } from './db/settings.ts';
 import {
   TilBotError,
@@ -26,7 +26,7 @@ import {
   TilBotUserIsAdminError,
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
-} from './errors.js';
+} from './errors.ts';
 import ProjectController from '../app/projectcontroller.cjs';
 import LLM from '../app/llm.cjs';
 

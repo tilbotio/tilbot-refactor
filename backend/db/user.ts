@@ -1,13 +1,12 @@
-import { Schema, Model, model } from 'mongoose';
+import { Document, Schema, Model, model } from 'mongoose';
 import { SettingsModel, SettingsSchemaInterface } from './settings.ts';
 import { MongoError } from 'mongodb';
-import pkg from 'mongoose-bcrypt';
+import mongoose_bcrypt from 'mongoose-bcrypt';
 import {
     TilBotUserNotFoundError,
     TilBotBadPasswordError,
     TilBotUserExistsError,
-} from '../errors.js';
-
+} from '../errors.ts';
 
 export interface UserSchemaInterface extends Document {
     username: string;
@@ -18,16 +17,17 @@ export interface UserSchemaInterface extends Document {
     verifyPassword(password: string): Promise<boolean>;
     checkPassword(password: string): Promise<void>;
     getSettings(): Promise<SettingsSchemaInterface>;
-    getSummaries(): Promise<Object[]>;
+    updatePassword(old_password: string, new_password: string): Promise<void>;
+    getPermittedSettings(): Promise<Record<string, any>>;
 }
 
 export interface UserModelInterface extends Model<UserSchemaInterface> {
     // Static methods go here
     getByUsername(username: string): Promise<UserSchemaInterface>;
     adminAccountExists(): Promise<boolean>;
-    register(username: string, password: string, role: number): Promise<SettingsSchemaInterface>;
+    register(username: string, password: string, role: number): Promise<UserSchemaInterface>;
+    getSummaries(): Promise<any[]>;
 }
-
 
 export const UserSchema = new Schema<UserSchemaInterface>({
     username: { type: String, required: true, unique: true },
@@ -39,11 +39,11 @@ export const UserSchema = new Schema<UserSchemaInterface>({
         /**
         * Retrieve active user by username
         *
-        * @param {String} username - The username to search for.
-        * @return {UserModel} The user object from database.
+        * @param username - The username to search for.
+        * @return The user object from database.
         */
-        async getByUsername(username) {
-            const user = await UserModel.findOne({ username, active: true });
+        async getByUsername(username: string): Promise<UserModelInterface> {
+            const user = await UserModel.findOne<UserModelInterface>({ username, active: true });
             if (user == null) {
                 throw new TilBotUserNotFoundError(username);
             }
@@ -53,9 +53,9 @@ export const UserSchema = new Schema<UserSchemaInterface>({
         /**
         * Check if there's at least one active user with admin rights.
         *
-        * @return {Boolean} True if at least one admin user is found, false otherwise.
+        * @return True if at least one admin user is found, false otherwise.
         */
-        async adminAccountExists() {
+        async adminAccountExists(): Promise<boolean> {
             return (
                 await UserModel.findOne({ role: 99, active: true })
             ) != null;
@@ -64,9 +64,9 @@ export const UserSchema = new Schema<UserSchemaInterface>({
         /**
         * Retrieve all users from database (role 1, not admin).
         *
-        * @return {Object[]} Array of user info present in database.
+        * @return Array of user info present in database.
         */
-        async getSummaries() {
+        async getSummaries(): Promise<Object[]> {
             const users = await UserModel.find({ role: 1 });
             const summaries = users.map(user => ({
                 username: user.username,
@@ -83,21 +83,20 @@ export const UserSchema = new Schema<UserSchemaInterface>({
         * @param {String} password - Password
         * @param {Number} role - User role: 99 = admin; 1 = user
         */
-        async register(username, password, role) {
+        async register(username: string, password: string, role: number): Promise<UserModelInterface> {
             const user = new UserModel({ username, password, role });
             try {
                 await user.save();
             } catch (error) {
                 if (error instanceof MongoError && error.code == 11000) {
                     // duplicate key error
-                    throw new TilBotUserExistsError(user);
+                    throw new TilBotUserExistsError(username);
                 } else {
                     throw error;
                 }
             }
-            return user;
+            return user as any;
         },
-
     },
     methods: {
         /**
@@ -147,6 +146,6 @@ export const UserSchema = new Schema<UserSchemaInterface>({
     },
 });
 
-UserSchema.plugin(pkg);
+UserSchema.plugin(mongoose_bcrypt);
 
-export const UserModel = model<UserSchemaInterface, UserModelInterface>('userschemas', UserSchema);
+export const UserModel = model<UserSchemaInterface, UserModelInterface>('user', UserSchema);
