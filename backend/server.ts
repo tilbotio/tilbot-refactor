@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { randomBytes } from 'crypto';
 import { LogModel } from './db/log.ts';
 import { ProjectModel } from './db/project.ts';
-import { UserModel, UserSchemaInterface } from './db/user.ts';
+import { UserModel } from './db/user.ts';
 import { SettingsModel } from './db/settings.ts';
 import {
   TilBotError,
@@ -47,6 +47,7 @@ function getOrCreateToken(tokenPath: string): string {
   }
 }
 
+// const __dirname = dirname(__filename);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // For the MongoDB connection
@@ -297,7 +298,7 @@ app.post('/api/import_project', async (req, res) => {
 
   console.log(zipEntries);
 
-  let project_data = null;
+  let project_data: string | null = null;
 
   zipEntries.forEach(zipEntry => {
     if (zipEntry.entryName == "project.json") {

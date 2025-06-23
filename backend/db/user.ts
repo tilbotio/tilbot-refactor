@@ -1,5 +1,5 @@
 import { Document, Schema, Model, model } from 'mongoose';
-import { SettingsModel, SettingsSchemaInterface } from './settings.ts';
+import { SettingsModel, type SettingsSchemaInterface } from './settings.ts';
 import { MongoError } from 'mongodb';
 import mongoose_bcrypt from 'mongoose-bcrypt';
 import {
