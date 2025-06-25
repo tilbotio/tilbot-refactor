@@ -7,7 +7,8 @@
         "backend",
         "socket-io",
         "app",
-        "tests"
+        "tests/unit",
+        "tests/integration"
     ],
     "scripts": {
         "dev:frontend": "npm run dev --workspace=frontend",
@@ -21,9 +22,9 @@
         "package-win": "npm run package-win --workspace=app",
         "package-mac-x64": "npm run package-mac-x64 --workspace=app",
         "package-mac-arm": "npm run package-mac-arm --workspace=app",
-        "test": "npm run test --workspace=tests",
-        "test-unit": "npm run test-unit --workspace=tests",
-        "test-integration": "npm run test-integration --workspace=tests"        
+        "test-unit": "npm run test --workspace=tests/unit",
+        "test-integration": "npm run test --workspace=tests/integration",
+        "test-integration-ui": "npm run test-ui --workspace=tests/integration"
     },
     "devDependencies": {
         "concurrently": "^8.2.2",

@@ -1,0 +1,13 @@
+{
+    "name": "integration",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "test": "npx playwright test",
+        "test-ui": "npx playwright test --ui"
+    },
+    "dependencies": {
+        "@playwright/test": "^1.53.1",
+        "@types/node": "^24.0.4"
+    }
+}

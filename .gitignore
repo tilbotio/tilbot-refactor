@@ -27,3 +27,9 @@ node_modules
 /tilbot-darwin-x64
 /tilbot-win32-x64
 /tmp_upload/
+
+# Playwright
+/tests/integration/test-results/
+/tests/integration/playwright-report/
+/tests/integration/blob-report/
+/tests/integration/playwright/.cache/
