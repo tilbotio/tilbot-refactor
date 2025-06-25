@@ -45,91 +45,78 @@ export class LocalProjectController extends BasicProjectController {
     }
 
     async send_events(connector: any, input_str: string) {
-        if (connector.events !== undefined) {
-            for (let c = 0; c < connector.events.length; c++) {
-                if (connector.events[c].type == 'message') {
-                    // Do nothing for now (simulator)
-                }
-                else if (connector.events[c].type == 'variable') {
-                    let regExp = /\[([^\]]+)\]/g;
-                    let matches = regExp.exec(connector.events[c].var_value);
+        const events = connector.events;
+        if (events == null) {
+            return;
+        }
 
-                    if (matches !== null) {
-                        // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
-                        if (matches[1].toLowerCase().startsWith('random')) {
-                            let db = matches[1].substring(7, matches[1].indexOf(')'));
-                            let res = await window.parent.api.invoke('query-db-random', { db: db });
-                            if (res !== null) {
-                                this.client_vars[connector.events[c].var_name] = res;
-                            }
-                        }
-                        else if (matches[1] == 'input') {
-                            this.client_vars[connector.events[c].var_name] = connector.events[c].var_value.replace('[input]', input_str);
-                        }
+        for (const event of events) {
+            const type = event.type;
+            if (type == 'message') {
+                // Do nothing for now (simulator)
+            } else if (type == 'variable') {
+                const var_name = event.var_name;
+                const var_value = event.var_value;
+                const client_vars = this.client_vars;
+                const client_var = client_vars[var_name];
+
+                const regExp = /\[([^\]]+)\]/g;
+                const matches = regExp.exec(var_value);
+
+                if (matches === null) {
+                    if (var_value.startsWith('+') || var_value.startsWith('-')) {
+                        const rawValue = parseInt(var_value.replaceAll(' ', ''));
+                        client_vars[var_name] = parseInt(client_var ?? '0') + rawValue;
+                    } else {
+                        client_vars[var_name] = var_value;
                     }
-                    else {
-                        if (connector.events[c].var_value.startsWith('+')) {
-                            if (this.client_vars[connector.events[c].var_name] === undefined) {
-                                this.client_vars[connector.events[c].var_name] = parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
-                            }
-                            else {
-                                this.client_vars[connector.events[c].var_name] = parseInt(this.client_vars[connector.events[c].var_name]) + parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
-                            }
+                } else {
+                    // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
+                    if (matches[1].toLowerCase().startsWith('random')) {
+                        let db = matches[1].substring(7, matches[1].indexOf(')'));
+                        let res = await window.parent.api.invoke('query-db-random', { db });
+                        if (res !== null) {
+                            client_vars[var_name] = res;
                         }
-                        else if (connector.events[c].var_value.startsWith('-')) {
-                            if (this.client_vars[connector.events[c].var_name] === undefined) {
-                                this.client_vars[connector.events[c].var_name] = 0 - parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
-                            }
-                            else {
-                                this.client_vars[connector.events[c].var_name] = parseInt(this.client_vars[connector.events[c].var_name]) - parseInt(connector.events[c].var_value.substring(1).replace(' ', ''));
-                            }
-                        }
-                        else {
-                            this.client_vars[connector.events[c].var_name] = connector.events[c].var_value;
-                        }
+                    } else if (matches[1] == 'input') {
+                        client_vars[var_name] = var_value.replace('[input]', input_str);
                     }
                 }
             }
         }
+
     }
 
     send_message(block: any, input: string = '') {
-        let params: any = {};
+        const params: any = {};
+        const content = this.check_variables(block.content, input);
+        const type = block.type;
 
-        let content = this.check_variables(block.content, input);
-
-        if (block.type == 'MC') {
+        if (type == 'MC') {
             params.options = [];
-            for (var c in block.connectors) {
+            for (const connector of block.connectors) {
                 // Remove any additional variables/checks from the connector
-                let label_cleaned = block.connectors[c].label.replace(/\[([^\]]+)\]/g, "");
-                if (!params.options.includes(label_cleaned)) {
-                    params.options.push(label_cleaned);
+                const cleanedLabel = connector.label.replace(/\[([^\]]+)\]/g, "");
+                if (!params.options.includes(cleanedLabel)) {
+                    params.options.push(cleanedLabel);
                 }
             }
 
-            this.chatbot_message_callback({ type: block.type, content: content, params: params });
-        }
-        else if (block.type == 'List') {
+            this.chatbot_message_callback({ type, content, params });
+        } else if (type == 'List') {
             params.options = block.items;
             params.text_input = block.text_input;
             params.number_input = block.number_input;
 
-            this.chatbot_message_callback({ type: block.type, content: content, params: params });
-        }
-        else if (block.type == 'Group') {
+            this.chatbot_message_callback({ type, content, params });
+        } else if (type == 'Group') {
             this.move_to_group({ id: this.current_block_id, model: block });
             this.current_block_id = block.starting_block_id;
             this.send_message(block.blocks[block.starting_block_id]);
-        }
-        else {
-            let targets = true;
+        } else {
+            const has_targets = block.connectors[0].targets.length > 0;
 
-            if (block.connectors[0].targets.length == 0) {
-                targets = false;
-            }
-
-            this.chatbot_message_callback({ type: block.type, content: content, params: params, has_targets: targets });
+            this.chatbot_message_callback({ type, content, params, has_targets });
         }
     }
 
@@ -137,194 +124,111 @@ export class LocalProjectController extends BasicProjectController {
         var path = this.get_path();
 
         if (id == -1) {
-            var group_block_id = path[path.length - 1];
+            const group_block_id = path[path.length - 1];
             this.move_level_up();
 
-            path = this.get_path();
-
-            var block = this.project;
-
-            if (path.length > 0) {
-                for (var i = 0; i < path.length; i++) {
-                    block = block.blocks[path[i]];
-                }
+            let block = this.project;
+            for (const step of path) {
+                block = block.blocks[step];
             }
 
-            for (var i = 0; i < block.blocks[group_block_id.toString()].connectors.length; i++) {
-                if (block.blocks[group_block_id.toString()].connectors[i].from_id == this.current_block_id) {
-                    var new_id = block.blocks[group_block_id.toString()].connectors[i].targets[0];
+            for (const connector of block.blocks[group_block_id.toString()].connectors) {
+                if (connector.from_id == this.current_block_id) {
+                    var new_id = connector.targets[0];
                     this.current_block_id = group_block_id;
                     this.check_group_exit(new_id);
                     break;
                 }
             }
-        }
-
-        else {
+        } else {
             this.current_block_id = id;
             this._send_current_message();
         }
     }
 
-    message_sent_event() {
-        var path = this.get_path();
-
+    message_sent_event(): void {
+        const path = this.get_path();
         if (path.length == 0) {
-            if (this.project.blocks[this.current_block_id.toString()].type == 'Auto') {
-                this.send_events(this.project.blocks[this.current_block_id.toString()].connectors[0], '');
-                this.current_block_id = this.project.blocks[this.current_block_id.toString()].connectors[0].targets[0];
+            const current_block = this.project.blocks[this.current_block_id.toString()];
+            if (current_block.type === 'Auto') {
+                const connector = current_block.connectors[0];
+                this.send_events(connector, '');
+                this.current_block_id = connector.targets[0];
                 this._send_current_message();
             }
-        }
-
-        else {
-            var block = this.project.blocks[path[0]];
-
-            for (var i = 1; i < path.length; i++) {
-                block = block.blocks[path[i]];
+        } else {
+            let block = this.project;
+            for (const step of path) {
+                block = block.blocks[step];
             }
 
-            if (block.blocks[this.current_block_id.toString()].type == 'Auto') {
-                var new_id = block.blocks[this.current_block_id.toString()].connectors[0].targets[0];
+            const current_block = block.blocks[this.current_block_id.toString()];
+            if (current_block.type == 'Auto') {
+                const new_id = current_block.connectors[0].targets[0];
                 this.check_group_exit(new_id);
             }
         }
     }
 
-    _send_current_message(input: string = '') {
+    _send_current_message(input: string = ''): void {
         if (this.current_block_id == undefined || this.current_block_id == -1) {
             return;
         }
 
-        var self = this;
-        var path = this.get_path();
-        var block = this.project;
-
-        if (path.length > 0) {
-            block = this.project.blocks[path[0]];
-
-            for (var i = 1; i < path.length; i++) {
-                block = block.blocks[path[i]];
-            }
+        let block = this.project;
+        for (const step of this.get_path()) {
+            block = block.blocks[step];
         }
-
         block = block.blocks[this.current_block_id.toString()];
 
-        if (block.chatgpt_variation !== undefined && block.chatgpt_variation) {
-            let content = this.check_variables(block.content, input);
-            let prompt = this.check_variables(block.variation_prompt);
+        if (block.chatgpt_variation) {
+            const content = this.check_variables(block.content, input);
+            const prompt = this.check_variables(block.variation_prompt);
 
             this.cur_time = Date.now();
             this.variation_request_callback(content, prompt, block.chatgpt_memory);
-        }
-        else {
-            setTimeout(function () {
-                self.send_message(block, input);
+        } else {
+            setTimeout(() => {
+                this.send_message(block, input);
             }, block.delay * 1000);
         }
-
     }
 
-    check_variables(content: string, input: string = '') {
-
-        let regExp = /\[([^\]]+)\]/g;
-        let matches = regExp.exec(content);
-
-        if (matches !== null) {
-            if (matches[1].indexOf(' = ') !== -1) {
-                let matches2 = regExp.exec(content);
-
-                let parts = matches[1].split(' = ');
-                if (parts[0] in this.client_vars && this.client_vars[parts[0]] == parts[1]) {
-                    content = content.substring(matches2.index + 1, matches2.index + 1 + matches2[1].length) + content.substring(matches2.index + matches2[0].length);
-                    return this.check_variables(content, input);
-                }
-                else {
-                    content = content.replace(matches[0], '').replace(matches2[0], '');
-                    return this.check_variables(content, input);
-                }
-            }
-            else if (matches[1].indexOf(' != ') !== -1) {
-                let matches2 = regExp.exec(content);
-
-                let parts = matches[1].split(' != ');
-                if (parts[0] in this.client_vars && this.client_vars[parts[0]] != parts[1]) {
-                    content = content.substring(matches2.index + 1, matches2.index + 1 + matches2[1].length) + content.substring(matches2.index + matches2[0].length);
-                    return this.check_variables(content, input);
-                }
-                else {
-                    content = content.replace(matches[0], '').replace(matches2[0], '');
-                    return this.check_variables(content, input);
-                }
-            }
-
-            if (typeof input === 'object' && input !== null) {
-                content = content.substring(0, matches.index) + input[matches[1]] + content.substring(matches.index + matches[1].length + 2);
-            }
-            else if (input !== '' && content.includes('[input]')) {
-                content = content.replace('[input]', input);
-            }
-            else {
+    check_variables(content: string, input: string = ''): string {
+        return content.replaceAll(/\[([^\]]+)\]/, (_, bracketedText) => {
+            if (bracketedText === 'input') {
+               return input;
+            } else {
                 // If it's a column from a CSV table, there should be a period.
                 // Element 1 of the match contains the string without the brackets.
-                let csv_parts = matches[1].split('.');
-
+                const csv_parts = bracketedText.split('.');
                 if (csv_parts.length == 2) {
-                    let db = csv_parts[0];
-                    let col = csv_parts[1];
-
-                    // The column can be yet another variable
-                    if (col.startsWith('[')) {
-                        col = this.client_vars[col.substring(1)];
-                        matches[1] += ']';
-                    }
-
-                    // Check if local variable
-                    if (db in this.client_vars) {
-                        content = content.replace('[' + matches[1] + ']', this.client_vars[db][col]);
-                    }
-                }
-                else {
-                    content = content.replace('[' + matches[1] + ']', this.client_vars[matches[1]]);
+                    const [db, col] = csv_parts;
+                    const client_db = this.client_vars[db] ?? {};
+                    return this.check_variables(client_db[col] ?? "", input);
+                } else {
+                    return this.check_variables(this.client_vars[bracketedText] ?? "", input);
                 }
             }
-        }
-
-        if (regExp.lastIndex !== 0) {
-            return this.check_variables(content, input);
-        }
-
-        return content;
+        });
     }
 
     receive_variation(str: string) {
         // @TODO: handle error messages in requesting variation from ChatGPT
-        var self = this;
-        var path = this.get_path();
-        var block = this.project;
+        let block = this.project;
 
-        if (path.length > 0) {
-            block = this.project.blocks[path[0]];
-
-            for (var i = 1; i < path.length; i++) {
-                block = block.blocks[path[i]];
-            }
+        for (const step of this.get_path()) {
+            block = block.blocks[step];
         }
 
         block = JSON.parse(JSON.stringify(block.blocks[this.current_block_id.toString()]));
         block.content = str;
 
-        let after_time = Date.now();
-
-        let new_delay = block.delay * 1000 - (after_time - this.cur_time);
-
-        if (new_delay < 0) {
-            self.send_message(block);
-        }
-        else {
-            setTimeout(function () {
-                self.send_message(block);
-            }, new_delay);
+        const delay = block.delay * 1000 - (Date.now() - this.cur_time);
+        if (delay > 0) {
+            setTimeout(() => { this.send_message(block); }, delay);
+        } else {
+            this.send_message(block);
         }
     }
 
