@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ url, fetch }) => {
     typingStyle: "fixed",
     typingTime: 2,
     typingCharPSec: 40,
-    showAvatar: "yes",
+    showAvatar: true,
     avatarFile: "",
     name: "Tilbot",
   };

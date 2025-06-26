@@ -3,12 +3,20 @@
   let { avatarFile, path, name } = $props();
 </script>
 
-{#if avatarFile}
-  <div class="rounded-full w-12">
-    <img src="{path}avatar/{avatarFile}" alt="Avatar for {name}" />
-  </div>
-{:else}
-  <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
-    <span>{firstLetter(name)}</span>
-  </div>
-{/if}
+<div
+  class="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
+>
+  {#if avatarFile}
+    <img
+      src="{path}avatar/{avatarFile}"
+      alt={`Avatar for ${name}`}
+      class="w-full h-full object-cover"
+    />
+  {:else}
+    <div
+      class="w-full h-full bg-neutral-focus text-neutral-content flex items-center justify-center"
+    >
+      <span>{firstLetter(name)}</span>
+    </div>
+  {/if}
+</div>
