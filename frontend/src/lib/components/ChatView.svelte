@@ -5,5 +5,12 @@
 </script>
 
 <div class="flex flex-col w-full h-full">
-  <ChatHeader {...settings} />
+  {#if showHeader}
+    <ChatHeader
+      name={settings.name}
+      showAvatar={settings.showAvatar}
+      avatarFile={settings.avatarFile}
+      {path}
+    />
+  {/if}
 </div>

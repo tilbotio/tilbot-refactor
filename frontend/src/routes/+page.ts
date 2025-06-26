@@ -8,11 +8,11 @@ export const load: PageLoad = async ({ url, fetch }) => {
   let path: string = "";
   let conversationId: string | null = null;
   let settings: any = {
-    typing_style: "fixed",
-    typing_time: 2,
-    typing_charpsec: 40,
-    show_avatar: "yes",
-    avatar_file: "",
+    typingStyle: "fixed",
+    typingTime: 2,
+    typingCharPSec: 40,
+    showAvatar: "yes",
+    avatarFile: "",
     name: "Tilbot",
   };
 
