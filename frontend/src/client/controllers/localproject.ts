@@ -16,7 +16,7 @@ export class LocalProjectController extends BasicProjectController {
 
     // Keep track of time because it may take the LLM time to generate a response.
     // We subtract this response time from the (artificial) typing delay since it has already passed.
-    private cur_time: number;
+    private cur_time: number = 0;
 
     constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function, variation_request_callback: Function) {
         super();
@@ -58,7 +58,6 @@ export class LocalProjectController extends BasicProjectController {
                 const var_name = event.var_name;
                 const var_value = event.var_value;
                 const client_vars = this.client_vars;
-                const client_var = client_vars[var_name];
 
                 const regExp = /\[([^\]]+)\]/g;
                 const matches = regExp.exec(var_value);
@@ -66,19 +65,20 @@ export class LocalProjectController extends BasicProjectController {
                 if (matches === null) {
                     if (var_value.startsWith('+') || var_value.startsWith('-')) {
                         const rawValue = parseInt(var_value.replaceAll(' ', ''));
-                        client_vars[var_name] = parseInt(client_var ?? '0') + rawValue;
+                        client_vars[var_name] = parseInt(client_vars[var_name] ?? '0') + rawValue;
                     } else {
                         client_vars[var_name] = var_value;
                     }
                 } else {
+                    const bracketedText = matches[1];
                     // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
-                    if (matches[1].toLowerCase().startsWith('random')) {
-                        let db = matches[1].substring(7, matches[1].indexOf(')'));
-                        let res = await window.parent.api.invoke('query-db-random', { db });
+                    if (bracketedText.toLowerCase().startsWith('random(')) {
+                        const db = bracketedText.substring(7, bracketedText.indexOf(')'));
+                        const res = await this.csvLookupRandom(db);
                         if (res !== null) {
                             client_vars[var_name] = res;
                         }
-                    } else if (matches[1] == 'input') {
+                    } else if (bracketedText == 'input') {
                         client_vars[var_name] = var_value.replace('[input]', input_str);
                     }
                 }
@@ -230,6 +230,12 @@ export class LocalProjectController extends BasicProjectController {
         } else {
             this.send_message(block);
         }
+    }
+
+    async csvLookupRandom(db: string): Promise<string | null> {
+        const window_parent: any = window.parent;
+        return await window_parent.api.invoke('query-db-random', { db });
+        // return await this.csv_datas[db].get(col, val);
     }
 
     async csvLookup(db: string, col: string, val: string): Promise<string | null> {
