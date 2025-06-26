@@ -4,7 +4,7 @@
 </script>
 
 <div
-  class="w-full h-full rounded-full overflow-hidden text-neutral-content flex items-center justify-center bg-black"
+  class="w-full h-full rounded-full overflow-hidden text-neutral-content flex items-center justify-center bg-neutral-focus"
 >
   {#if avatarFile}
     <img
