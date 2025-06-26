@@ -1,7 +1,7 @@
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ url, fetch }) => {
-  const showHeaderParam = url.searchParams.get("show_header") ?? "1";
+  const showHeaderParam = url.searchParams.get("show_header") || "1";
   const participantId = url.searchParams.get("pid") || null;
   const projectId = url.searchParams.get("project") || null;
   const showHeader = showHeaderParam === "1";
