@@ -4,7 +4,7 @@
 </script>
 
 <div
-  class="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
+  class="w-full h-full rounded-full overflow-hidden text-neutral-content flex items-center justify-center bg-black"
 >
   {#if avatarFile}
     <img
@@ -13,10 +13,6 @@
       class="w-full h-full object-cover"
     />
   {:else}
-    <div
-      class="w-full h-full bg-neutral-focus text-neutral-content flex items-center justify-center"
-    >
-      <span>{firstLetter(name)}</span>
-    </div>
+    <span>{firstLetter(name)}</span>
   {/if}
 </div>
