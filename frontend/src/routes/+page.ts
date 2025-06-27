@@ -3,14 +3,16 @@ import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ChatSettings } from "../../../common/ChatSettings"
 
 export const load: PageLoad = async ({ url, fetch }) => {
+  const showHeaderParam = url.searchParams.get("show_header") || "1";
+  const showHeader = showHeaderParam === "1";
+  
   const runtimeContext: RuntimeContext = {
     path: "",
     conversationId: null,
     participantId: url.searchParams.get("pid") || null,
     projectId: url.searchParams.get("project") || null,
   };
-  const showHeaderParam = url.searchParams.get("show_header") || "1";
-  const showHeader = showHeaderParam === "1";
+
   let settings: ChatSettings = {
     typingStyle: "fixed",
     typingTime: 2,
