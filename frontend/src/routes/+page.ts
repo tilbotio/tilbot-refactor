@@ -47,7 +47,7 @@ export const load: PageLoad = async ({ url, fetch }) => {
 
   return {
     showHeader,
-    ...settings,
-    ...runtimeContext,
+    settings,
+    ...runtimeContext
   };
 };
