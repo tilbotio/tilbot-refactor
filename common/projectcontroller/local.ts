@@ -1,4 +1,8 @@
-import { BasicProjectController } from './basic';
+import type {
+    ProjectControllerInterface,
+    ProjectControllerOutputInterface,
+    ProjectControllerLookupInterface,
+} from './types';
 
 // RegExp.escape() is a bit new
 const regexEscape: (str: string) => string = (RegExp as any).escape ||
@@ -6,42 +10,55 @@ const regexEscape: (str: string) => string = (RegExp as any).escape ||
         return str.replace(/[\\^$*+?.()|\[\]{}]/g, '\\$&');
     };
 
-export class LocalProjectController extends BasicProjectController {
-
+export class LocalProjectController implements ProjectControllerInterface {
+    private lookup: ProjectControllerLookupInterface;
+    private output: ProjectControllerOutputInterface;
+    private project: any;
     private current_block_id: number;
-    private chatbot_message_callback: Function;
-    private chatbot_settings_callback: Function;
-    private variation_request_callback: Function;
+    private selected_group_blocks: any[] = [];
     private client_vars: any;
 
-    // Keep track of time because it may take the LLM time to generate a response.
-    // We subtract this response time from the (artificial) typing delay since it has already passed.
-    private cur_time: number = 0;
-
-    constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function, variation_request_callback: Function) {
-        super();
-
-        this.chatbot_message_callback = chatbot_message_callback;
-        this.chatbot_settings_callback = chatbot_settings_callback;
-        this.variation_request_callback = variation_request_callback;
-        this.project = JSON.parse(json_str);
-        this.current_block_id = this.project.starting_block_id;
+    constructor(lookup: ProjectControllerLookupInterface, output: ProjectControllerOutputInterface, project: any) {
+        this.lookup = lookup;
+        this.output = output;
+        this.project = project;
+        this.current_block_id = project.starting_block_id;
         this.client_vars = {};
 
-        if (this.project.settings === undefined) {
-            this.project.settings = {
-                'typing_style': 'fixed',
-                'typing_time': 2,
-                'typing_charpsec': 40,
-                'show_avatar': 'yes',
-                'name': 'Tilbot'
-            };
-        }
+        output.settings(project.settings ?? {
+            'typing_style': 'fixed',
+            'typing_time': 2,
+            'typing_charpsec': 40,
+            'show_avatar': 'yes',
+            'name': 'Tilbot'
+        });
 
-        this.chatbot_settings_callback(this.project.settings);
-        if (this.project.starting_block_id !== undefined && this.project.starting_block_id !== -1) {
-            this.send_message(this.project.blocks[this.project.starting_block_id.toString()]);
+        const starting_block_id = project.starting_block_id ?? -1;
+        if (starting_block_id !== -1) {
+            this.send_message(this.project.blocks[starting_block_id.toString()]);
         }
+    }
+
+    get_path() {
+        console.log(this.selected_group_blocks);
+
+        const path = this.selected_group_blocks.map(block => block.id);
+
+        console.log(path);
+
+        return path;
+    }
+
+    move_to_group(params: any) {
+        this.selected_group_blocks.push(params);
+    }
+
+    move_level_up() {
+        this.selected_group_blocks.pop();
+    }
+
+    move_to_root() {
+        this.selected_group_blocks = [];
     }
 
     async send_events(connector: any, input_str: string) {
@@ -102,13 +119,13 @@ export class LocalProjectController extends BasicProjectController {
                 }
             }
 
-            this.chatbot_message_callback({ type, content, params });
+            this.output.botMessage({ type, content, params });
         } else if (type == 'List') {
             params.options = block.items;
             params.text_input = block.text_input;
             params.number_input = block.number_input;
 
-            this.chatbot_message_callback({ type, content, params });
+            this.output.botMessage({ type, content, params });
         } else if (type == 'Group') {
             this.move_to_group({ id: this.current_block_id, model: block });
             this.current_block_id = block.starting_block_id;
@@ -116,7 +133,7 @@ export class LocalProjectController extends BasicProjectController {
         } else {
             const has_targets = block.connectors[0].targets.length > 0;
 
-            this.chatbot_message_callback({ type, content, params, has_targets });
+            this.output.botMessage({ type, content, params, has_targets });
         }
     }
 
@@ -171,7 +188,8 @@ export class LocalProjectController extends BasicProjectController {
     }
 
     _send_current_message(input: string = ''): void {
-        if (this.current_block_id == undefined || this.current_block_id == -1) {
+        const current_block_id = this.current_block_id ?? -1;
+        if (current_block_id == -1) {
             return;
         }
 
@@ -179,14 +197,28 @@ export class LocalProjectController extends BasicProjectController {
         for (const step of this.get_path()) {
             block = block.blocks[step];
         }
-        block = block.blocks[this.current_block_id.toString()];
+        block = block.blocks[current_block_id.toString()];
 
         if (block.chatgpt_variation) {
             const content = this.check_variables(block.content, input);
             const prompt = this.check_variables(block.variation_prompt);
 
-            this.cur_time = Date.now();
-            this.variation_request_callback(content, prompt, block.chatgpt_memory);
+            // Keep track of time because it may take the LLM time to generate a response.
+            // We subtract this response time from the (artificial) typing delay since it has already passed.
+            const cur_time = Date.now();
+
+            (async () => {
+                const variation = await this.lookup.variation(content, prompt, block.chatgpt_memory);
+
+                const variationBlock = { ...block, content: variation };
+
+                const delay = variationBlock.delay * 1000 - (Date.now() - cur_time);
+                if (delay > 0) {
+                    setTimeout(() => { this.send_message(variationBlock); }, delay);
+                } else {
+                    this.send_message(variationBlock);
+                }
+            })();
         } else {
             setTimeout(() => {
                 this.send_message(block, input);
@@ -197,7 +229,7 @@ export class LocalProjectController extends BasicProjectController {
     check_variables(content: string, input: string = ''): string {
         return content.replaceAll(/\[([^\]]+)\]/, (_, bracketedText) => {
             if (bracketedText === 'input') {
-               return input;
+                return input;
             } else {
                 // If it's a column from a CSV table, there should be a period.
                 // Element 1 of the match contains the string without the brackets.
@@ -211,25 +243,6 @@ export class LocalProjectController extends BasicProjectController {
                 }
             }
         });
-    }
-
-    receive_variation(str: string) {
-        // @TODO: handle error messages in requesting variation from ChatGPT
-        let block = this.project;
-
-        for (const step of this.get_path()) {
-            block = block.blocks[step];
-        }
-
-        block = JSON.parse(JSON.stringify(block.blocks[this.current_block_id.toString()]));
-        block.content = str;
-
-        const delay = block.delay * 1000 - (Date.now() - this.cur_time);
-        if (delay > 0) {
-            setTimeout(() => { this.send_message(block); }, delay);
-        } else {
-            this.send_message(block);
-        }
     }
 
     async csvLookupRandom(db: string): Promise<string | null> {
@@ -275,11 +288,10 @@ export class LocalProjectController extends BasicProjectController {
 
             // If it's a column from a CSV table, there should be a period.
             // Element 1 of the match contains the string without the brackets.
-            let csv_parts = bracketedText.split('.');
+            const csv_parts = bracketedText.split('.');
 
             if (csv_parts.length == 2) {
-                let db = csv_parts[0];
-                let col = csv_parts[1];
+                let [db, col] = csv_parts;
 
                 if (db.startsWith('!')) {
                     shouldMatch = false;
@@ -291,7 +303,7 @@ export class LocalProjectController extends BasicProjectController {
                     const varOptions = this.client_vars[db][col].split('|');
 
                     for (const option of varOptions) {
-                        let escapedOption = regexEscape(option);
+                        const escapedOption = regexEscape(option);
                         if (str.match(new RegExp("\\b" + escapedOption + "\\b", "i")) != null) {
                             return shouldMatch ? option : null;
                         }
@@ -300,7 +312,7 @@ export class LocalProjectController extends BasicProjectController {
                     return shouldMatch ? null : '';
                 } else {
                     const parts = str.split(' ');
-                    const matchedParts = [];
+                    const matchedParts: string[] = [];
 
                     for (const part of parts) {
                         const cleanedPart = part.replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
@@ -343,7 +355,7 @@ export class LocalProjectController extends BasicProjectController {
                 // @TODO: distinguish between contains / exact match options
                 const ands = label.split(/\s*\[and\]\s*/);
                 let num_match = 0;
-                let last_found_output = null;
+                let last_found_output: string | null = null;
 
                 for (const and of ands) {
                     const output = await this.check_labeled_connector(and, str);
@@ -410,4 +422,7 @@ export class LocalProjectController extends BasicProjectController {
         // Not used right now
     }
 
+    log(message: string) {
+        console.log(message);
+    }
 }

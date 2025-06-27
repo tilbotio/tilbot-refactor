@@ -27,7 +27,8 @@ import {
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
 } from './errors.ts';
-import ProjectController from '../app/projectcontroller.cjs';
+import { type ProjectControllerInterface } from '../common/projectcontroller/types';
+import { LocalProjectController } from '../common/projectcontroller/local';
 import LLM from '../app/llm.cjs';
 
 // Generate a somewhat persistent token:
@@ -380,7 +381,7 @@ app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
 });
 
-const projectControllers: Map<string, ProjectController> = new Map();
+const projectControllers: Map<string, ProjectControllerInterface> = new Map();
 
 // API call: create a new conversation for a project -- anyone can do this, no need to be logged in.
 app.get('/api/create_conversation', async (req, res) => {
@@ -388,7 +389,7 @@ app.get('/api/create_conversation', async (req, res) => {
   const project = await ProjectModel.getById(query.id, { active: true, status: 1 });
   const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
-  const projectController = new ProjectController(
+  const projectController = new LocalProjectController(
     project,
     __dirname + '/../projects/' + project.id,
     LLM.fromSettings(settings),
