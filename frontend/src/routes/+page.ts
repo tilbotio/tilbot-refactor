@@ -1,5 +1,6 @@
 import type { PageLoad } from "./$types";
-import type { RuntimeContext } from "$lib/types";
+import type { RuntimeContext } from "$lib/types/RuntimeContext";
+import type { ChatSettings } from "../../../common/ChatSettings"
 
 export const load: PageLoad = async ({ url, fetch }) => {
   const runtimeContext: RuntimeContext = {
@@ -10,7 +11,7 @@ export const load: PageLoad = async ({ url, fetch }) => {
   };
   const showHeaderParam = url.searchParams.get("show_header") || "1";
   const showHeader = showHeaderParam === "1";
-  let settings: any = {
+  let settings: ChatSettings = {
     typingStyle: "fixed",
     typingTime: 2,
     typingCharPSec: 40,
@@ -44,7 +45,7 @@ export const load: PageLoad = async ({ url, fetch }) => {
 
   return {
     showHeader,
-    settings,
+    ...settings,
     ...runtimeContext,
   };
 };
