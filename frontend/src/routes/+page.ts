@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ url, fetch }) => {
   const showHeader = showHeaderParam === "1";
   
   const runtimeContext: RuntimeContext = {
-    path: "",
+    path: "Wombles?",
     conversationId: null,
     participantId: url.searchParams.get("pid") || null,
     projectId: url.searchParams.get("project") || null,
