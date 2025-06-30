@@ -2,21 +2,18 @@
   import ChatHeader from "./ChatHeader.svelte";
   import type { ChatSettings } from "../../../../common/ChatSettings";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
+  import { getContext } from "svelte";
 
-  type CombinedProps = {
-    settings: ChatSettings;
-    runtimeContext: RuntimeContext;
-  };
-
-  let { settings, runtimeContext }: CombinedProps = $props();
+  const runtimeContext: RuntimeContext = getContext("runtime-context");
+  const settingsContext: ChatSettings = getContext("settings-context");
 </script>
 
 <div class="flex flex-col w-full h-full">
   {#if runtimeContext.showHeader}
     <ChatHeader
-      name={settings.name}
-      showAvatar={settings.showAvatar}
-      avatarFile={settings.avatarFile}
+      name={settingsContext.name}
+      showAvatar={settingsContext.showAvatar}
+      avatarFile={settingsContext.avatarFile}
       path={runtimeContext.path}
     />
   {/if}
