@@ -4,11 +4,12 @@ import type { ChatSettings } from "../../../common/ChatSettings"
 
 export const load: PageLoad = async ({ url, fetch }) => {
   const showHeaderParam = url.searchParams.get("show_header") || "1";
-  const showHeader = showHeaderParam === "1";
   
   const runtimeContext: RuntimeContext = {
     path: "",
     conversationId: null,
+    // As showHeader is not altered in the application, we do not consider it a state
+    showHeader: showHeaderParam === "1",
     participantId: url.searchParams.get("pid") || null,
     projectId: url.searchParams.get("project") || null,
   };
@@ -46,8 +47,7 @@ export const load: PageLoad = async ({ url, fetch }) => {
   }
 
   return {
-    showHeader,
     settings,
-    ...runtimeContext
+    runtimeContext
   };
 };
