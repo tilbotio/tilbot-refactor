@@ -28,8 +28,11 @@ node_modules
 /tilbot-win32-x64
 /tmp_upload/
 
+.DS_Store
+
 # Playwright
 /tests/integration/test-results/
 /tests/integration/playwright-report/
 /tests/integration/blob-report/
 /tests/integration/playwright/.cache/
+/tests/integration/.npm/
