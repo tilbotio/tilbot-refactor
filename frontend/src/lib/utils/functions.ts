@@ -1,4 +1,4 @@
 // Various helper functions used throughout the project
-export function firstLetter(str: string) {
+export function firstLetter(str: string): string {
   return str.charAt(0).toUpperCase();
 }

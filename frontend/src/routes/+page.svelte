@@ -5,8 +5,8 @@
 
   let { data: loadResult }: PageProps = $props();
 
-  setContext("settings-context", loadResult.settings);
-  setContext("runtime-context", loadResult.runtimeContext);
+  setContext("settingsContext", loadResult.settings);
+  setContext("runtimeContext", loadResult.runtimeContext);
 </script>
 
 <ChatView />

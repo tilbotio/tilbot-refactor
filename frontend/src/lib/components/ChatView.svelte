@@ -10,11 +10,6 @@
 
 <div class="flex flex-col w-full h-full">
   {#if runtimeContext.showHeader}
-    <ChatHeader
-      name={settingsContext.name}
-      showAvatar={settingsContext.showAvatar}
-      avatarFile={settingsContext.avatarFile}
-      path={runtimeContext.path}
-    />
+    <ChatHeader />
   {/if}
 </div>
