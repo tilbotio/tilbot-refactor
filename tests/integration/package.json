@@ -11,6 +11,7 @@
         "@types/node": "^24.0.4"
     },
     "devDependencies": {
+        "@testcontainers/mongodb": "^11.0.3",
         "testcontainers": "^11.0.3"
     }
 }

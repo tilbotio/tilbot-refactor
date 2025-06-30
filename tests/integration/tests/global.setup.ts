@@ -1,5 +1,10 @@
 import { test as setup } from '@playwright/test';
 import { DockerComposeEnvironment, Wait } from 'testcontainers';
+import { MongoDBContainer } from '@testcontainers/mongodb';
+
+setup('start test mongo', async ({ }) => {
+    const mongodbContainer = await new MongoDBContainer("mongo:5").withReuse().start();
+});
 
 setup('start containers', async ({ }) => {
     setup.setTimeout(120_000);
