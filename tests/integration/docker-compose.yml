@@ -7,16 +7,10 @@ services:
     extends:
       file: ../../docker-compose.yml
       service: frontend
-    depends_on:
-      npm-ci:
-        condition: service_completed_successfully
   backend:
     extends:
       file: ../../docker-compose.yml
       service: backend
-    depends_on:
-      npm-ci:
-        condition: service_completed_successfully
   mongo:
     image: mongo
     ports:

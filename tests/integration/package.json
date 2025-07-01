@@ -8,10 +8,10 @@
     },
     "dependencies": {
         "@playwright/test": "^1.53.1",
-        "@types/node": "^24.0.4"
+        "@types/node": "^24.0.4",
+        "mongoose": "^6.6.7"
     },
     "devDependencies": {
-        "@testcontainers/mongodb": "^11.0.3",
         "testcontainers": "^11.0.3"
     }
 }

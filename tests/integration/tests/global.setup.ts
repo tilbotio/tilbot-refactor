@@ -1,5 +1,5 @@
 import { test as setup } from '@playwright/test';
-import { DockerComposeEnvironment, Wait } from 'testcontainers';
+import { DockerComposeEnvironment } from 'testcontainers';
 
 setup('start containers', async ({ }) => {
     setup.setTimeout(120_000);
@@ -9,7 +9,7 @@ setup('start containers', async ({ }) => {
     const composeFilePath = ".";
     const composeFile = "docker-compose.yml";
     
-    const environment = await new DockerComposeEnvironment(composeFilePath, composeFile).withWaitStrategy('frontend-1', Wait.forListeningPorts()).up(); 
+    const environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up(); 
     //const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
     //await delay(60000);
 
