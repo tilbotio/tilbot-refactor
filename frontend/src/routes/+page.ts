@@ -20,7 +20,7 @@ export const load: PageLoad = ({ url, fetch }) => {
     typingCharPSec: 40,
     showAvatar: true,
     avatarFile: "",
-    name: "Tilbot",
+    name: "Tilbot"
   };
 
   if (runtimeContext.projectId) { 

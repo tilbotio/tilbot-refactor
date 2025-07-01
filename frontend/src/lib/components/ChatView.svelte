@@ -4,8 +4,7 @@
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { getContext } from "svelte";
 
-  const runtimeContext: RuntimeContext = getContext("runtime-context");
-  const settingsContext: ChatSettings = getContext("settings-context");
+  const runtimeContext: RuntimeContext = getContext("runtimeContext");
 </script>
 
 <div class="flex flex-col w-full h-full">
