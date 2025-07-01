@@ -1,8 +1,8 @@
 export interface ChatSettings {
-    typingStyle?: string;
-    typingTime?: number;
-    typingCharPSec?: number;
-    showAvatar?: boolean;
-    avatarFile?: string | null;
-    name?: string;
+    typingStyle: string;
+    typingTime: number;
+    typingCharPSec: number;
+    showAvatar: boolean;
+    avatarFile: string | null;
+    name: string;
 }
