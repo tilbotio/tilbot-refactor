@@ -2,7 +2,7 @@ import type { PageLoad } from "./$types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ChatSettings } from "../../../common/ChatSettings"
 
-export const load: PageLoad = async ({ url, fetch }) => {
+export const load: PageLoad = ({ url, fetch }) => {
   const showHeaderParam = url.searchParams.get("show_header") || "1";
   
   const runtimeContext: RuntimeContext = {
@@ -23,12 +23,14 @@ export const load: PageLoad = async ({ url, fetch }) => {
     name: "Tilbot",
   };
 
-  if (runtimeContext.projectId) {
-    runtimeContext.path = `/proj_pub/${runtimeContext.projectId}`;
+  if (runtimeContext.projectId) { 
+    const id = runtimeContext.projectId;
+    ( async() => {
+    runtimeContext.path = `/proj_pub/${id}`;
     try {
       const response = await fetch(
         `/api/create_conversation?id=${encodeURIComponent(
-          runtimeContext.projectId
+          id
         )}`
       );
 
@@ -45,9 +47,10 @@ export const load: PageLoad = async ({ url, fetch }) => {
       console.error(`Failed to fetch conversation data: ${err.message}`);
     }
   }
+)};
 
   return {
     settings,
-    runtimeContext
+    runtimeContext,
   };
 };
