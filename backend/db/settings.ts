@@ -1,4 +1,4 @@
-import { Schema, Document, Model, model } from 'mongoose';
+import { Schema, model, type Document, type Model } from 'mongoose';
 
 export interface SettingsSchemaInterface extends Document {
     chatgpt_api_key: string;

@@ -1,4 +1,4 @@
-import { Document, Schema, Model, model } from 'mongoose';
+import { Schema, model, type Document, type Model } from 'mongoose';
 import { SettingsModel, type SettingsSchemaInterface } from './settings.ts';
 import { MongoError } from 'mongodb';
 import mongoose_bcrypt from 'mongoose-bcrypt';

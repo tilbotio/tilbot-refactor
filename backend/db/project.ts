@@ -1,4 +1,4 @@
-import { Schema, Document, Model, model } from 'mongoose';
+import { Schema, model, type Document, type Model } from 'mongoose';
 import { LogModel } from './log.ts';
 import { TilBotProjectNotFoundError } from '../errors.ts';
 import crypto from 'crypto';

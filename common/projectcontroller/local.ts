@@ -2,6 +2,7 @@ import type {
     ProjectControllerInterface,
     ProjectControllerOutputInterface,
     ProjectControllerLookupInterface,
+    ProjectControllerLoggerInterface,
 } from './types';
 
 // RegExp.escape() is a bit new
@@ -13,14 +14,21 @@ const regexEscape: (str: string) => string = (RegExp as any).escape ||
 export class LocalProjectController implements ProjectControllerInterface {
     private lookup: ProjectControllerLookupInterface;
     private output: ProjectControllerOutputInterface;
+    private logger: ProjectControllerLoggerInterface;
     private project: any;
     private current_block_id: number;
     private selected_group_blocks: any[] = [];
     private client_vars: any;
 
-    constructor(lookup: ProjectControllerLookupInterface, output: ProjectControllerOutputInterface, project: any) {
+    constructor(
+        lookup: ProjectControllerLookupInterface,
+        output: ProjectControllerOutputInterface,
+        logger: ProjectControllerLoggerInterface,
+        project: any,
+    ) {
         this.lookup = lookup;
         this.output = output;
+        this.logger = logger;
         this.project = project;
         this.current_block_id = project.starting_block_id;
         this.client_vars = {};
@@ -419,10 +427,10 @@ export class LocalProjectController implements ProjectControllerInterface {
     }
 
     set_participant_id(pid: string) {
-        // Not used right now
+        this.logger.set_participant_id(pid);
     }
 
     log(message: string) {
-        console.log(message);
+        this.logger.log("projectcontroller", message);
     }
 }

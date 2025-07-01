@@ -1,5 +1,15 @@
-import { Schema, model } from 'mongoose';
-import { MessageSchema } from './message.ts';
+import { Schema, model, type Document, type Model } from 'mongoose';
+import { MessageSchema, type MessageSchemaInterface } from './message.ts';
+
+export interface LogSchemaInterface extends Document {
+    messages: MessageSchemaInterface[];
+    session_started: Date;
+    session_closed: Date;
+    project_id: string;
+    participant_id: string;
+};
+
+export interface LogModelInterface extends Model<LogSchemaInterface> { };
 
 export const LogSchema = new Schema({
     messages: [MessageSchema],
@@ -9,4 +19,4 @@ export const LogSchema = new Schema({
     participant_id: { type: String, default: "" }
 });
 
-export const LogModel = model('log', LogSchema);
+export const LogModel = model<LogSchemaInterface, LogModelInterface>('log', LogSchema);
