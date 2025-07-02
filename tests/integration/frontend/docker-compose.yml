@@ -1,15 +1,15 @@
 services:
   npm-ci:
     extends:
-      file: ../../docker-compose.yml
+      file: ../../../docker-compose.yml
       service: npm-ci
   frontend:
     extends:
-      file: ../../docker-compose.yml
+      file: ../../../docker-compose.yml
       service: frontend
   backend:
     extends:
-      file: ../../docker-compose.yml
+      file: ../../../docker-compose.yml
       service: backend
   mongo:
     image: mongo

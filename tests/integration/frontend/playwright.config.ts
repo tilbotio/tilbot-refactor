@@ -36,25 +36,30 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'setup containers',
-      testMatch: /global\.setup.ts/
+      name: 'start containers',
+      testMatch: /global\.setup.ts/,
+      teardown: 'stop containers'
+    },
+    {
+      name: 'stop containers',
+      testMatch: /global\.teardown.ts/
     },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      dependencies: ['setup containers']
+      dependencies: ['start containers'],
     },
 
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      dependencies: ['setup containers']
+      dependencies: ['start containers']
     },
 
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      dependencies: ['setup containers']
+      dependencies: ['start containers']
     },
 
     /* Test against mobile viewports. */

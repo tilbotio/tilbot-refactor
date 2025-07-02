@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "test": "npx playwright test",
-        "test-ui": "npx playwright test --ui"
+        "test": "DEBUG=testcontainers* TESTCONTAINERS_RYUK_DISABLED=true npx playwright test",
+        "test-ui": "DEBUG=testcontainers* TESTCONTAINERS_RYUK_DISABLED=true npx playwright test --ui"
     },
     "dependencies": {
         "@playwright/test": "^1.53.1",

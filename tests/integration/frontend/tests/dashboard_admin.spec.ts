@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { UserModel } from '../../../backend/db/user';
+import { UserModel } from '../../../../backend/db/user';
 import mongoose from 'mongoose';
 
 /*test('login button', async ({ page }) => {
@@ -17,6 +17,8 @@ test('login button 2', async ({ page }) => {
 });*/
 
 test('login admin', async ({ page }) => {
+    console.log('===');
+    console.log(process.env.compose);
     // Empty all accounts from DB
     await mongoose.connect("mongodb://127.0.0.1:27017/tilbot", { useNewUrlParser: true, useUnifiedTopology: true });
     await UserModel.deleteMany();
