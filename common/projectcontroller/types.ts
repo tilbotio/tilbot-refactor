@@ -7,7 +7,7 @@ export interface ProjectControllerInterface {
 }
 
 export interface ProjectControllerLookupInterface {
-    cell(db: string, row: string, col: string): Promise<string>;
+    cell(db: string, col: string, val: string): Promise<string>;
     random(db: string): Promise<string>;
     variation(content: string, prompt: string, memory: any): Promise<string>;
 }
