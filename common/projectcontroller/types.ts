@@ -1,5 +1,6 @@
 
-export interface ProjectControllerInterface {
+export interface ProjectControllerInterface<ProjectControllerOutputType extends ProjectControllerOutputInterface> {
+    readonly output: ProjectControllerOutputType;
     message_sent_event(): void;
     receive_message(str: string): void;
     log(str: string): void;

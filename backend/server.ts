@@ -27,8 +27,11 @@ import {
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
 } from './errors.ts';
-import { type ProjectControllerInterface } from '../common/projectcontroller/types';
+import type { ProjectControllerInterface } from '../common/projectcontroller/types';
 import { LocalProjectController } from '../common/projectcontroller/local';
+import { ServerControllerLookup, ServerControllerOutput } from './projectcontroller';
+import { Logger } from './logger';
+import { CsvData } from '../common/csvdata';
 import LLM from '../app/llm.cjs';
 
 // Generate a somewhat persistent token:
@@ -381,18 +384,32 @@ app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
 });
 
-const projectControllers: Map<string, ProjectControllerInterface> = new Map();
+const projectControllers: Map<string, ProjectControllerInterface<ServerControllerOutput>> = new Map();
 
 // API call: create a new conversation for a project -- anyone can do this, no need to be logged in.
 app.get('/api/create_conversation', async (req, res) => {
   const query: any = req.query;
-  const project = await ProjectModel.getById(query.id, { active: true, status: 1 });
+  const projectId = query.id;
+  const project = await ProjectModel.getById(projectId, { active: true, status: 1 });
   const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
+  const llm: any = LLM.fromSettings(settings);
+  const csv_datas: any = {};
+
+  const p = `${__dirname}/../projects/${project.id}`;
+
+  // Set up the data files
+  for (const variable of project.variables) {
+    if (variable.type == 'csv') {
+      csv_datas[variable.name] = new CsvData(variable.csvfile, p);
+    }
+  }
+
   const projectController = new LocalProjectController(
-    project,
-    __dirname + '/../projects/' + project.id,
-    LLM.fromSettings(settings),
+    new ServerControllerLookup(csv_datas, llm),
+    new ServerControllerOutput(),
+    new Logger(projectId),
+    project
   );
 
   const controllerId = randomBytes(16).toString('hex');
@@ -409,23 +426,25 @@ app.get('/ws/chat', { websocket: true }, async (socket, req) => {
     throw new Error(`Conversation '${query.conversation}' not found`);
   }
 
-  if (projectController.socket) {
-    projectController.socket.close();
-    projectController.socket = null;
+  const output = projectController.output;
+
+  if (output.socket) {
+    output.socket.close();
+    output.socket = null;
   }
 
   socket.addEventListener('open', () => {
-    if (projectController.socket) {
+    if (output.socket) {
       // We're late to the party.
       socket.close();
     } else {
-      projectController.socket = socket;
+      output.socket = socket;
     }
   });
 
   socket.addEventListener('close', () => {
-    if (projectController.socket === socket) {
-      projectController.socket = null;
+    if (output.socket === socket) {
+      output.socket = null;
     }
   });
 
@@ -437,15 +456,15 @@ app.get('/ws/chat', { websocket: true }, async (socket, req) => {
         break;
 
       case 'user_message':
-        projectController.receive_message(...args);
+        projectController.receive_message(...args as [string]);
         break;
 
       case 'log':
-        projectController.log(...args);
+        projectController.log(...args as [string]);
         break;
 
       case 'pid':
-        projectController.set_participant_id(...args);
+        projectController.set_participant_id(...args as [string]);
         break;
     }
   });

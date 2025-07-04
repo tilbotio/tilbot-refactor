@@ -3,11 +3,10 @@
 
 import type {
     ProjectControllerLookupInterface,
-    ProjectControllerLoggerInterface,
     ProjectControllerOutputInterface,
 } from '../common/projectcontroller/types';
 
-class ServerControllerLookup implements ProjectControllerLookupInterface {
+export class ServerControllerLookup implements ProjectControllerLookupInterface {
     private csv_datas: { [key: string]: any; };
     private llm: any;
 
@@ -29,29 +28,58 @@ class ServerControllerLookup implements ProjectControllerLookupInterface {
     }
 }
 
-class ServerControllerLogger implements ProjectControllerLoggerInterface {
-    log(event: string, detail: string): void {
-        // FIXME
+export class ServerControllerOutput implements ProjectControllerOutputInterface {
+    private _socket: WebSocket | null = null;
+    private pending: any[] = [];
+
+    emit(...message: any[]) {
+        this.pending.push(JSON.stringify(message));
+        this.flushSocket();
     }
 
-    set_participant_id(pid: string): void {
-        // FIXME
+    flushSocket() {
+        const socket = this._socket;
+        if (socket != null) {
+            const pending = this.pending;
+            for (const p of this.pending) {
+                socket.send(p);
+            }
+            pending.length = 0;
+        }
     }
-}
-class ServerControllerOutput implements ProjectControllerOutputInterface {
+
+    get socket() {
+        return this._socket;
+    }
+
+    set socket(socket: WebSocket | null) {
+        this._socket = socket;
+        if (socket == null) {
+            return;
+        }
+
+        this.flushSocket();
+
+        socket.addEventListener('close', () => {
+            if (this._socket === socket) {
+                this._socket = null;
+            }
+        });
+    }
+
     typingIndicator(): void {
-        // FIXME
+        this.emit('typing indicator');
     }
 
     windowMessage(text: string): void {
-        // FIXME
+        this.emit('window message', { content: text });
     }
 
     botMessage(block: { type: string, content: string, params: any; has_targets?: boolean; }): void {
-        // FIXME
+        this.emit('bot message', block);
     }
 
     settings(settings: any, path?: string): void {
-        // FIXME
+        this.emit('settings', settings, path);
     }
 }

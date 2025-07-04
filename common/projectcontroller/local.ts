@@ -11,27 +11,27 @@ const regexEscape: (str: string) => string = (RegExp as any).escape ||
         return str.replace(/[\\^$*+?.()|\[\]{}]/g, '\\$&');
     };
 
-export class LocalProjectController implements ProjectControllerInterface {
-    private lookup: ProjectControllerLookupInterface;
-    private output: ProjectControllerOutputInterface;
-    private logger: ProjectControllerLoggerInterface;
-    private project: any;
-    private current_block_id: number;
-    private selected_group_blocks: any[] = [];
-    private client_vars: any;
+export class LocalProjectController<ProjectControllerOutputType extends ProjectControllerOutputInterface> implements ProjectControllerInterface<ProjectControllerOutputType> {
+    private _lookup: ProjectControllerLookupInterface;
+    private _output: ProjectControllerOutputType;
+    private _logger: ProjectControllerLoggerInterface;
+    private _project: any;
+    private _current_block_id: number;
+    private _selected_group_blocks: any[] = [];
+    private _client_vars: any;
 
     constructor(
         lookup: ProjectControllerLookupInterface,
-        output: ProjectControllerOutputInterface,
+        output: ProjectControllerOutputType,
         logger: ProjectControllerLoggerInterface,
         project: any,
     ) {
-        this.lookup = lookup;
-        this.output = output;
-        this.logger = logger;
-        this.project = project;
-        this.current_block_id = project.starting_block_id;
-        this.client_vars = {};
+        this._lookup = lookup;
+        this._output = output;
+        this._logger = logger;
+        this._project = project;
+        this._current_block_id = project.starting_block_id;
+        this._client_vars = {};
 
         output.settings(project.settings ?? {
             'typing_style': 'fixed',
@@ -43,14 +43,18 @@ export class LocalProjectController implements ProjectControllerInterface {
 
         const starting_block_id = project.starting_block_id ?? -1;
         if (starting_block_id !== -1) {
-            this.send_message(this.project.blocks[starting_block_id.toString()]);
+            this.send_message(this._project.blocks[starting_block_id.toString()]);
         }
     }
 
-    get_path() {
-        console.log(this.selected_group_blocks);
+    get output(): ProjectControllerOutputType {
+        return this._output;
+    }
 
-        const path = this.selected_group_blocks.map(block => block.id);
+    get_path() {
+        console.log(this._selected_group_blocks);
+
+        const path = this._selected_group_blocks.map(block => block.id);
 
         console.log(path);
 
@@ -58,15 +62,15 @@ export class LocalProjectController implements ProjectControllerInterface {
     }
 
     move_to_group(params: any) {
-        this.selected_group_blocks.push(params);
+        this._selected_group_blocks.push(params);
     }
 
     move_level_up() {
-        this.selected_group_blocks.pop();
+        this._selected_group_blocks.pop();
     }
 
     move_to_root() {
-        this.selected_group_blocks = [];
+        this._selected_group_blocks = [];
     }
 
     async send_events(connector: any, input_str: string) {
@@ -82,7 +86,7 @@ export class LocalProjectController implements ProjectControllerInterface {
             } else if (type == 'variable') {
                 const var_name = event.var_name;
                 const var_value = event.var_value;
-                const client_vars = this.client_vars;
+                const client_vars = this._client_vars;
 
                 const regExp = /\[([^\]]+)\]/g;
                 const matches = regExp.exec(var_value);
@@ -127,21 +131,21 @@ export class LocalProjectController implements ProjectControllerInterface {
                 }
             }
 
-            this.output.botMessage({ type, content, params });
+            this._output.botMessage({ type, content, params });
         } else if (type == 'List') {
             params.options = block.items;
             params.text_input = block.text_input;
             params.number_input = block.number_input;
 
-            this.output.botMessage({ type, content, params });
+            this._output.botMessage({ type, content, params });
         } else if (type == 'Group') {
-            this.move_to_group({ id: this.current_block_id, model: block });
-            this.current_block_id = block.starting_block_id;
+            this.move_to_group({ id: this._current_block_id, model: block });
+            this._current_block_id = block.starting_block_id;
             this.send_message(block.blocks[block.starting_block_id]);
         } else {
             const has_targets = block.connectors[0].targets.length > 0;
 
-            this.output.botMessage({ type, content, params, has_targets });
+            this._output.botMessage({ type, content, params, has_targets });
         }
     }
 
@@ -152,21 +156,21 @@ export class LocalProjectController implements ProjectControllerInterface {
             const group_block_id = path[path.length - 1];
             this.move_level_up();
 
-            let block = this.project;
+            let block = this._project;
             for (const step of path) {
                 block = block.blocks[step];
             }
 
             for (const connector of block.blocks[group_block_id.toString()].connectors) {
-                if (connector.from_id == this.current_block_id) {
+                if (connector.from_id == this._current_block_id) {
                     var new_id = connector.targets[0];
-                    this.current_block_id = group_block_id;
+                    this._current_block_id = group_block_id;
                     this.check_group_exit(new_id);
                     break;
                 }
             }
         } else {
-            this.current_block_id = id;
+            this._current_block_id = id;
             this._send_current_message();
         }
     }
@@ -174,20 +178,20 @@ export class LocalProjectController implements ProjectControllerInterface {
     message_sent_event(): void {
         const path = this.get_path();
         if (path.length == 0) {
-            const current_block = this.project.blocks[this.current_block_id.toString()];
+            const current_block = this._project.blocks[this._current_block_id.toString()];
             if (current_block.type === 'Auto') {
                 const connector = current_block.connectors[0];
                 this.send_events(connector, '');
-                this.current_block_id = connector.targets[0];
+                this._current_block_id = connector.targets[0];
                 this._send_current_message();
             }
         } else {
-            let block = this.project;
+            let block = this._project;
             for (const step of path) {
                 block = block.blocks[step];
             }
 
-            const current_block = block.blocks[this.current_block_id.toString()];
+            const current_block = block.blocks[this._current_block_id.toString()];
             if (current_block.type == 'Auto') {
                 const new_id = current_block.connectors[0].targets[0];
                 this.check_group_exit(new_id);
@@ -196,12 +200,12 @@ export class LocalProjectController implements ProjectControllerInterface {
     }
 
     _send_current_message(input: string = ''): void {
-        const current_block_id = this.current_block_id ?? -1;
+        const current_block_id = this._current_block_id ?? -1;
         if (current_block_id == -1) {
             return;
         }
 
-        let block = this.project;
+        let block = this._project;
         for (const step of this.get_path()) {
             block = block.blocks[step];
         }
@@ -216,7 +220,7 @@ export class LocalProjectController implements ProjectControllerInterface {
             const cur_time = Date.now();
 
             (async () => {
-                const variation = await this.lookup.variation(content, prompt, block.chatgpt_memory);
+                const variation = await this._lookup.variation(content, prompt, block.chatgpt_memory);
 
                 const variationBlock = { ...block, content: variation };
 
@@ -244,10 +248,10 @@ export class LocalProjectController implements ProjectControllerInterface {
                 const csv_parts = bracketedText.split('.');
                 if (csv_parts.length == 2) {
                     const [db, col] = csv_parts;
-                    const client_db = this.client_vars[db] ?? {};
+                    const client_db = this._client_vars[db] ?? {};
                     return this.check_variables(client_db[col] ?? "", input);
                 } else {
-                    return this.check_variables(this.client_vars[bracketedText] ?? "", input);
+                    return this.check_variables(this._client_vars[bracketedText] ?? "", input);
                 }
             }
         });
@@ -307,8 +311,8 @@ export class LocalProjectController implements ProjectControllerInterface {
                 }
 
                 // Check if local variable
-                if (db in this.client_vars) {
-                    const varOptions = this.client_vars[db][col].split('|');
+                if (db in this._client_vars) {
+                    const varOptions = this._client_vars[db][col].split('|');
 
                     for (const option of varOptions) {
                         const escapedOption = regexEscape(option);
@@ -333,7 +337,7 @@ export class LocalProjectController implements ProjectControllerInterface {
                     return matchedParts.length ? matchedParts.join(' ') : null;
                 }
             } else {
-                if (bracketedText in this.client_vars && this.client_vars[bracketedText] == str) {
+                if (bracketedText in this._client_vars && this._client_vars[bracketedText] == str) {
                     return str;
                 } else {
                     return '';
@@ -393,9 +397,9 @@ export class LocalProjectController implements ProjectControllerInterface {
             output: string | null;
         } = { found: false, connector: null, output: null };
 
-        const blocks = this.project.blocks;
-        if (this.current_block_id !== undefined && this.current_block_id !== -1) {
-            const current_block = blocks[this.current_block_id.toString()];
+        const blocks = this._project.blocks;
+        if (this._current_block_id !== undefined && this._current_block_id !== -1) {
+            const current_block = blocks[this._current_block_id.toString()];
             if (current_block.type !== 'Auto') {
                 best = await this.find_best_connector(current_block, str, str);
             }
@@ -420,17 +424,17 @@ export class LocalProjectController implements ProjectControllerInterface {
 
         if (best.connector) {
             const { connector, output } = best;
-            this.current_block_id = connector.targets[0];
+            this._current_block_id = connector.targets[0];
             this.send_events(connector, output as string);
             this._send_current_message(output as string);
         }
     }
 
     set_participant_id(pid: string) {
-        this.logger.set_participant_id(pid);
+        this._logger.set_participant_id(pid);
     }
 
     log(message: string) {
-        this.logger.log("projectcontroller", message);
+        this._logger.log("projectcontroller", message);
     }
 }
