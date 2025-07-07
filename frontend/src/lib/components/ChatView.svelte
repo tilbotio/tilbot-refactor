@@ -28,7 +28,3 @@
     <ChatHeader />
   {/if}
 </div>
-
-<div>
-  <button onclick={() => (showBarcodeScanner = true)}>Open scanner</button>
-</div>

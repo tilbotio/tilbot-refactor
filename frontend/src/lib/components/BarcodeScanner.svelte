@@ -3,7 +3,7 @@
    * @prop onClose: callback function, will be provided by parent component
    * @prop onScan: callback function, will be provided by parent component
    */
-  import { Icon, XMark } from "svelte-heros-v2";
+  import { XMark } from "svelte-heros-v2";
   import { Html5Qrcode } from "html5-qrcode";
   import { onMount } from "svelte";
 
@@ -61,7 +61,7 @@
     aria-label="Close scanner"
     onclick={onClose}
   >
-    <Icon src={XMark} class="h-6 w-6" />
+    <XMark class="h-6 w-6" />
   </button>
   <div id="barcodeScanner" class="!border-0 z-0"></div>
 </div>

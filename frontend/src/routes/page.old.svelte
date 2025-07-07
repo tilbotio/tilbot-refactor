@@ -1,5 +1,5 @@
 <script lang="ts">
-  import BarcodeReader from "$lib/components/BarcodeReader.svelte";
+  import BarcodeReader from "$lib/components/BarcodeScanner.svelte";
   import ChatHeader from "$lib/components/ChatHeader.svelte";
   import { onMount, tick } from "svelte";
   import { firstLetter } from "$lib/utils/functions";
