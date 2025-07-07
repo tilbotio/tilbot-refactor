@@ -1,5 +1,7 @@
 <script lang="ts">
-  let { message } = $props();
+  import Avatar from "./Avatar.svelte";
+
+  let { message, newBotMessageBlock } = $props();
 
   function determineBackground(author: string) {
     switch (author) {
@@ -16,5 +18,12 @@
 </script>
 
 <div class="chat {alignment}">
+  {#if newBotMessageBlock}
+    <div class="chat-image avatar">
+      <div class="w-10">
+        <Avatar />
+      </div>
+    </div>
+  {/if}
   <div class="chat-bubble {background}">{@html message.content}</div>
 </div>
