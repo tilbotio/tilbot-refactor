@@ -1,7 +1,12 @@
 <script lang="ts">
   import ChatMessage from "./ChatMessage.svelte";
+  import type { Message } from "$lib/types/MiscTypes";
 
-  let { messages } = $props();
+  type Props = {
+    messages: Message[];
+  };
+
+  let { messages }: Props = $props();
 </script>
 
 {#each messages as message, index}

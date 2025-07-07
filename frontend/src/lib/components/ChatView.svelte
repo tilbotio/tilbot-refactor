@@ -4,10 +4,12 @@
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { getContext } from "svelte";
   import MessageList from "./MessageList.svelte";
+  import type { InputMode, ShowBarcodeScanner } from "$lib/types/MiscTypes";
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
 
-  let showBarcodeScanner: boolean = $state(false);
+  let showBarcodeScanner: ShowBarcodeScanner = $state(false);
+  let inputMode: InputMode = $state("text");
 
   // let messages: Array<any> = $state([]);
   // Messages array below is for testing purposes only, replace with line above after development.
@@ -33,11 +35,11 @@
     },
   ]);
 
-  function closeBarcodeReader() {
+  function closeBarcodeReader(): void {
     showBarcodeScanner = false;
   }
 
-  function handleScannedCode(decoded: string) {
+  function handleScannedCode(decoded: string): void {
     // Bug with receive_message not defined on BasicProjectController, hence this intermediate debug fix
     // user_message(`barcode: ${decoded}`);
     console.log(`Code scanned: ${decoded}`);

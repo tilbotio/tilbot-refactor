@@ -1,9 +1,16 @@
 <script lang="ts">
   import Avatar from "./Avatar.svelte";
+  import type { Message } from "$lib/types/MiscTypes";
+  import type { NewBotMessageBlock } from "$lib/types/MiscTypes";
 
-  let { message, newBotMessageBlock } = $props();
+  type Props = {
+    message: Message;
+    newBotMessageBlock: NewBotMessageBlock;
+  };
 
-  function determineBackground(author: string) {
+  let { message, newBotMessageBlock }: Props = $props();
+
+  function determineLayout(author: string): [string, string] {
     switch (author) {
       case "bot":
         return ["bg-tilbot-secondary-purple", "chat-start"];
@@ -14,7 +21,7 @@
     }
   }
 
-  const [background, alignment] = determineBackground(message.from);
+  const [background, alignment] = determineLayout(message.from);
 </script>
 
 <div class="chat {alignment}">
