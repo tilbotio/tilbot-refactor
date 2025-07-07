@@ -1,18 +1,16 @@
 <script lang="ts">
   /**
-   * @prop visible: determine whether or not component is shown
    * @prop onClose: callback function, will be provided by parent component
    * @prop onScan: callback function, will be provided by parent component
    */
-  import { Icon, XMark } from "svelte-hero-icons";
+  import { Icon, XMark } from "svelte-heros-v2";
   import { Html5Qrcode } from "html5-qrcode";
+  import { onMount } from "svelte";
 
   let {
-    visible = false,
     onClose = () => {},
     onScan = (_decoded: string) => {},
   }: {
-    visible: boolean;
     onClose: () => void;
     onScan: (decoded: string) => void;
   } = $props();
@@ -34,10 +32,9 @@
     onClose();
   }
 
-  $effect(() => {
-    // https://joyofcode.xyz/avoid-async-effects-in-svelte hence the chaining.
-    if (visible && html5Qrcode === null) {
-      html5Qrcode = new Html5Qrcode("barcodereader");
+  onMount(() => {
+    if (html5Qrcode === null) {
+      html5Qrcode = new Html5Qrcode("barcodeScanner");
       html5Qrcode
         .start(
           { facingMode: "environment" },
@@ -56,17 +53,15 @@
   });
 </script>
 
-{#if visible}
-  <div
-    class="fixed top-0 left-0 w-full h-full bg-tilbot-secondary-purple z-50 flex flex-col justify-center text-white"
+<div
+  class="fixed top-0 left-0 w-full h-full bg-tilbot-secondary-purple z-50 flex flex-col justify-center text-white"
+>
+  <button
+    class="btn btn-circle absolute right-4 top-4 z-10 bg-white text-tilbot-secondary-purple hover:bg-white"
+    aria-label="Close scanner"
+    onclick={onClose}
   >
-    <button
-      class="btn btn-circle absolute right-4 top-4 z-10 bg-white text-tilbot-secondary-purple hover:bg-white"
-      aria-label="Close scanner"
-      onclick={onClose}
-    >
-      <Icon src={XMark} class="h-6 w-6" />
-    </button>
-    <div id="barcodereader" class="!border-0 z-0"></div>
-  </div>
-{/if}
+    <Icon src={XMark} class="h-6 w-6" />
+  </button>
+  <div id="barcodeScanner" class="!border-0 z-0"></div>
+</div>
