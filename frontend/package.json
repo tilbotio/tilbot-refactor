@@ -23,7 +23,6 @@
         "postcss": "^8.5.4",
         "svelte": "^5.33.13",
         "svelte-check": "^4.2.1",
-        "svelte-hero-icons": "^5.2.0",
         "svelte-preprocess": "^6.0.3",
         "tailwindcss": "^3.2.1",
         "typescript": "^5.0.0",
@@ -35,6 +34,7 @@
         "daisyui": "^4.12.21",
         "html5-qrcode": "^2.3.7",
         "openai": "^3.3.0",
-        "papaparse": "^5.4.1"
+        "papaparse": "^5.4.1",
+        "svelte-heros-v2": "^2.0.1"
     }
 }
