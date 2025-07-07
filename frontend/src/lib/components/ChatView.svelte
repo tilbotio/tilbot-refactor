@@ -3,10 +3,35 @@
   import BarcodeScanner from "./BarcodeScanner.svelte";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { getContext } from "svelte";
+  import MessageList from "./MessageList.svelte";
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
 
-  let showBarcodeScanner = $state(false);
+  let showBarcodeScanner: boolean = $state(false);
+
+  // let messages: Array<any> = $state([]);
+  // Messages array below is for testing purposes only, replace with line above after development.
+  let messages: Array<any> = $state([
+    { from: "bot", content: "Hi there! I am a bot." },
+    { from: "user", content: "Hi there bot, I am a user!" },
+    { from: "bot", content: "Well hello there user!" },
+    {
+      from: "bot",
+      content: "What a pleasure to see you. Did you bring a friend?",
+    },
+    { from: "chatgpt", content: "Wassup bruh?" },
+    { from: "user", content: "Go away, and stop stealing the biccies" },
+    {
+      from: "user",
+      content:
+        "No, I mean it, I can you see munching away on my biscuits. Shoo!",
+    },
+    { from: "chatgpt", content: "Geez, chill already, I am outta here" },
+    {
+      from: "bot",
+      content: "Well, you do not see that every day.. let's get started!",
+    },
+  ]);
 
   function closeBarcodeReader() {
     showBarcodeScanner = false;
@@ -27,4 +52,7 @@
   {#if runtimeContext.showHeader}
     <ChatHeader />
   {/if}
+  <div class="w-full h-full flex-1 overflow-y-scroll py-2">
+    <MessageList {messages} />
+  </div>
 </div>
