@@ -15,12 +15,20 @@ export class ServerControllerLookup implements ProjectControllerLookupInterface 
         this.llm = llm;
     }
 
-    async cell(db: string, col: string, val: string): Promise<string> {
-        return await this.csv_datas[db].get(col, val);
+    async cell(db: string, col: string, val: string): Promise<Object[] | null> {
+        const csv = this.csv_datas[db];
+        if (csv === undefined) {
+            return null;
+        }
+        return await csv.get(col, val);
     }
 
-    async random(db: string): Promise<string> {
-        return await this.csv_datas[db].get_random_line();
+    async random(db: string): Promise<Object | null> {
+        const csv = this.csv_datas[db];
+        if (csv === undefined) {
+            return null;
+        }
+        return await csv.get_random_line();
     }
 
     async variation(content: string, prompt: string, memory?: any): Promise<string> {

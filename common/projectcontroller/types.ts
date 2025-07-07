@@ -8,8 +8,8 @@ export interface ProjectControllerInterface<ProjectControllerOutputType extends 
 }
 
 export interface ProjectControllerLookupInterface {
-    cell(db: string, col: string, val: string): Promise<string>;
-    random(db: string): Promise<string>;
+    cell(db: string, col: string, val: string): Promise<Object[] | null>;
+    random(db: string): Promise<Object | null>;
     variation(content: string, prompt: string, memory: any): Promise<string>;
 }
 

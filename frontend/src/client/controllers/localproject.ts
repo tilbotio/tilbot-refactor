@@ -195,7 +195,7 @@ export class LocalProjectController extends BasicProjectController {
     }
 
     check_variables(content: string, input: string = ''): string {
-        return content.replaceAll(/\[([^\]]+)\]/, (_, bracketedText) => {
+        return content.replaceAll(/\[([^\]]+)\]/g, (_, bracketedText) => {
             if (bracketedText === 'input') {
                return input;
             } else {

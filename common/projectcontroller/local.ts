@@ -52,11 +52,11 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
     }
 
     get_path() {
-        console.log(this._selected_group_blocks);
+        // console.log(this._selected_group_blocks);
 
         const path = this._selected_group_blocks.map(block => block.id);
 
-        console.log(path);
+        // console.log(path);
 
         return path;
     }
@@ -103,7 +103,7 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
                     // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
                     if (bracketedText.toLowerCase().startsWith('random(')) {
                         const db = bracketedText.substring(7, bracketedText.indexOf(')'));
-                        const res = await this.csvLookupRandom(db);
+                        const res = await this._lookup.random(db);
                         if (res !== null) {
                             client_vars[var_name] = res;
                         }
@@ -233,13 +233,14 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
             })();
         } else {
             setTimeout(() => {
+                console.log(`sending message '${input}' for block ${JSON.stringify(block)}`)
                 this.send_message(block, input);
-            }, block.delay * 1000);
+            }, (block.delay ?? 0) * 1000);
         }
     }
 
     check_variables(content: string, input: string = ''): string {
-        return content.replaceAll(/\[([^\]]+)\]/, (_, bracketedText) => {
+        return content.replaceAll(/\[([^\]]+)\]/g, (_, bracketedText) => {
             if (bracketedText === 'input') {
                 return input;
             } else {
@@ -255,18 +256,6 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
                 }
             }
         });
-    }
-
-    async csvLookupRandom(db: string): Promise<string | null> {
-        const window_parent: any = window.parent;
-        return await window_parent.api.invoke('query-db-random', { db });
-        // return await this.csv_datas[db].get(col, val);
-    }
-
-    async csvLookup(db: string, col: string, val: string): Promise<string | null> {
-        const window_parent: any = window.parent;
-        return await window_parent.api.invoke('query-db', { db, col, val });
-        // return await this.csv_datas[db].get(col, val);
     }
 
     async check_labeled_connector(connector: string, str: string): Promise<string | null> {
@@ -328,7 +317,7 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
 
                     for (const part of parts) {
                         const cleanedPart = part.replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
-                        const res = await this.csvLookup(db, col, cleanedPart);
+                        const res = await this._lookup.cell(db, col, cleanedPart);
                         if (Boolean(res && res.length) === shouldMatch) {
                             matchedParts.push(part);
                         }
@@ -406,9 +395,8 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
         }
 
         if (!best.found) {
-            let else_connector = null;
             // Check if we need to fire a trigger -- after checking responses to query by the bot!
-            for (const block of blocks) {
+            for (const block of Object.values(blocks) as any[]) {
                 if (block.type === 'Trigger') {
                     const candidate = await this.find_best_connector(block, str, str);
                     if (candidate.connector) {

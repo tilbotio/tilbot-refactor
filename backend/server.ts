@@ -28,10 +28,10 @@ import {
   TilBotProjectNotFoundError,
 } from './errors.ts';
 import type { ProjectControllerInterface } from '../common/projectcontroller/types';
-import { LocalProjectController } from '../common/projectcontroller/local';
-import { ServerControllerLookup, ServerControllerOutput } from './projectcontroller';
-import { Logger } from './logger';
-import { CsvData } from '../common/csvdata';
+import { LocalProjectController } from '../common/projectcontroller/local.ts';
+import { ServerControllerLookup, ServerControllerOutput } from './projectcontroller.ts';
+import { Logger } from './logger.ts';
+import { CsvData } from '../common/csvdata.ts';
 import LLM from '../app/llm.cjs';
 
 // Generate a somewhat persistent token:
@@ -300,8 +300,6 @@ app.post('/api/import_project', async (req, res) => {
   const zip = new AdmZip(raw.files.file.tempFilePath);
   const zipEntries = zip.getEntries(); // an array of ZipEntry records
 
-  console.log(zipEntries);
-
   let project_data: string | null = null;
 
   zipEntries.forEach(zipEntry => {
@@ -396,7 +394,7 @@ app.get('/api/create_conversation', async (req, res) => {
   const llm: any = LLM.fromSettings(settings);
   const csv_datas: any = {};
 
-  const p = `${__dirname}/../projects/${project.id}`;
+  const p = `${__dirname}/projects/${project.id}`;
 
   // Set up the data files
   for (const variable of project.variables) {
@@ -432,6 +430,7 @@ app.get('/ws/chat', { websocket: true }, async (socket, req) => {
     output.socket.close();
     output.socket = null;
   }
+  output.socket = socket;
 
   socket.addEventListener('open', () => {
     if (output.socket) {
@@ -481,7 +480,7 @@ async function stop_bot(projectId: string) {
     console.error(`Error stopping bot: ${error}`);
   }
 
-  const socket = projectControllers[projectId].socket;
+  const socket = projectControllers[projectId]?.socket;
   if (socket) {
     socket.close();
   }
