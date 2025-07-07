@@ -233,7 +233,7 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
             })();
         } else {
             setTimeout(() => {
-                console.log(`sending message '${input}' for block ${JSON.stringify(block)}`)
+                console.log(`sending message '${input}' for block ${JSON.stringify(block)}`);
                 this.send_message(block, input);
             }, (block.delay ?? 0) * 1000);
         }
@@ -395,6 +395,7 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
         }
 
         if (!best.found) {
+            // console.log("No connector for current block found, looking for triggers");
             // Check if we need to fire a trigger -- after checking responses to query by the bot!
             for (const block of Object.values(blocks) as any[]) {
                 if (block.type === 'Trigger') {
@@ -416,6 +417,8 @@ export class LocalProjectController<ProjectControllerOutputType extends ProjectC
             this.send_events(connector, output as string);
             this._send_current_message(output as string);
         }
+
+        // console.log(best);
     }
 
     set_participant_id(pid: string) {

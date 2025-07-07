@@ -446,25 +446,29 @@ app.get('/ws/chat', { websocket: true }, async (socket, req) => {
       output.socket = null;
     }
   });
-
+ 
   socket.addEventListener('message', (e: MessageEvent) => {
-    const [command, ...args] = JSON.parse(e.data);
-    switch (command) {
-      case 'message sent':
-        projectController.message_sent_event();
-        break;
+    try {
+      const [command, ...args] = JSON.parse(e.data);
+      switch (command) {
+        case 'message sent':
+          projectController.message_sent_event();
+          break;
 
-      case 'user_message':
-        projectController.receive_message(...args as [string]);
-        break;
+        case 'user_message':
+          projectController.receive_message(...args as [string]);
+          break;
 
-      case 'log':
-        projectController.log(...args as [string]);
-        break;
+        case 'log':
+          projectController.log(...args as [string]);
+          break;
 
-      case 'pid':
-        projectController.set_participant_id(...args as [string]);
-        break;
+        case 'pid':
+          projectController.set_participant_id(...args as [string]);
+          break;
+      }
+    } catch (error) {
+      console.error(error);
     }
   });
 });
