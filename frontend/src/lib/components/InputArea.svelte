@@ -22,8 +22,7 @@
     placeholder=""
     bind:value={inputText}
   ></textarea>
-  <!--TODO: Don't send empty messages-->
-  {#if inputText}
+  {#if inputText && inputText.trim().length > 0}
     <button
       class="btn btn-circle absolute bottom-4 right-4"
       aria-label="Send message"
