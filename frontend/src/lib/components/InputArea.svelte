@@ -4,15 +4,20 @@
   type Props = {
     inputMode: "text" | "mc";
     onSend: (inputText: string) => void;
+    onScanner: () => void;
   };
 
   let inputText: inputText = $state("");
 
-  const { inputMode, onSend }: Props = $props();
+  const { inputMode, onSend, onScanner }: Props = $props();
 
   function handleTextSubmit(): void {
     onSend(inputText);
     inputText = "";
+  }
+
+  function openBarcodeReader(): void {
+    onScanner();
   }
 </script>
 
@@ -29,11 +34,10 @@
       onclick={handleTextSubmit}><PaperAirplane class="h-6 w-6" /></button
     >
   {:else}
-    <!--TODO: Replace temporary handleTextSubmit with callback function from parent for opening the barcode scanner.-->
     <button
       class="btn btn-circle absolute bottom-4 right-4"
       aria-label="Scan barcode"
-      onclick={handleTextSubmit}><QrCode class="h-6 w-6"></QrCode></button
+      onclick={onScanner}><QrCode class="h-6 w-6"></QrCode></button
     >
   {/if}
 </div>

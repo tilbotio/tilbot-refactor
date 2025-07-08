@@ -36,6 +36,10 @@
     },
   ]);
 
+  function openBarcodeReader(): void {
+    showBarcodeScanner = true;
+  }
+
   function closeBarcodeReader(): void {
     showBarcodeScanner = false;
   }
@@ -63,5 +67,9 @@
   <div class="w-full h-full flex-1 overflow-y-scroll py-2">
     <MessageList {messages} />
   </div>
-  <InputArea {inputMode} onSend={sendUserMessage} />
+  <InputArea
+    {inputMode}
+    onSend={sendUserMessage}
+    onScanner={openBarcodeReader}
+  />
 </div>
