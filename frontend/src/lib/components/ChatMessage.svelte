@@ -1,7 +1,6 @@
 <script lang="ts">
   import Avatar from "./Avatar.svelte";
-  import type { Message } from "$lib/types/MiscTypes";
-  import type { NewBotMessageBlock } from "$lib/types/MiscTypes";
+  import type { Message, NewBotMessageBlock } from "$lib/types/types";
 
   type Props = {
     message: Message;

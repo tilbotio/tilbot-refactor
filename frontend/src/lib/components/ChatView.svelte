@@ -4,7 +4,8 @@
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { getContext } from "svelte";
   import MessageList from "./MessageList.svelte";
-  import type { InputMode, ShowBarcodeScanner } from "$lib/types/MiscTypes";
+  import type { InputMode, ShowBarcodeScanner } from "$lib/types/types";
+  import InputArea from "./InputArea.svelte";
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
 
@@ -44,6 +45,11 @@
     // user_message(`barcode: ${decoded}`);
     console.log(`Code scanned: ${decoded}`);
   }
+
+  //Temporary sendMessage function to test functionality between components
+  function sendUserMessage(messageText: string): void {
+    messages.push({ from: "user", content: messageText });
+  }
 </script>
 
 {#if showBarcodeScanner}
@@ -57,4 +63,5 @@
   <div class="w-full h-full flex-1 overflow-y-scroll py-2">
     <MessageList {messages} />
   </div>
+  <InputArea {inputMode} />
 </div>
