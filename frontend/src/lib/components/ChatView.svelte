@@ -63,5 +63,5 @@
   <div class="w-full h-full flex-1 overflow-y-scroll py-2">
     <MessageList {messages} />
   </div>
-  <InputArea {inputMode} />
+  <InputArea {inputMode} onSend={sendUserMessage} />
 </div>

@@ -1,13 +1,19 @@
 <script lang="ts">
   import type { inputText } from "$lib/types/types";
-  import { PaperAirplane, Plus, QrCode } from "svelte-heros-v2";
+  import { PaperAirplane, QrCode } from "svelte-heros-v2";
   type Props = {
     inputMode: "text" | "mc";
+    onSend: (inputText: string) => void;
   };
 
   let inputText: inputText = $state("");
 
-  const { inputMode }: Props = $props();
+  const { inputMode, onSend }: Props = $props();
+
+  function handleTextSubmit(): void {
+    onSend(inputText);
+    inputText = "";
+  }
 </script>
 
 <div class="bg-gray-100 w-full h-20 drop-shadow-md">
@@ -16,7 +22,19 @@
     placeholder=""
     bind:value={inputText}
   ></textarea>
+  <!--TODO: Don't send empty messages-->
   {#if inputText}
-    <button class="btn btn-circle absolute bottom-4 right-4">BUTTON</button>
+    <button
+      class="btn btn-circle absolute bottom-4 right-4"
+      aria-label="Send message"
+      onclick={handleTextSubmit}><PaperAirplane class="h-6 w-6" /></button
+    >
+  {:else}
+    <!--TODO: Replace temporary handleTextSubmit with callback function from parent for opening the barcode scanner.-->
+    <button
+      class="btn btn-circle absolute bottom-4 right-4"
+      aria-label="Scan barcode"
+      onclick={handleTextSubmit}><QrCode class="h-6 w-6"></QrCode></button
+    >
   {/if}
 </div>
