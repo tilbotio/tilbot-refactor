@@ -1,4 +1,9 @@
-import { BasicProjectController } from '../../shared/controllers/basicproject';
+import type {
+    ProjectControllerInterface,
+    ProjectControllerOutputInterface,
+    ProjectControllerLookupInterface,
+    ProjectControllerLoggerInterface,
+} from './types';
 
 // RegExp.escape() is a bit new
 const regexEscape: (str: string) => string = (RegExp as any).escape ||
@@ -6,42 +11,66 @@ const regexEscape: (str: string) => string = (RegExp as any).escape ||
         return str.replace(/[\\^$*+?.()|\[\]{}]/g, '\\$&');
     };
 
-export class LocalProjectController extends BasicProjectController {
+export class LocalProjectController<ProjectControllerOutputType extends ProjectControllerOutputInterface> implements ProjectControllerInterface<ProjectControllerOutputType> {
+    private _lookup: ProjectControllerLookupInterface;
+    private _output: ProjectControllerOutputType;
+    private _logger: ProjectControllerLoggerInterface;
+    private _project: any;
+    private _current_block_id: number;
+    private _selected_group_blocks: any[] = [];
+    private _client_vars: any;
 
-    private current_block_id: number;
-    private chatbot_message_callback: Function;
-    private chatbot_settings_callback: Function;
-    private variation_request_callback: Function;
-    private client_vars: any;
+    constructor(
+        lookup: ProjectControllerLookupInterface,
+        output: ProjectControllerOutputType,
+        logger: ProjectControllerLoggerInterface,
+        project: any,
+    ) {
+        this._lookup = lookup;
+        this._output = output;
+        this._logger = logger;
+        this._project = project;
+        this._current_block_id = project.starting_block_id;
+        this._client_vars = {};
 
-    // Keep track of time because it may take the LLM time to generate a response.
-    // We subtract this response time from the (artificial) typing delay since it has already passed.
-    private cur_time: number = 0;
+        output.settings(project.settings ?? {
+            'typing_style': 'fixed',
+            'typing_time': 2,
+            'typing_charpsec': 40,
+            'show_avatar': 'yes',
+            'name': 'Tilbot'
+        });
 
-    constructor(json_str: string, chatbot_message_callback: Function, chatbot_settings_callback: Function, variation_request_callback: Function) {
-        super();
-
-        this.chatbot_message_callback = chatbot_message_callback;
-        this.chatbot_settings_callback = chatbot_settings_callback;
-        this.variation_request_callback = variation_request_callback;
-        this.project = JSON.parse(json_str);
-        this.current_block_id = this.project.starting_block_id;
-        this.client_vars = {};
-
-        if (this.project.settings === undefined) {
-            this.project.settings = {
-                'typing_style': 'fixed',
-                'typing_time': 2,
-                'typing_charpsec': 40,
-                'show_avatar': 'yes',
-                'name': 'Tilbot'
-            };
+        const starting_block_id = project.starting_block_id ?? -1;
+        if (starting_block_id !== -1) {
+            this.send_message(this._project.blocks[starting_block_id.toString()]);
         }
+    }
 
-        this.chatbot_settings_callback(this.project.settings);
-        if (this.project.starting_block_id !== undefined && this.project.starting_block_id !== -1) {
-            this.send_message(this.project.blocks[this.project.starting_block_id.toString()]);
-        }
+    get output(): ProjectControllerOutputType {
+        return this._output;
+    }
+
+    get_path() {
+        // console.log(this._selected_group_blocks);
+
+        const path = this._selected_group_blocks.map(block => block.id);
+
+        // console.log(path);
+
+        return path;
+    }
+
+    move_to_group(params: any) {
+        this._selected_group_blocks.push(params);
+    }
+
+    move_level_up() {
+        this._selected_group_blocks.pop();
+    }
+
+    move_to_root() {
+        this._selected_group_blocks = [];
     }
 
     async send_events(connector: any, input_str: string) {
@@ -57,7 +86,7 @@ export class LocalProjectController extends BasicProjectController {
             } else if (type == 'variable') {
                 const var_name = event.var_name;
                 const var_value = event.var_value;
-                const client_vars = this.client_vars;
+                const client_vars = this._client_vars;
 
                 const regExp = /\[([^\]]+)\]/g;
                 const matches = regExp.exec(var_value);
@@ -74,7 +103,7 @@ export class LocalProjectController extends BasicProjectController {
                     // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
                     if (bracketedText.toLowerCase().startsWith('random(')) {
                         const db = bracketedText.substring(7, bracketedText.indexOf(')'));
-                        const res = await this.csvLookupRandom(db);
+                        const res = await this._lookup.random(db);
                         if (res !== null) {
                             client_vars[var_name] = res;
                         }
@@ -102,21 +131,21 @@ export class LocalProjectController extends BasicProjectController {
                 }
             }
 
-            this.chatbot_message_callback({ type, content, params });
+            this._output.botMessage({ type, content, params });
         } else if (type == 'List') {
             params.options = block.items;
             params.text_input = block.text_input;
             params.number_input = block.number_input;
 
-            this.chatbot_message_callback({ type, content, params });
+            this._output.botMessage({ type, content, params });
         } else if (type == 'Group') {
-            this.move_to_group({ id: this.current_block_id, model: block });
-            this.current_block_id = block.starting_block_id;
+            this.move_to_group({ id: this._current_block_id, model: block });
+            this._current_block_id = block.starting_block_id;
             this.send_message(block.blocks[block.starting_block_id]);
         } else {
             const has_targets = block.connectors[0].targets.length > 0;
 
-            this.chatbot_message_callback({ type, content, params, has_targets });
+            this._output.botMessage({ type, content, params, has_targets });
         }
     }
 
@@ -127,21 +156,21 @@ export class LocalProjectController extends BasicProjectController {
             const group_block_id = path[path.length - 1];
             this.move_level_up();
 
-            let block = this.project;
+            let block = this._project;
             for (const step of path) {
                 block = block.blocks[step];
             }
 
             for (const connector of block.blocks[group_block_id.toString()].connectors) {
-                if (connector.from_id == this.current_block_id) {
+                if (connector.from_id == this._current_block_id) {
                     var new_id = connector.targets[0];
-                    this.current_block_id = group_block_id;
+                    this._current_block_id = group_block_id;
                     this.check_group_exit(new_id);
                     break;
                 }
             }
         } else {
-            this.current_block_id = id;
+            this._current_block_id = id;
             this._send_current_message();
         }
     }
@@ -149,20 +178,20 @@ export class LocalProjectController extends BasicProjectController {
     message_sent_event(): void {
         const path = this.get_path();
         if (path.length == 0) {
-            const current_block = this.project.blocks[this.current_block_id.toString()];
+            const current_block = this._project.blocks[this._current_block_id.toString()];
             if (current_block.type === 'Auto') {
                 const connector = current_block.connectors[0];
                 this.send_events(connector, '');
-                this.current_block_id = connector.targets[0];
+                this._current_block_id = connector.targets[0];
                 this._send_current_message();
             }
         } else {
-            let block = this.project;
+            let block = this._project;
             for (const step of path) {
                 block = block.blocks[step];
             }
 
-            const current_block = block.blocks[this.current_block_id.toString()];
+            const current_block = block.blocks[this._current_block_id.toString()];
             if (current_block.type == 'Auto') {
                 const new_id = current_block.connectors[0].targets[0];
                 this.check_group_exit(new_id);
@@ -171,77 +200,62 @@ export class LocalProjectController extends BasicProjectController {
     }
 
     _send_current_message(input: string = ''): void {
-        if (this.current_block_id == undefined || this.current_block_id == -1) {
+        const current_block_id = this._current_block_id ?? -1;
+        if (current_block_id == -1) {
             return;
         }
 
-        let block = this.project;
+        let block = this._project;
         for (const step of this.get_path()) {
             block = block.blocks[step];
         }
-        block = block.blocks[this.current_block_id.toString()];
+        block = block.blocks[current_block_id.toString()];
 
         if (block.chatgpt_variation) {
             const content = this.check_variables(block.content, input);
             const prompt = this.check_variables(block.variation_prompt);
 
-            this.cur_time = Date.now();
-            this.variation_request_callback(content, prompt, block.chatgpt_memory);
+            // Keep track of time because it may take the LLM time to generate a response.
+            // We subtract this response time from the (artificial) typing delay since it has already passed.
+            const cur_time = Date.now();
+
+            (async () => {
+                const variation = await this._lookup.variation(content, prompt, block.chatgpt_memory);
+
+                const variationBlock = { ...block, content: variation };
+
+                const delay = variationBlock.delay * 1000 - (Date.now() - cur_time);
+                if (delay > 0) {
+                    setTimeout(() => { this.send_message(variationBlock); }, delay);
+                } else {
+                    this.send_message(variationBlock);
+                }
+            })();
         } else {
             setTimeout(() => {
+                console.log(`sending message '${input}' for block ${JSON.stringify(block)}`);
                 this.send_message(block, input);
-            }, block.delay * 1000);
+            }, (block.delay ?? 0) * 1000);
         }
     }
 
     check_variables(content: string, input: string = ''): string {
         return content.replaceAll(/\[([^\]]+)\]/g, (_, bracketedText) => {
             if (bracketedText === 'input') {
-               return input;
+                return input;
             } else {
                 // If it's a column from a CSV table, there should be a period.
                 // Element 1 of the match contains the string without the brackets.
                 const csv_parts = bracketedText.split('.');
                 if (csv_parts.length == 2) {
                     const [db, col] = csv_parts;
-                    const client_db = this.client_vars[db] ?? {};
+                    const client_db = this._client_vars[db] ?? {};
                     return this.check_variables(client_db[col] ?? "", input);
                 } else {
-                    return this.check_variables(this.client_vars[bracketedText] ?? "", input);
+                    return this.check_variables(this._client_vars[bracketedText] ?? "", input);
                 }
             }
         });
-    }
-
-    receive_variation(str: string) {
-        // @TODO: handle error messages in requesting variation from ChatGPT
-        let block = this.project;
-
-        for (const step of this.get_path()) {
-            block = block.blocks[step];
-        }
-
-        block = JSON.parse(JSON.stringify(block.blocks[this.current_block_id.toString()]));
-        block.content = str;
-
-        const delay = block.delay * 1000 - (Date.now() - this.cur_time);
-        if (delay > 0) {
-            setTimeout(() => { this.send_message(block); }, delay);
-        } else {
-            this.send_message(block);
-        }
-    }
-
-    async csvLookupRandom(db: string): Promise<string | null> {
-        const window_parent: any = window.parent;
-        return await window_parent.api.invoke('query-db-random', { db });
-        // return await this.csv_datas[db].get(col, val);
-    }
-
-    async csvLookup(db: string, col: string, val: string): Promise<string | null> {
-        const window_parent: any = window.parent;
-        return await window_parent.api.invoke('query-db', { db, col, val });
-        // return await this.csv_datas[db].get(col, val);
     }
 
     async check_labeled_connector(connector: string, str: string): Promise<string | null> {
@@ -275,11 +289,10 @@ export class LocalProjectController extends BasicProjectController {
 
             // If it's a column from a CSV table, there should be a period.
             // Element 1 of the match contains the string without the brackets.
-            let csv_parts = bracketedText.split('.');
+            const csv_parts = bracketedText.split('.');
 
             if (csv_parts.length == 2) {
-                let db = csv_parts[0];
-                let col = csv_parts[1];
+                let [db, col] = csv_parts;
 
                 if (db.startsWith('!')) {
                     shouldMatch = false;
@@ -287,11 +300,11 @@ export class LocalProjectController extends BasicProjectController {
                 }
 
                 // Check if local variable
-                if (db in this.client_vars) {
-                    const varOptions = this.client_vars[db][col].split('|');
+                if (db in this._client_vars) {
+                    const varOptions = this._client_vars[db][col].split('|');
 
                     for (const option of varOptions) {
-                        let escapedOption = regexEscape(option);
+                        const escapedOption = regexEscape(option);
                         if (str.match(new RegExp("\\b" + escapedOption + "\\b", "i")) != null) {
                             return shouldMatch ? option : null;
                         }
@@ -300,11 +313,11 @@ export class LocalProjectController extends BasicProjectController {
                     return shouldMatch ? null : '';
                 } else {
                     const parts = str.split(' ');
-                    const matchedParts = [];
+                    const matchedParts: string[] = [];
 
                     for (const part of parts) {
                         const cleanedPart = part.replace('barcode:', '').replace('?', '').replace('!', '').replace('.', '');
-                        const res = await this.csvLookup(db, col, cleanedPart);
+                        const res = await this._lookup.cell(db, col, cleanedPart);
                         if (Boolean(res && res.length) === shouldMatch) {
                             matchedParts.push(part);
                         }
@@ -313,7 +326,7 @@ export class LocalProjectController extends BasicProjectController {
                     return matchedParts.length ? matchedParts.join(' ') : null;
                 }
             } else {
-                if (bracketedText in this.client_vars && this.client_vars[bracketedText] == str) {
+                if (bracketedText in this._client_vars && this._client_vars[bracketedText] == str) {
                     return str;
                 } else {
                     return '';
@@ -343,7 +356,7 @@ export class LocalProjectController extends BasicProjectController {
                 // @TODO: distinguish between contains / exact match options
                 const ands = label.split(/\s*\[and\]\s*/);
                 let num_match = 0;
-                let last_found_output = null;
+                let last_found_output: string | null = null;
 
                 for (const and of ands) {
                     const output = await this.check_labeled_connector(and, str);
@@ -373,18 +386,18 @@ export class LocalProjectController extends BasicProjectController {
             output: string | null;
         } = { found: false, connector: null, output: null };
 
-        const blocks = this.project.blocks;
-        if (this.current_block_id !== undefined && this.current_block_id !== -1) {
-            const current_block = blocks[this.current_block_id.toString()];
+        const blocks = this._project.blocks;
+        if (this._current_block_id !== undefined && this._current_block_id !== -1) {
+            const current_block = blocks[this._current_block_id.toString()];
             if (current_block.type !== 'Auto') {
                 best = await this.find_best_connector(current_block, str, str);
             }
         }
 
         if (!best.found) {
-            let else_connector = null;
+            // console.log("No connector for current block found, looking for triggers");
             // Check if we need to fire a trigger -- after checking responses to query by the bot!
-            for (const block of blocks) {
+            for (const block of Object.values(blocks) as any[]) {
                 if (block.type === 'Trigger') {
                     const candidate = await this.find_best_connector(block, str, str);
                     if (candidate.connector) {
@@ -400,14 +413,19 @@ export class LocalProjectController extends BasicProjectController {
 
         if (best.connector) {
             const { connector, output } = best;
-            this.current_block_id = connector.targets[0];
+            this._current_block_id = connector.targets[0];
             this.send_events(connector, output as string);
             this._send_current_message(output as string);
         }
+
+        // console.log(best);
     }
 
     set_participant_id(pid: string) {
-        // Not used right now
+        this._logger.set_participant_id(pid);
     }
 
+    log(message: string) {
+        this._logger.log("projectcontroller", message);
+    }
 }

@@ -1,4 +1,4 @@
-import  { dirname, resolve } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import Fastify from 'fastify';
 import { fastifySession } from '@fastify/session';
@@ -9,15 +9,16 @@ import fastifyFileUpload from 'fastify-file-upload';
 import fastifyMultiPart from '@fastify/multipart';
 import fastifyWebSocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
+import { MongoClient } from 'mongodb';
 import MongoStore from 'connect-mongo';
 import mongoose from 'mongoose';
 import AdmZip from 'adm-zip';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { randomBytes } from 'crypto';
-import { LogModel } from './db/log.js';
-import { ProjectModel } from './db/project.js';
-import { UserModel } from './db/user.js';
-import { SettingsModel } from './db/settings.js';
+import { LogModel } from './db/log.ts';
+import { ProjectModel } from './db/project.ts';
+import { UserModel } from './db/user.ts';
+import { SettingsModel } from './db/settings.ts';
 import {
   TilBotError,
   TilBotUserNotAdminError,
@@ -25,12 +26,16 @@ import {
   TilBotUserIsAdminError,
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
-} from './errors.js';
-import ProjectController from '../app/projectcontroller.cjs';
+} from './errors.ts';
+import type { ProjectControllerInterface } from '../common/projectcontroller/types';
+import { LocalProjectController } from '../common/projectcontroller/local.ts';
+import { ServerControllerLookup, ServerControllerOutput } from './projectcontroller.ts';
+import { Logger } from './logger.ts';
+import { CsvData } from '../common/csvdata.ts';
 import LLM from '../app/llm.cjs';
 
 // Generate a somewhat persistent token:
-function getOrCreateToken(tokenPath) {
+function getOrCreateToken(tokenPath: string): string {
   try {
     return readFileSync(tokenPath, { encoding: 'utf8' });
   } catch (error) {
@@ -46,6 +51,7 @@ function getOrCreateToken(tokenPath) {
   }
 }
 
+// const __dirname = dirname(__filename);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // For the MongoDB connection
@@ -57,16 +63,18 @@ const app = Fastify({ logger: true });
 
 // Do initialization work in parallel (because why not):
 await Promise.all([
-  mongoose.connect(dbPath, { useNewUrlParser: true, useUnifiedTopology: true }),
+  mongoose.connect(dbPath),
 
   app.register(fastifyWebSocket),
 
   app.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET || getOrCreateToken('/tmp/cookie-secret'),
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    secure: Boolean(process.env.HTTPS),
-    httpOnly: true,
-    sameSite: 'none',
+    parseOptions: {
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      secure: Boolean(process.env.HTTPS),
+      httpOnly: true,
+      sameSite: 'none',
+    },
   }),
 
   app.register(fastifySession, {
@@ -75,7 +83,8 @@ await Promise.all([
     },
     secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
     store: MongoStore.create({
-      client: mongoose.connection.getClient(),
+      // mongodb npm version confusion leads to an unfortunate type conflict:
+      client: mongoose.connection.getClient() as unknown as MongoClient,
       stringify: false,
       autoRemoveInterval: 600, // minutes
     }),
@@ -103,20 +112,21 @@ await Promise.all([
   app.register(fastifyMultiPart),
 ]);
 
-
 // add a route that lives separately from the SvelteKit app
 app.post('/api/login', async (req, res) => {
-  const user = await UserModel.getByUsername(req.body.username);
-  await user.checkPassword(req.body.password);
-  req.session.username = req.body.username;
-  req.session.save();
+  const body: any = req.body;
+  const user = await UserModel.getByUsername(body.username);
+  await user.checkPassword(body.password);
+  const session: any = req.session;
+  session.username = body.username;
+  session.save();
 });
 
 app.get('/api/admin_account_exists', async (req, res) => {
   if (await UserModel.adminAccountExists()) {
     return 'EXISTS';
   } else {
-    await UserModel.create('admin', 'admin', 99);
+    await UserModel.register('admin', 'admin', 99);
     return 'CREATED';
   }
 });
@@ -126,32 +136,38 @@ app.post('/api/logout', async (req, res) => {
 });
 
 app.post('/api/change_pass', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
-  await user.updatePassword(req.body.oldpass, req.body.newpass);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
+  const body: any = req.body;
+  await user.updatePassword(body.oldpass, body.newpass);
 });
 
 app.post('/api/create_user_account', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
   // Check if user is admin
   if (user.role != 99) {
     throw new TilBotUserNotAdminError();
   }
-  await UserModel.create(req.body.username, req.body.password, 1);
+  const body: any = req.body;
+  await UserModel.register(body.username, body.password, 1);
 });
 
 app.post('/api/set_user_active', async (req, res) => {
-  const session_user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const session_user = await UserModel.getByUsername(session.username);
   if (session_user.role != 99) {
     throw new TilBotUserNotAdminError();
   }
 
-  const user = await UserModel.getByUsername(req.body.username);
-  user.active = req.body.active;
+  const body: any = req.body;
+  const user = await UserModel.getByUsername(body.username);
+  user.active = body.active;
   await user.save();
   // If a user was set to inactive, stop all of their running projects.
-  if (!req.body.active) {
+  if (!body.active) {
     const projects = await ProjectModel.find({
-      user_id: req.body.username,
+      user_id: body.username,
       active: true,
       status: 1,
     });
@@ -164,12 +180,13 @@ app.post('/api/set_user_active', async (req, res) => {
 });
 
 app.get('/api/get_dashboard', async (req, res) => {
+  const session: any = req.session;
   // Return error message if not logged in
-  if (req.session.username == undefined) {
+  if (session.username == undefined) {
     throw new TilBotNotLoggedInError();
   }
-  const data = { 'username': req.session.username };
-  const user = await UserModel.getByUsername(req.session.username);
+  const data: any = { 'username': session.username };
+  const user = await UserModel.getByUsername(session.username);
   if (user.role == 99) { // admin, retrieve user accounts
     const users = await UserModel.getSummaries();
     for (const user of users) {
@@ -183,7 +200,7 @@ app.get('/api/get_dashboard', async (req, res) => {
     data.users = users;
   } else { // regular user, retrieve projects and settings
     data.projects = await ProjectModel.getSummaries({
-      user_id: req.session.username,
+      user_id: session.username,
       active: true,
     });
     data.settings = await user.getPermittedSettings();
@@ -192,54 +209,59 @@ app.get('/api/get_dashboard', async (req, res) => {
 });
 
 app.post('/api/create_project', async (req, res) => {
-  await ProjectModel.create(req.session.username);
+  const session: any = req.session;
+  await ProjectModel.register(session.username);
 });
 
 /**
  * API call: change a project's status (active/inactive)
  */
 app.post('/api/set_project_active', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
   if (user.role != 1) {
-    throw new TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(session.username);
   }
 
-  const project = await ProjectModel.getById(req.body.projectid, { user_id: req.session.username, active: true });
+  const body: any = req.body;
+  const project = await ProjectModel.getById(body.projectid, { user_id: session.username, active: true });
   if (project.status == 1) {
     // Stop project from running first
-    stop_bot(req.body.projectid);
+    stop_bot(body.projectid);
   }
 
-  if (req.body.active) {
+  if (body.active) {
     // @TODO: maybe at some point also make it possible to set the project back to active.
     throw new TilBotError();
   } else {
     // Make the project inactive
-    project.active = req.body.active;
+    project.active = body.active;
     await project.save();
   }
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
 app.post('/api/set_project_status', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
   if (user.role != 1) {
-    throw new TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(session.username);
   }
 
+  const body: any = req.body;
   // Ensure that this project is owned by the user who is logged in:
-  const project = await ProjectModel.getById(req.body.projectid, {
-    user_id: req.session.username,
+  const project = await ProjectModel.getById(body.projectid, {
+    user_id: session.username,
     active: true,
   });
 
-  console.log(req.body.status);
-  const status = req.body.status ? 1 : 0;
+  console.log(body.status);
+  const status = body.status ? 1 : 0;
   project.status = status;
   project.save();
 
   if (status == 0) {
-    stop_bot(req.body.projectid);
+    stop_bot(body.projectid);
   }
 });
 
@@ -252,7 +274,8 @@ app.post('/api/import_project', async (req, res) => {
   console.log('=== IMPORT PROJECT ===');
   console.log(req.body);
 
-  const project_id = req.body.project_id;
+  const body: any = req.body;
+  const project_id = body.project_id;
 
   // Be extra careful because we're going to do filesystem operations here!
   if (!/^[0-9a-f]{32}$/.test(project_id)) {
@@ -260,8 +283,9 @@ app.post('/api/import_project', async (req, res) => {
   }
 
   // Ensure that the project exists and is owned by the user:
-  console.log(`project id: '${project_id}' user: '${req.session.username}'`);
-  const project = await ProjectModel.getById(project_id, { user_id: req.session.username });
+  const session: any = req.session;
+  console.log(`project id: '${project_id}' user: '${session.username}'`);
+  const project = await ProjectModel.getById(project_id, { user_id: session.username });
 
   const priv_dir = 'projects/' + project_id;
   const pub_dir = 'proj_pub/' + project_id;
@@ -272,12 +296,11 @@ app.post('/api/import_project', async (req, res) => {
   rmSync(pub_dir, { recursive: true, force: true });
   mkdirSync(pub_dir, { recursive: true });
 
-  const zip = new AdmZip(req.raw.files.file.tempFilePath);
+  const raw: any = req.raw;
+  const zip = new AdmZip(raw.files.file.tempFilePath);
   const zipEntries = zip.getEntries(); // an array of ZipEntry records
 
-  console.log(zipEntries);
-
-  let project_data = null;
+  let project_data: string | null = null;
 
   zipEntries.forEach(zipEntry => {
     if (zipEntry.entryName == "project.json") {
@@ -310,25 +333,29 @@ app.post('/api/import_project', async (req, res) => {
  * API call: save a user's settings
  */
 app.post('/api/save_settings', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
   if (user.role !== 1) {
-    throw new TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(session.username);
   }
   const settings = await user.getSettings();
-  await settings.update(JSON.parse(req.body.settings));
+  const body: any = req.body;
+  await settings.updatePermitted(JSON.parse(body.settings));
 });
 
 // API call: get a project's log files
 app.get('/api/get_logs', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
   if (user.role !== 1) {
-    throw new TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(session.username);
   }
-  if (!req.query.projectid) {
+  const query: any = req.query;
+  if (!query.projectid) {
     throw new TilBotProjectNotFoundError();
   }
-  const project = await ProjectModel.getById(req.query.projectid, {
-    user_id: req.session.username,
+  const project = await ProjectModel.getById(query.projectid, {
+    user_id: session.username,
     active: true,
   });
   return project.getLogs();
@@ -336,34 +363,51 @@ app.get('/api/get_logs', async (req, res) => {
 
 // API call: delete a project's log files
 app.post('/api/delete_logs', async (req, res) => {
-  const user = await UserModel.getByUsername(req.session.username);
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
   if (user.role !== 1) {
-    throw new TilBotUserIsAdminError(req.session.username);
+    throw new TilBotUserIsAdminError(session.username);
   }
   // Ensure the project exists and is owned by the current user
-  await ProjectModel.getById(req.body.projectid, {
-    user_id: req.session.username,
+  const body: any = req.body;
+  await ProjectModel.getById(body.projectid, {
+    user_id: session.username,
     active: true,
   });
-  await LogModel.deleteMany({ project_id: req.body.projectid });
-  console.log(`Deleted logs: ${req.body.projectid}`);
+  await LogModel.deleteMany({ project_id: body.projectid });
+  console.log(`Deleted logs: ${body.projectid}`);
 });
 
 app.get('/api/sesh', async (req, res) => {
   console.log(req.session);
 });
 
-const projectControllers = new Map();
+const projectControllers: Map<string, ProjectControllerInterface<ServerControllerOutput>> = new Map();
 
 // API call: create a new conversation for a project -- anyone can do this, no need to be logged in.
 app.get('/api/create_conversation', async (req, res) => {
-  const project = await ProjectModel.getById(req.query.id, { active: true, status: 1 });
+  const query: any = req.query;
+  const projectId = query.id;
+  const project = await ProjectModel.getById(projectId, { active: true, status: 1 });
   const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
-  const projectController = new ProjectController(
-    project,
-    __dirname + '/../projects/' + project.id,
-    LLM.fromSettings(settings),
+  const llm: any = LLM.fromSettings(settings);
+  const csv_datas: any = {};
+
+  const p = `${__dirname}/projects/${project.id}`;
+
+  // Set up the data files
+  for (const variable of project.variables) {
+    if (variable.type == 'csv') {
+      csv_datas[variable.name] = new CsvData(variable.csvfile, p);
+    }
+  }
+
+  const projectController = new LocalProjectController(
+    new ServerControllerLookup(csv_datas, llm),
+    new ServerControllerOutput(),
+    new Logger(projectId),
+    project
   );
 
   const controllerId = randomBytes(16).toString('hex');
@@ -374,65 +418,74 @@ app.get('/api/create_conversation', async (req, res) => {
 });
 
 app.get('/ws/chat', { websocket: true }, async (socket, req) => {
-  const projectController = projectControllers.get(req.query.conversation);
+  const query: any = req.query;
+  const projectController = projectControllers.get(query.conversation);
   if (!projectController) {
-    throw new Error(`Conversation '${req.query.conversation}' not found`);
+    throw new Error(`Conversation '${query.conversation}' not found`);
   }
 
-  if (projectController.socket) {
-    projectController.socket.close();
-    projectController.socket = null;
+  const output = projectController.output;
+
+  if (output.socket) {
+    output.socket.close();
+    output.socket = null;
   }
+  output.socket = socket;
 
   socket.addEventListener('open', () => {
-    if (projectController.socket) {
+    if (output.socket) {
       // We're late to the party.
       socket.close();
     } else {
-      projectController.socket = socket;
+      output.socket = socket;
     }
   });
 
   socket.addEventListener('close', () => {
-    if (projectController.socket === socket) {
-      projectController.socket = null;
+    if (output.socket === socket) {
+      output.socket = null;
     }
   });
+ 
+  socket.addEventListener('message', (e: MessageEvent) => {
+    try {
+      const [command, ...args] = JSON.parse(e.data);
+      switch (command) {
+        case 'message sent':
+          projectController.message_sent_event();
+          break;
 
-  socket.addEventListener('message', e => {
-    const [command, ...args] = JSON.parse(e.data);
-    switch (command) {
-      case 'message sent':
-        projectController.message_sent_event(...args);
-        break;
+        case 'user_message':
+          projectController.receive_message(...args as [string]);
+          break;
 
-      case 'user_message':
-        projectController.receive_message(...args);
-        break;
+        case 'log':
+          projectController.log(...args as [string]);
+          break;
 
-      case 'log':
-        projectController.log(...args);
-        break;
-
-      case 'pid':
-        projectController.set_participant_id(...args);
-        break;
+        case 'pid':
+          projectController.set_participant_id(...args as [string]);
+          break;
+      }
+    } catch (error) {
+      console.error(error);
     }
   });
 });
 
-async function stop_bot(projectId) {
+async function stop_bot(projectId: string) {
   console.log(`stopping ${projectId}`);
 
   try {
-    const project = await ProjectModel.getById(projectid);
+    const project = await ProjectModel.getById(projectId);
     project.status = 0;
     await project.save();
   } catch (error) {
     console.error(`Error stopping bot: ${error}`);
   }
 
-  for (const socket of Object.values(socketClients[projectId] ?? {})) {
+  const socket = projectControllers[projectId]?.socket;
+  if (socket) {
     socket.close();
   }
 };
