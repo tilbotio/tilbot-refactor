@@ -1,4 +1,4 @@
-export type InputMode = 'text' | 'mc';
+export type CurrentMessageType = 'text' | 'mc';
 
 export type Message = {
     from: 'bot' | 'user' | 'chatgpt';
@@ -9,4 +9,6 @@ export type NewBotMessageBlock = boolean;
 
 export type ShowBarcodeScanner = boolean;
 
-export type inputText = string;
+export type InputText = string;
+
+export type McOption = { content: string };

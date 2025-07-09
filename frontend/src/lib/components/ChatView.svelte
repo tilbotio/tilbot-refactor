@@ -4,13 +4,18 @@
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { getContext } from "svelte";
   import MessageList from "./MessageList.svelte";
-  import type { InputMode, ShowBarcodeScanner } from "$lib/types/types";
+  import type {
+    CurrentMessageType,
+    McOption,
+    ShowBarcodeScanner,
+  } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
-  let inputMode: InputMode = $state("text");
+  let currentMessageType: CurrentMessageType = $state("text");
+  let mcOptions: McOption[] = $state([]);
 
   // let messages: Array<any> = $state([]);
   // Messages array below is for testing purposes only, replace with line above after development.
@@ -40,6 +45,18 @@
     showBarcodeScanner = true;
   }
 
+  //Temporary function to test receiving a MC message
+  function testMcOptions(): void {
+    currentMessageType = "mc";
+    const testOptions = [
+      { content: "yes" },
+      { content: "no" },
+      { content: "sure" },
+      { content: "womble" },
+    ];
+    mcOptions = testOptions;
+  }
+
   function closeBarcodeReader(): void {
     showBarcodeScanner = false;
   }
@@ -53,6 +70,8 @@
   //Temporary sendMessage function to test functionality between components
   function sendUserMessage(messageText: string): void {
     messages.push({ from: "user", content: messageText });
+    // Reset currentMessageType to text by default
+    currentMessageType = "text";
   }
 </script>
 
@@ -64,11 +83,13 @@
   {#if runtimeContext.showHeader}
     <ChatHeader />
   {/if}
+  <button onclick={testMcOptions}>Test MC</button>
   <div class="w-full h-full flex-1 overflow-y-scroll py-2">
     <MessageList {messages} />
   </div>
   <InputArea
-    {inputMode}
+    {currentMessageType}
+    {mcOptions}
     onSend={sendUserMessage}
     onScanner={openBarcodeReader}
   />
