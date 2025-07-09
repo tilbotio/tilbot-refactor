@@ -1,6 +1,10 @@
 <script lang="ts">
   import Avatar from "./Avatar.svelte";
-  import type { Message, NewBotMessageBlock } from "$lib/types/types";
+  import type {
+    AvatarContext,
+    Message,
+    NewBotMessageBlock,
+  } from "$lib/types/types";
 
   type Props = {
     message: Message;
@@ -8,6 +12,8 @@
   };
 
   let { message, newBotMessageBlock }: Props = $props();
+
+  const avatarContext: AvatarContext = "chatmessage";
 
   function determineLayout(author: string): [string, string] {
     switch (author) {
@@ -27,7 +33,7 @@
   {#if newBotMessageBlock}
     <div class="chat-image avatar">
       <div class="w-10">
-        <Avatar />
+        <Avatar {avatarContext} />
       </div>
     </div>
   {/if}

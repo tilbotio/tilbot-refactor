@@ -5,4 +5,5 @@ export interface ChatSettings {
     showAvatar: boolean;
     avatarFile: string | null;
     name: string;
+    chatbotAvatarFile: string | null;
 }
