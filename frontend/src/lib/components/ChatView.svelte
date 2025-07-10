@@ -45,18 +45,6 @@
     showBarcodeScanner = true;
   }
 
-  //Temporary function to test receiving a MC message
-  function testMcOptions(): void {
-    currentMessageType = "mc";
-    const testOptions = [
-      { content: "yes" },
-      { content: "no" },
-      { content: "sure" },
-      { content: "womble" },
-    ];
-    mcOptions = testOptions;
-  }
-
   function closeBarcodeReader(): void {
     showBarcodeScanner = false;
   }
@@ -83,7 +71,6 @@
   {#if runtimeContext.showHeader}
     <ChatHeader />
   {/if}
-  <button onclick={testMcOptions}>Test MC</button>
   <div class="w-full h-full flex-1 overflow-y-scroll py-2">
     <MessageList {messages} />
   </div>
