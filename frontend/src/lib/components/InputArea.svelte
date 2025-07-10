@@ -17,6 +17,7 @@
   const { currentMessageType, mcOptions, onSend, onScanner }: Props = $props();
 
   function handleTextSubmit(): void {
+    console.log("Text submitted");
     onSend(inputText);
     inputText = "";
   }
@@ -32,7 +33,11 @@
   function handleKeyDown(event: KeyboardEvent): void {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      handleTextSubmit();
+      if (inputText.trim() === "") {
+        return;
+      } else {
+        handleTextSubmit();
+      }
     }
   }
 </script>
