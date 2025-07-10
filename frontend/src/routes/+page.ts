@@ -9,6 +9,7 @@ export const load: PageLoad = ({ url, fetch }) => {
     path: "",
     conversationId: null,
     // As showHeader is not altered in the application, we do not consider it a state
+    isTilbotEditor: true,
     showHeader: showHeaderParam === "1",
     participantId: url.searchParams.get("pid") || null,
     projectId: url.searchParams.get("project") || null,
