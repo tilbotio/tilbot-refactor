@@ -28,6 +28,13 @@
   function openBarcodeReader(): void {
     onScanner();
   }
+
+  function handleKeyDown(event: KeyboardEvent): void {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleTextSubmit();
+    }
+  }
 </script>
 
 {#if currentMessageType === "mc"}
@@ -45,6 +52,7 @@
       class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]"
       placeholder=""
       bind:value={inputText}
+      onkeydown={handleKeyDown}
     ></textarea>
     {#if inputText && inputText.trim().length > 0}
       <button
