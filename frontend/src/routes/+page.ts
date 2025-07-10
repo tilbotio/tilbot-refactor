@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ChatSettings } from "../../../common/ChatSettings"
@@ -8,8 +9,8 @@ export const load: PageLoad = ({ url, fetch }) => {
   const runtimeContext: RuntimeContext = {
     path: "",
     conversationId: null,
+    isTilbotEditor: false,
     // As showHeader is not altered in the application, we do not consider it a state
-    isTilbotEditor: true,
     showHeader: showHeaderParam === "1",
     participantId: url.searchParams.get("pid") || null,
     projectId: url.searchParams.get("project") || null,
@@ -24,6 +25,16 @@ export const load: PageLoad = ({ url, fetch }) => {
     name: "Tilbot",
     chatbotAvatarFile: ""
   };
+
+  if (browser) {
+    try {
+      if (window.parent.isTilbotEditor) {
+        runtimeContext.isTilbotEditor = true;
+      }
+    } catch (e) {
+      runtimeContext.isTilbotEditor = false;
+    }
+  }
 
   if (runtimeContext.projectId) { 
     const id = runtimeContext.projectId;
