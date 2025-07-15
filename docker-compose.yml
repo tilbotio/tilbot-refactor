@@ -47,6 +47,7 @@ services:
       MONGO_INITDB_DATABASE: tilbot
     volumes:
     - mongodb:/data/db
+    entrypoint: sh -ec "exec docker-entrypoint.sh mongod >/dev/null 2>&1"
 
 volumes:
   mongodb:
