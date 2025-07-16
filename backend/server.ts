@@ -1,24 +1,24 @@
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
-import Fastify from 'fastify';
-import { fastifySession } from '@fastify/session';
-import { fastifyCookie } from '@fastify/cookie';
-import fastifyCORS from '@fastify/cors';
-import fastifyFormBody from '@fastify/formbody';
-import fastifyFileUpload from 'fastify-file-upload';
-import fastifyMultiPart from '@fastify/multipart';
-import fastifyWebSocket from '@fastify/websocket';
-import fastifyStatic from '@fastify/static';
-import { MongoClient } from 'mongodb';
-import MongoStore from 'connect-mongo';
-import mongoose from 'mongoose';
-import AdmZip from 'adm-zip';
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
-import { randomBytes } from 'crypto';
-import { LogModel } from './db/log.ts';
-import { ProjectModel } from './db/project.ts';
-import { UserModel } from './db/user.ts';
-import { SettingsModel } from './db/settings.ts';
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
+import Fastify from "fastify";
+import { fastifySession } from "@fastify/session";
+import { fastifyCookie } from "@fastify/cookie";
+import fastifyCORS from "@fastify/cors";
+import fastifyFormBody from "@fastify/formbody";
+import fastifyFileUpload from "fastify-file-upload";
+import fastifyMultiPart from "@fastify/multipart";
+import fastifyWebSocket from "@fastify/websocket";
+import fastifyStatic from "@fastify/static";
+import { MongoClient } from "mongodb";
+import MongoStore from "connect-mongo";
+import mongoose from "mongoose";
+import AdmZip from "adm-zip";
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
+import { randomBytes } from "crypto";
+import { LogModel } from "./db/log.ts";
+import { ProjectModel } from "./db/project.ts";
+import { UserModel } from "./db/user.ts";
+import { SettingsModel } from "./db/settings.ts";
 import {
   TilBotError,
   TilBotUserNotAdminError,
@@ -26,23 +26,26 @@ import {
   TilBotUserIsAdminError,
   TilBotNoProjectFileError,
   TilBotProjectNotFoundError,
-} from './errors.ts';
-import type { ProjectControllerInterface } from '../common/projectcontroller/types';
-import { LocalProjectController } from '../common/projectcontroller/local.ts';
-import { ServerControllerLookup, ServerControllerOutput } from './projectcontroller.ts';
-import { Logger } from './logger.ts';
-import { CsvData } from '../common/csvdata.ts';
-import LLM from '../app/llm.cjs';
+} from "./errors.ts";
+import type { ProjectControllerInterface } from "../common/projectcontroller/types";
+import { LocalProjectController } from "../common/projectcontroller/local.ts";
+import {
+  ServerControllerLookup,
+  ServerControllerOutput,
+} from "./projectcontroller.ts";
+import { Logger } from "./logger.ts";
+import { CsvData } from "../common/csvdata.ts";
+import LLM from "../app/llm.cjs";
 
 // Generate a somewhat persistent token:
 function getOrCreateToken(tokenPath: string): string {
   try {
-    return readFileSync(tokenPath, { encoding: 'utf8' });
+    return readFileSync(tokenPath, { encoding: "utf8" });
   } catch (error) {
-    if (error.code === 'ENOENT') {
+    if (error.code === "ENOENT") {
       // File does not exist, generate token and save
-      const token = randomBytes(32).toString('base64');
-      writeFileSync(tokenPath, token, { encoding: 'utf8' });
+      const token = randomBytes(32).toString("base64");
+      writeFileSync(tokenPath, token, { encoding: "utf8" });
       return token;
     } else {
       // Rethrow any other error
@@ -56,8 +59,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // For the MongoDB connection
 const dbPath = process.env.MONGO_USERNAME
-  ? `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASSWORD}@mongo:${process.env.MONGO_PORT ?? 27017}/${process.env.MONGO_DB ?? 'tilbot'}`
-  : (process.env.MONGO_DB ?? 'mongodb://127.0.0.1:27017/tilbot');
+  ? `mongodb://${process.env.MONGO_USERNAME}:${
+      process.env.MONGO_PASSWORD
+    }@mongo:${process.env.MONGO_PORT ?? 27017}/${
+      process.env.MONGO_DB ?? "tilbot"
+    }`
+  : process.env.MONGO_DB ?? "mongodb://127.0.0.1:27017/tilbot";
 
 const app = Fastify({ logger: true });
 
@@ -68,12 +75,12 @@ await Promise.all([
   app.register(fastifyWebSocket),
 
   app.register(fastifyCookie, {
-    secret: process.env.COOKIE_SECRET || getOrCreateToken('/tmp/cookie-secret'),
+    secret: process.env.COOKIE_SECRET || getOrCreateToken("/tmp/cookie-secret"),
     parseOptions: {
       maxAge: 60 * 60 * 24 * 7, // 1 week
       secure: Boolean(process.env.HTTPS),
       httpOnly: true,
-      sameSite: 'none',
+      sameSite: "none",
     },
   }),
 
@@ -81,7 +88,8 @@ await Promise.all([
     cookie: {
       secure: Boolean(process.env.HTTPS),
     },
-    secret: process.env.SESSION_SECRET || getOrCreateToken('/tmp/session-secret'),
+    secret:
+      process.env.SESSION_SECRET || getOrCreateToken("/tmp/session-secret"),
     store: MongoStore.create({
       // mongodb npm version confusion leads to an unfortunate type conflict:
       client: mongoose.connection.getClient() as unknown as MongoClient,
@@ -92,8 +100,8 @@ await Promise.all([
 
   // For CORS
   app.register(fastifyCORS, {
-    allowedHeaders: ['Content-Type'],
-    origin: 'http://localhost:5173',
+    allowedHeaders: ["Content-Type"],
+    origin: "http://localhost:5173",
     preflightContinue: true,
     credentials: true,
   }),
@@ -106,14 +114,14 @@ await Promise.all([
     safeFileNames: true,
     abortOnLimit: true,
     useTempFiles: true,
-    tempFileDir: '/tmp',
+    tempFileDir: "/tmp",
   }),
 
   app.register(fastifyMultiPart),
 ]);
 
 // add a route that lives separately from the SvelteKit app
-app.post('/api/login', async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const body: any = req.body;
   const user = await UserModel.getByUsername(body.username);
   await user.checkPassword(body.password);
@@ -122,27 +130,27 @@ app.post('/api/login', async (req, res) => {
   session.save();
 });
 
-app.get('/api/admin_account_exists', async (req, res) => {
+app.get("/api/admin_account_exists", async (req, res) => {
   if (await UserModel.adminAccountExists()) {
-    return 'EXISTS';
+    return "EXISTS";
   } else {
-    await UserModel.register('admin', 'admin', 99);
-    return 'CREATED';
+    await UserModel.register("admin", "admin", 99);
+    return "CREATED";
   }
 });
 
-app.post('/api/logout', async (req, res) => {
+app.post("/api/logout", async (req, res) => {
   req.session.destroy();
 });
 
-app.post('/api/change_pass', async (req, res) => {
+app.post("/api/change_pass", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   const body: any = req.body;
   await user.updatePassword(body.oldpass, body.newpass);
 });
 
-app.post('/api/create_user_account', async (req, res) => {
+app.post("/api/create_user_account", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   // Check if user is admin
@@ -153,7 +161,7 @@ app.post('/api/create_user_account', async (req, res) => {
   await UserModel.register(body.username, body.password, 1);
 });
 
-app.post('/api/set_user_active', async (req, res) => {
+app.post("/api/set_user_active", async (req, res) => {
   const session: any = req.session;
   const session_user = await UserModel.getByUsername(session.username);
   if (session_user.role != 99) {
@@ -179,15 +187,16 @@ app.post('/api/set_user_active', async (req, res) => {
   }
 });
 
-app.get('/api/get_dashboard', async (req, res) => {
+app.get("/api/get_dashboard", async (req, res) => {
   const session: any = req.session;
   // Return error message if not logged in
   if (session.username == undefined) {
     throw new TilBotNotLoggedInError();
   }
-  const data: any = { 'username': session.username };
+  const data: any = { username: session.username };
   const user = await UserModel.getByUsername(session.username);
-  if (user.role == 99) { // admin, retrieve user accounts
+  if (user.role == 99) {
+    // admin, retrieve user accounts
     const users = await UserModel.getSummaries();
     for (const user of users) {
       const projects = await ProjectModel.getSummaries({
@@ -198,7 +207,8 @@ app.get('/api/get_dashboard', async (req, res) => {
       user.running_projects = projects.length;
     }
     data.users = users;
-  } else { // regular user, retrieve projects and settings
+  } else {
+    // regular user, retrieve projects and settings
     data.projects = await ProjectModel.getSummaries({
       user_id: session.username,
       active: true,
@@ -208,7 +218,7 @@ app.get('/api/get_dashboard', async (req, res) => {
   return JSON.stringify(data);
 });
 
-app.post('/api/create_project', async (req, res) => {
+app.post("/api/create_project", async (req, res) => {
   const session: any = req.session;
   await ProjectModel.register(session.username);
 });
@@ -216,7 +226,7 @@ app.post('/api/create_project', async (req, res) => {
 /**
  * API call: change a project's status (active/inactive)
  */
-app.post('/api/set_project_active', async (req, res) => {
+app.post("/api/set_project_active", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   if (user.role != 1) {
@@ -224,7 +234,10 @@ app.post('/api/set_project_active', async (req, res) => {
   }
 
   const body: any = req.body;
-  const project = await ProjectModel.getById(body.projectid, { user_id: session.username, active: true });
+  const project = await ProjectModel.getById(body.projectid, {
+    user_id: session.username,
+    active: true,
+  });
   if (project.status == 1) {
     // Stop project from running first
     stop_bot(body.projectid);
@@ -241,7 +254,7 @@ app.post('/api/set_project_active', async (req, res) => {
 });
 
 // API call: change the status of a project (0 = paused, 1 = running)
-app.post('/api/set_project_status', async (req, res) => {
+app.post("/api/set_project_status", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   if (user.role != 1) {
@@ -268,10 +281,10 @@ app.post('/api/set_project_status', async (req, res) => {
 /**
  * API call: Import a project
  */
-app.post('/api/import_project', async (req, res) => {
+app.post("/api/import_project", async (req, res) => {
   // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
 
-  console.log('=== IMPORT PROJECT ===');
+  console.log("=== IMPORT PROJECT ===");
   console.log(req.body);
 
   const body: any = req.body;
@@ -285,10 +298,12 @@ app.post('/api/import_project', async (req, res) => {
   // Ensure that the project exists and is owned by the user:
   const session: any = req.session;
   console.log(`project id: '${project_id}' user: '${session.username}'`);
-  const project = await ProjectModel.getById(project_id, { user_id: session.username });
+  const project = await ProjectModel.getById(project_id, {
+    user_id: session.username,
+  });
 
-  const priv_dir = 'projects/' + project_id;
-  const pub_dir = 'proj_pub/' + project_id;
+  const priv_dir = "projects/" + project_id;
+  const pub_dir = "proj_pub/" + project_id;
 
   rmSync(priv_dir, { recursive: true, force: true });
   mkdirSync(priv_dir, { recursive: true });
@@ -302,13 +317,13 @@ app.post('/api/import_project', async (req, res) => {
 
   let project_data: string | null = null;
 
-  zipEntries.forEach(zipEntry => {
+  zipEntries.forEach((zipEntry) => {
     if (zipEntry.entryName == "project.json") {
       project_data = zipEntry.getData().toString("utf8");
 
       // @TODO: import project file into database
       //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
-    } else if (zipEntry.entryName.startsWith('var/')) {
+    } else if (zipEntry.entryName.startsWith("var/")) {
       zip.extractEntryTo(zipEntry, priv_dir);
     } else {
       zip.extractEntryTo(zipEntry, pub_dir);
@@ -319,7 +334,7 @@ app.post('/api/import_project', async (req, res) => {
     throw new TilBotNoProjectFileError();
   }
 
-  console.log('project file found');
+  console.log("project file found");
 
   if (project.status == 1) {
     await stop_bot(project_id);
@@ -332,7 +347,7 @@ app.post('/api/import_project', async (req, res) => {
 /**
  * API call: save a user's settings
  */
-app.post('/api/save_settings', async (req, res) => {
+app.post("/api/save_settings", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   if (user.role !== 1) {
@@ -344,7 +359,7 @@ app.post('/api/save_settings', async (req, res) => {
 });
 
 // API call: get a project's log files
-app.get('/api/get_logs', async (req, res) => {
+app.get("/api/get_logs", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   if (user.role !== 1) {
@@ -362,7 +377,7 @@ app.get('/api/get_logs', async (req, res) => {
 });
 
 // API call: delete a project's log files
-app.post('/api/delete_logs', async (req, res) => {
+app.post("/api/delete_logs", async (req, res) => {
   const session: any = req.session;
   const user = await UserModel.getByUsername(session.username);
   if (user.role !== 1) {
@@ -378,17 +393,23 @@ app.post('/api/delete_logs', async (req, res) => {
   console.log(`Deleted logs: ${body.projectid}`);
 });
 
-app.get('/api/sesh', async (req, res) => {
+app.get("/api/sesh", async (req, res) => {
   console.log(req.session);
 });
 
-const projectControllers: Map<string, ProjectControllerInterface<ServerControllerOutput>> = new Map();
+const projectControllers: Map<
+  string,
+  ProjectControllerInterface<ServerControllerOutput>
+> = new Map();
 
 // API call: create a new conversation for a project -- anyone can do this, no need to be logged in.
-app.get('/api/create_conversation', async (req, res) => {
+app.get("/api/create_conversation", async (req, res) => {
   const query: any = req.query;
   const projectId = query.id;
-  const project = await ProjectModel.getById(projectId, { active: true, status: 1 });
+  const project = await ProjectModel.getById(projectId, {
+    active: true,
+    status: 1,
+  });
   const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
   const llm: any = LLM.fromSettings(settings);
@@ -398,7 +419,7 @@ app.get('/api/create_conversation', async (req, res) => {
 
   // Set up the data files
   for (const variable of project.variables) {
-    if (variable.type == 'csv') {
+    if (variable.type == "csv") {
       csv_datas[variable.name] = new CsvData(variable.csvfile, p);
     }
   }
@@ -410,14 +431,14 @@ app.get('/api/create_conversation', async (req, res) => {
     project
   );
 
-  const controllerId = randomBytes(16).toString('hex');
+  const controllerId = randomBytes(16).toString("hex");
 
   projectControllers.set(controllerId, projectController);
 
   return { conversation: controllerId, settings: project.settings };
 });
 
-app.get('/ws/chat', { websocket: true }, async (socket, req) => {
+app.get("/ws/chat", { websocket: true }, async (socket, req) => {
   const query: any = req.query;
   const projectController = projectControllers.get(query.conversation);
   if (!projectController) {
@@ -432,7 +453,7 @@ app.get('/ws/chat', { websocket: true }, async (socket, req) => {
   }
   output.socket = socket;
 
-  socket.addEventListener('open', () => {
+  socket.addEventListener("open", () => {
     if (output.socket) {
       // We're late to the party.
       socket.close();
@@ -441,30 +462,30 @@ app.get('/ws/chat', { websocket: true }, async (socket, req) => {
     }
   });
 
-  socket.addEventListener('close', () => {
+  socket.addEventListener("close", () => {
     if (output.socket === socket) {
       output.socket = null;
     }
   });
- 
-  socket.addEventListener('message', (e: MessageEvent) => {
+
+  socket.addEventListener("message", (e: MessageEvent) => {
     try {
       const [command, ...args] = JSON.parse(e.data);
       switch (command) {
-        case 'message sent':
+        case "message sent":
           projectController.message_sent_event();
           break;
 
-        case 'user_message':
-          projectController.receive_message(...args as [string]);
+        case "user_message":
+          projectController.receive_message(...(args as [string]));
           break;
 
-        case 'log':
-          projectController.log(...args as [string]);
+        case "log":
+          projectController.log(...(args as [string]));
           break;
 
-        case 'pid':
-          projectController.set_participant_id(...args as [string]);
+        case "pid":
+          projectController.set_participant_id(...(args as [string]));
           break;
       }
     } catch (error) {
@@ -488,18 +509,18 @@ async function stop_bot(projectId: string) {
   if (socket) {
     socket.close();
   }
-};
+}
 
 // Serve the static public files from projects.
 // FIXME: also serve the compiled Svelte files.
 await app.register(fastifyStatic, {
-  root: resolve(__dirname, 'proj_pub'),
+  root: resolve(__dirname, "proj_pub"),
 });
 
 // Implement the default response for successful requests
-app.addHook('onSend', async (req, res, payload) => {
+app.addHook("onSend", async (req, res, payload) => {
   if (!res.sent && payload === undefined) {
-    return 'OK';
+    return "OK";
   }
 });
 
@@ -512,13 +533,13 @@ app.setErrorHandler((err, req, res) => {
     res.status(200);
     res.send(err.api_status_code);
   } else {
-    res.send('NOK');
+    res.send("NOK");
   }
 });
 
-const port = parseInt(process.env.LISTEN_PORT || '8000');
+const port = parseInt(process.env.LISTEN_PORT || "8000");
 
-app.listen({ port, host: '0.0.0.0' }, (err, addr) => {
+app.listen({ port, host: "0.0.0.0" }, (err, addr) => {
   if (err) {
     app.log.error(err);
     process.exit(1);

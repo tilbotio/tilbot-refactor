@@ -7,33 +7,42 @@ import type {
 } from '../common/projectcontroller/types';
 
 export class ServerControllerLookup implements ProjectControllerLookupInterface {
-    private csv_datas: { [key: string]: any; };
-    private llm: any;
+  private csv_datas: { [key: string]: any };
+  private llm: any;
 
-    constructor(csv_datas: { [key: string]: any; }, llm: any) {
-        this.csv_datas = csv_datas;
-        this.llm = llm;
-    }
+  constructor(csv_datas: { [key: string]: any }, llm: any) {
+    this.csv_datas = csv_datas;
+    this.llm = llm;
+  }
 
-    async cell(db: string, col: string, val: string): Promise<Object[] | null> {
-        const csv = this.csv_datas[db];
-        if (csv === undefined) {
-            return null;
-        }
-        return await csv.get(col, val);
+  async cell(db: string, col: string, val: string): Promise<Object[] | null> {
+    const csv = this.csv_datas[db];
+    if (csv === undefined) {
+      return null;
     }
+    return await csv.get(col, val);
+  }
 
-    async random(db: string): Promise<Object | null> {
-        const csv = this.csv_datas[db];
-        if (csv === undefined) {
-            return null;
-        }
-        return await csv.get_random_line();
+  async random(db: string): Promise<Object | null> {
+    const csv = this.csv_datas[db];
+    if (csv === undefined) {
+      return null;
     }
+    return await csv.get_random_line();
+  }
 
-    async variation(content: string, prompt: string, memory?: any): Promise<string> {
-        return await this.llm.get_variation(content, prompt, memory != undefined, memory);
-    }
+  async variation(
+    content: string,
+    prompt: string,
+    memory?: any
+  ): Promise<string> {
+    return await this.llm.get_variation(
+      content,
+      prompt,
+      memory != undefined,
+      memory
+    );
+  }
 }
 
 export class ServerControllerOutput implements ProjectControllerOutputInterface {
