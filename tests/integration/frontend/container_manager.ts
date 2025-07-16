@@ -1,26 +1,38 @@
-import { DockerComposeEnvironment } from 'testcontainers';
-import { getContainerRuntimeClient } from "testcontainers";
+import {
+  DockerComposeEnvironment,
+  getContainerRuntimeClient,
+} from "testcontainers";
 
-abstract class ContainerManager {
-    
-    private static composeFilePath = "./";
-    private static composeFile = "docker-compose.yml";
+class ContainerManager {
+  private static _instance: ContainerManager;
+  private composeFilePath: string = "./";
+  private composeFile: string = "docker-compose.yml";
 
-    public static async startEnvironment() {
-        // Start the Docker containers      
-        //ContainerManager.environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up(); 
-        const environment = await new DockerComposeEnvironment(ContainerManager.composeFilePath, ContainerManager.composeFile).withProjectName("tilbot").up(); 
-        //console.log(ContainerManager.environment);
-        //console.log(process.env.compose);
-    }
+  private constructor() {}
 
-    public static async stopEnvironment() {
+  public static get Instance() {
+    return this._instance || (this._instance = new this());
+  }
 
-        const containerRuntimeClient = await getContainerRuntimeClient();
-        await containerRuntimeClient.compose.down({filePath: ContainerManager.composeFilePath, files: ContainerManager.composeFile, projectName: "tilbot"}, {timeout: 30000, removeVolumes: true});
+  public async startEnvironment() {
+    // Start the Docker containers
+    await new DockerComposeEnvironment(this.composeFilePath, this.composeFile)
+      .withProjectName("tilbot")
+      .up();
+  }
 
-        console.log(containerRuntimeClient.info);        
-    }
+  public async stopEnvironment() {
+    const containerRuntimeClient = await getContainerRuntimeClient();
+    await containerRuntimeClient.compose.down(
+      {
+        filePath: this.composeFilePath,
+        files: this.composeFile,
+        projectName: "tilbot",
+      },
+      { timeout: 30000, removeVolumes: true }
+    );
+  }
 }
 
-export { ContainerManager }
+const instance = ContainerManager.Instance;
+export { instance as ContainerManager };
