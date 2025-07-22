@@ -35,14 +35,18 @@
   onMount(() => {
     if (html5Qrcode === null) {
       html5Qrcode = new Html5Qrcode("barcodeScanner");
-      html5Qrcode
-        .start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: qrboxFunction },
-          onScanSuccess,
-          undefined
-        )
-        .catch((err) => console.error("QR starting error: ", err));
+      (async () => {
+        try {
+          await html5Qrcode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: qrboxFunction },
+            onScanSuccess,
+            undefined
+          );
+        } catch (err) {
+          console.error(`QR starting error ${err}`);
+        }
+      })();
     }
     return () => {
       html5Qrcode?.stop().catch((err) => {
