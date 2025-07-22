@@ -4,7 +4,7 @@ export interface ChatSettings {
   typingCharPSec: number;
   showAvatar: boolean;
   avatarFile: string | null;
-  showChatbotAvatar: string | null;
+  showChatbotAvatar: boolean;
   name: string;
   chatbotAvatarFile: string | null;
 }
