@@ -5,13 +5,12 @@
   import type { AvatarContext } from "$lib/types/types";
 
   const settings: ChatSettings = getContext("settingsContext");
-  const avatarContext: AvatarContext = "header";
 </script>
 
 <div class="bg-gray-100 w-full h-20 left-0 drop-shadow flex items-center px-4">
   {#if settings.showAvatar}
     <div class="avatar online placeholder w-12 h-12 mr-4">
-      <Avatar {avatarContext} />
+      <Avatar avatarSource={settings.avatarFile} />
     </div>
   {/if}
   <div class="text-lg font-medium">{settings.name}</div>
