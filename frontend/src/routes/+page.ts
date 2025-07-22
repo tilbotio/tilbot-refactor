@@ -1,11 +1,11 @@
 import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
-import type { ChatSettings } from "../../../common/ChatSettings"
+import type { ChatSettings } from "../../../common/ChatSettings";
 
 export const load: PageLoad = ({ url, fetch }) => {
   const showHeaderParam = url.searchParams.get("show_header") || "1";
-  
+
   const runtimeContext: RuntimeContext = {
     path: "",
     conversationId: null,
@@ -24,7 +24,7 @@ export const load: PageLoad = ({ url, fetch }) => {
     showAvatar: true,
     avatarFile: "",
     name: "Tilbot",
-    chatbotAvatarFile: ""
+    chatbotAvatarFile: "",
   };
 
   if (browser) {
@@ -37,31 +37,29 @@ export const load: PageLoad = ({ url, fetch }) => {
     }
   }
 
-  if (runtimeContext.projectId) { 
+  if (runtimeContext.projectId) {
     const id = runtimeContext.projectId;
-    ( async() => {
-    runtimeContext.path = `/proj_pub/${id}`;
-    try {
-      const response = await fetch(
-        `/api/create_conversation?id=${encodeURIComponent(
-          id
-        )}`
-      );
-
-      if (response.ok) {
-        ({ conversation: runtimeContext.conversationId, settings } =
-          await response.json());
-        console.log(settings);
-      } else {
-        throw new Error(
-          `Invalid response: ${response.status} ${response.statusText}`
+    (async () => {
+      runtimeContext.path = `/proj_pub/${id}`;
+      try {
+        const response = await fetch(
+          `/api/create_conversation?id=${encodeURIComponent(id)}`
         );
+
+        if (response.ok) {
+          ({ conversation: runtimeContext.conversationId, settings } =
+            await response.json());
+          console.log(settings);
+        } else {
+          throw new Error(
+            `Invalid response: ${response.status} ${response.statusText}`
+          );
+        }
+      } catch (err: any) {
+        console.error(`Failed to fetch conversation data: ${err.message}`);
       }
-    } catch (err: any) {
-      console.error(`Failed to fetch conversation data: ${err.message}`);
-    }
+    })();
   }
-)};
 
   return {
     settings,

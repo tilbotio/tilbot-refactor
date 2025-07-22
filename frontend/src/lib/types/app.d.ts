@@ -1,7 +1,7 @@
 declare global {
-    interface Window {
-        isTilbotEditor?: boolean;
-    }
+  interface Window {
+    isTilbotEditor?: boolean;
+  }
 }
 
 export {};
