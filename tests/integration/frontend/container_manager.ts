@@ -4,7 +4,7 @@ import {
 } from "testcontainers";
 
 class ContainerManager {
-  private composeFilePath: string = "./";
+  private composeFilePath: string = "../../../";
   private composeFile: string = "docker-compose.yml";
 
   constructor() {}
@@ -12,7 +12,7 @@ class ContainerManager {
   public async startEnvironment() {
     // Start the Docker containers
     await new DockerComposeEnvironment(this.composeFilePath, this.composeFile)
-      .withProjectName("tilbot")
+      .withProjectName("tilbot-test")
       .up();
   }
 
@@ -22,7 +22,7 @@ class ContainerManager {
       {
         filePath: this.composeFilePath,
         files: this.composeFile,
-        projectName: "tilbot",
+        projectName: "tilbot-test",
       },
       { timeout: 30000, removeVolumes: true }
     );
