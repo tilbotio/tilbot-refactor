@@ -10,7 +10,6 @@ node_modules
 /package
 /projects/
 /proj_pub/
-/settings.json
 /src/routes/avatar/
 /src/routes/gamble/
 /src/routes/guesswho/
@@ -28,3 +27,4 @@ node_modules
 /tilbot-win32-x64
 /tmp_upload/
 /app/.*
+/app/settings.json
