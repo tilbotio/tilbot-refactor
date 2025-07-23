@@ -4,15 +4,10 @@ import {
 } from "testcontainers";
 
 class ContainerManager {
-  private static _instance: ContainerManager;
   private composeFilePath: string = "./";
   private composeFile: string = "docker-compose.yml";
 
-  private constructor() {}
-
-  public static get Instance() {
-    return this._instance || (this._instance = new this());
-  }
+  constructor() {}
 
   public async startEnvironment() {
     // Start the Docker containers
@@ -34,5 +29,4 @@ class ContainerManager {
   }
 }
 
-const instance = ContainerManager.Instance;
-export { instance as ContainerManager };
+export const containerManager = new ContainerManager();
