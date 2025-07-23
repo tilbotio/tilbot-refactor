@@ -5,7 +5,7 @@
     "scripts": {
       "dev": "del-cli ./build && cp svelte_server.config.js svelte.config.js",
       "dev-vite": "vite dev",
-      "build": "cp svelte_server.config.js svelte.config.js && npm run build:vite",
+      "build": "npm run build:vite",
       "build:vite": "vite build",
       "preview": "vite preview",
       "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

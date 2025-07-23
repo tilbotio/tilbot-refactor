@@ -4,7 +4,7 @@ const { fork } = require('child_process');
 const fs = require('fs');
 const publicIp = require('public-ip');
 const AdmZip = require('adm-zip');
-const CsvData = require('./electron/csvdata.cjs');
+const CsvData = require('./csvdata.cjs');
 
 let ps = undefined;
 
