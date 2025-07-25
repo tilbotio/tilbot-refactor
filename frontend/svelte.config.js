@@ -1,18 +1,13 @@
-import adapter from '@sveltejs/adapter-node';
-import preprocess from 'svelte-preprocess';
+import adapter from "@sveltejs/adapter-node";
+import { sveltePreprocess } from "svelte-preprocess";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	compilerOptions: {runes: true},
-	// Consult https://github.com/sveltejs/svelte-preprocess
-	// for more information about preprocessors
-	preprocess: preprocess({
-		postcss: true
-	}),
-
-	kit: {
-		adapter: adapter()
-	}
+  compilerOptions: { runes: true },
+  // Consult https://github.com/sveltejs/svelte-preprocess
+  // for more information about preprocessors
+  preprocess: sveltePreprocess({ postcss: true }),
+  kit: { adapter: adapter() },
 };
 
 export default config;

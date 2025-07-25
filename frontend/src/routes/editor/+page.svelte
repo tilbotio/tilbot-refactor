@@ -29,11 +29,11 @@
     Trigger: TriggerBlockPopup,
   };
 
-  let jsonfileinput: HTMLElement = $state();
-  let simulator: HTMLIFrameElement = $state();
-  let start: SvelteComponent = $state();
-  let variables_window: SvelteComponent = $state();
-  let settings_window: SvelteComponent = $state();
+  let jsonfileinput: HTMLElement | undefined = $state();
+  let simulator: HTMLIFrameElement | undefined = $state();
+  let start: SvelteComponent | undefined = $state();
+  let variables_window: SvelteComponent | undefined = $state();
+  let settings_window: SvelteComponent | undefined = $state();
 
   let project: any = $state({
     current_block_id: 1,
@@ -47,14 +47,20 @@
       project_name: "New project",
     },
   });
-  let modal_launch: HTMLInputElement = $state();
-  let modal_edit: HTMLInputElement = $state();
+  let modal_launch: HTMLInputElement | undefined = $state();
+  let modal_edit: HTMLInputElement | undefined = $state();
 
   let selected_id = $state(0);
   let edit_block = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
-  let line_locations = $state({});
+  let line_locations: {
+    [key: string]: {
+      x: number;
+      y: number;
+      connectors: { x: number; y: number }[];
+    };
+  } = $state({});
 
   let num_draggable_loaded = 0;
   let is_loading = false;
@@ -66,9 +72,13 @@
   // For creating lines
   let dragging_connector = $state({});
 
-  let gen_settings = $state({});
+  let gen_settings: { [key: string]: any } = $state({});
   let path = $state("");
   let chatgpt_running = $state(false);
+
+  let alert_visible = $state(false);
+
+  const window_api: any = (window as any)?.api;
 
   onMount(() => {
     // Set a property on the window so that the simulator knows it's part of the editor.
@@ -83,27 +93,26 @@
       navigator.userAgent.indexOf("Electron") >= 0
     ) {
       is_electron = true;
-      simulator.src = "index.html";
+      simulator!.src = "index.html";
 
-      window.api.receive("server-ip", (data: any) => {
+      window_api.receive("server-ip", (data: any) => {
         public_ip = data.public_ip;
         local_ip = data.local_ip;
       });
 
-      window.api.receive("project-load", (project_str: string) => {
+      window_api.receive("project-load", (project_str: string) => {
         load_project(project_str);
       });
 
-      window.api.receive("project-saved", () => {
-        document.getElementById("alert_text").textContent = "Project saved!";
-        document.getElementById("alert")?.classList.remove("invisible");
+      window_api.receive("project-saved", () => {
+        alert_visible = true;
 
         setTimeout(function () {
-          document.getElementById("alert")?.classList.add("invisible");
+          alert_visible = false;
         }, 3000);
       });
 
-      window.api.receive("settings-load", (param: any) => {
+      window_api.receive("settings-load", (param: any) => {
         gen_settings = param.settings;
         path = param.path;
 
@@ -112,7 +121,7 @@
         }
       });
 
-      window.api.send("get-settings");
+      window_api.send("get-settings");
     }
 
     if (!is_electron) {
@@ -128,91 +137,78 @@
   });
 
   function add_start_location() {
-    let r = start.getBoundingClientRect();
-    line_locations["-1"] = {
-      x:
-        r.left +
-        r.width / 2 +
-        document.getElementById("editor_main").scrollLeft,
-      y: r.bottom + document.getElementById("editor_main").scrollTop,
-      connectors: [
-        {
-          x:
-            r.left +
-            r.width / 2 +
-            document.getElementById("editor_main").scrollLeft,
-          y: r.bottom + document.getElementById("editor_main").scrollTop,
-        },
-      ],
+    const rect = start!.getBoundingClientRect();
+    const editor_main: HTMLElement = document.getElementById("editor_main")!;
+    const xy = {
+      x: rect.left + rect.width / 2 + editor_main.scrollLeft,
+      y: rect.bottom + editor_main.scrollTop,
     };
+    line_locations["-1"] = { ...xy, connectors: [xy] };
   }
 
   function new_block(type: string) {
     // @TODO: take into account current level / groupblock
-    project.blocks[project.current_block_id] = {
+    const editor_main: HTMLElement = document.getElementById("editor_main")!;
+    const connectors: any[] = [];
+    const current_block_id = project.current_block_id;
+    const current_block: any = (project.blocks[current_block_id] = {
       type: type,
-      name: "Block " + project.current_block_id,
+      name: `Block ${project.current_block_id}`,
       content: "",
-      x:
-        document.getElementById("editor_main").scrollLeft + screen.width * 0.35,
-      y: document.getElementById("editor_main").scrollTop + screen.height * 0.4,
-      connectors: [],
-    };
+      x: editor_main.scrollLeft + screen.width * 0.35,
+      y: editor_main.scrollTop + screen.height * 0.4,
+      connectors,
+    });
 
     if (type == "Auto") {
-      project.blocks[project.current_block_id].connectors = [
-        {
-          type: "Basic",
-          targets: [],
-        },
-      ];
+      connectors.push({
+        type: "Basic",
+        targets: [],
+      });
     } else if (type == "Text") {
-      project.blocks[project.current_block_id].connectors = [
-        {
-          type: "Labeled",
-          label: "[else]",
-          targets: [],
-        },
-      ];
+      connectors.push({
+        type: "Labeled",
+        label: "[else]",
+        targets: [],
+      });
     } else if (type == "Trigger") {
-      project.blocks[project.current_block_id].name =
-        "Trigger " + project.current_block_id;
+      current_block.name = `Trigger ${project.current_block_id}`;
     }
 
-    project.current_block_id += 1;
+    project.current_block_id++;
 
     deselect_all();
 
     setTimeout(function () {
-      selected_id = project.current_block_id - 1;
+      selected_id = current_block_id;
     }, 50);
   }
 
   function btn_load_click() {
-    window.api.send("do-load");
+    window_api.send("do-load");
     //jsonfileinput.click(); // For web version
   }
 
   function btn_save_click() {
-    window.api.send("do-save", JSON.stringify(project));
+    window_api.send("do-save", JSON.stringify(project));
   }
 
   function btn_variables_click() {
-    variables_window.show();
+    variables_window!.show();
   }
 
   function btn_settings_click() {
-    settings_window.show();
+    settings_window!.show();
   }
 
   function btn_launch_click() {
-    modal_launch.click();
-    window.api.send("open-server", JSON.stringify(project));
+    modal_launch!.click();
+    window_api.send("open-server", JSON.stringify(project));
   }
 
   function btn_close_server_click() {
-    modal_launch.click();
-    window.api.send("close-server");
+    modal_launch!.click();
+    window_api.send("close-server");
   }
 
   function import_project_file(event: Event) {
@@ -233,84 +229,53 @@
     }
   }
 
-  function handleDraggableMessage(e: Event) {
+  function registerBlock(id: string, block: any) {
+    const editor_main: HTMLElement = document.getElementById("editor_main")!;
+    const scrollLeft = editor_main.scrollLeft;
+    const scrollTop = editor_main.scrollTop;
+
+    const block_rect = document
+      .getElementById(`block_${id}_in`)!
+      .getBoundingClientRect();
+
+    function center(rect: DOMRect) {
+      return {
+        x: rect.left + rect.width / 2 + scrollLeft,
+        y: rect.top + rect.height / 2 + scrollTop,
+      };
+    }
+
+    const connectors: any = {};
+
+    for (const cid in block.connectors) {
+      const connector_rect = document
+        .getElementById(`block_${id}_c_${cid}`)!
+        .getBoundingClientRect();
+      connectors[cid] = center(connector_rect);
+    }
+
+    line_locations[id] = { ...center(block_rect), connectors };
+  }
+
+  function handleDraggableMessage(e: CustomEvent) {
+    const blocks = project.blocks;
     if (e.detail.event == "draggable_loaded") {
       if (is_loading) {
-        num_draggable_loaded += 1;
+        num_draggable_loaded++;
 
-        if (num_draggable_loaded == Object.keys(project.blocks).length) {
+        const blockEntries = Object.entries(blocks) as [string, any][];
+        if (num_draggable_loaded == blockEntries.length) {
           is_loading = false;
+
           // Build the look-up table for connecting lines.
-          for (const [key, value] of Object.entries(project.blocks)) {
-            let in_obj = document
-              .getElementById("block_" + key + "_in")
-              .getBoundingClientRect();
-
-            line_locations[key] = {
-              x:
-                in_obj.left +
-                in_obj.width / 2 +
-                document.getElementById("editor_main").scrollLeft,
-              y:
-                in_obj.top +
-                in_obj.height / 2 +
-                document.getElementById("editor_main").scrollTop,
-            };
-
-            line_locations[key].connectors = {};
-
-            for (const cid in value.connectors) {
-              var con_obj = document
-                .getElementById("block_" + key + "_c_" + cid)
-                .getBoundingClientRect();
-              line_locations[key].connectors[cid] = {
-                x:
-                  con_obj.left +
-                  con_obj.width / 2 +
-                  document.getElementById("editor_main").scrollLeft,
-                y:
-                  con_obj.top +
-                  con_obj.height / 2 +
-                  document.getElementById("editor_main").scrollTop,
-              };
-            }
+          for (const [id, block] of blockEntries) {
+            registerBlock(id, block);
           }
         }
       } else {
         // Just add the one new entry in the collection
-        let block = project.blocks[e.detail.id];
-
-        let in_obj = document
-          .getElementById("block_" + e.detail.id + "_in")
-          .getBoundingClientRect();
-        line_locations[e.detail.id] = {
-          x:
-            in_obj.left +
-            in_obj.width / 2 +
-            document.getElementById("editor_main").scrollLeft,
-          y:
-            in_obj.top +
-            in_obj.height / 2 +
-            document.getElementById("editor_main").scrollTop,
-        };
-
-        line_locations[e.detail.id].connectors = {};
-
-        for (const cid in block.connectors) {
-          var con_obj = document
-            .getElementById("block_" + e.detail.id + "_c_" + cid)
-            .getBoundingClientRect();
-          line_locations[e.detail.id].connectors[cid] = {
-            x:
-              con_obj.left +
-              con_obj.width / 2 +
-              document.getElementById("editor_main").scrollLeft,
-            y:
-              con_obj.top +
-              con_obj.height / 2 +
-              document.getElementById("editor_main").scrollTop,
-          };
-        }
+        const id = e.detail.id;
+        registerBlock(id, blocks[id]);
       }
     } else if (e.detail.event == "start_dragging") {
       deselect_all();
@@ -319,8 +284,9 @@
       let max_x = 0;
       let max_y = 0;
 
-      for (const [key, value] of Object.entries(line_locations)) {
-        if (Object.entries(value.connectors).length == 0) {
+      for (const value of Object.values(line_locations)) {
+        const connectors = value.connectors;
+        if (connectors.length == 0) {
           if (value.x + 200 > max_x) {
             max_x = value.x + 200;
           }
@@ -329,17 +295,12 @@
             max_y = value.y + 200;
           }
         } else {
-          if (
-            value.connectors[Object.entries(value.connectors).length - 1].x >
-            max_x
-          ) {
+          const lastConnector = connectors[connectors.length - 1];
+          if (lastConnector.x > max_x) {
             max_x = value.x;
           }
 
-          if (
-            value.connectors[Object.entries(value.connectors).length - 1].y >
-            max_y
-          ) {
+          if (lastConnector.y > max_y) {
             max_y = value.y;
           }
         }
@@ -348,52 +309,33 @@
       project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
       project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
     } else if (e.detail.event == "dragging") {
+      const id = e.detail.id;
+      registerBlock(id, blocks[id]);
+
       // Update look-up table
-      let in_obj = document
-        .getElementById("block_" + e.detail.id + "_in")
+      const block_in_rect = document
+        .getElementById(`block_${id}_in`)!
         .getBoundingClientRect();
 
-      let obj_left = in_obj.left + in_obj.width / 2;
-      let obj_top = in_obj.top + in_obj.height / 2;
+      const obj_left = block_in_rect.left + block_in_rect.width / 2;
+      const obj_top = block_in_rect.top + block_in_rect.height / 2;
 
-      line_locations[e.detail.id].x =
-        obj_left + document.getElementById("editor_main").scrollLeft;
-      line_locations[e.detail.id].y =
-        obj_top + document.getElementById("editor_main").scrollTop;
+      const editor_main: HTMLElement = document.getElementById("editor_main")!;
+      const scrollLeft = editor_main.scrollLeft;
+      const scrollTop = editor_main.scrollTop;
 
-      for (const cid in line_locations[e.detail.id].connectors) {
-        let con_obj = document
-          .getElementById("block_" + e.detail.id + "_c_" + cid)
-          .getBoundingClientRect();
-        line_locations[e.detail.id].connectors[cid].x =
-          con_obj.left +
-          con_obj.width / 2 +
-          document.getElementById("editor_main").scrollLeft;
-        line_locations[e.detail.id].connectors[cid].y =
-          con_obj.top +
-          con_obj.height / 2 +
-          document.getElementById("editor_main").scrollTop;
-      }
-
-      if (document.getElementById("editor_main").offsetHeight - obj_top < 100) {
-        if (
-          document.getElementById("editor_main").firstChild.offsetHeight -
-            (obj_top + document.getElementById("editor_main").scrollTop) <
-          100
-        ) {
+      if (editor_main.offsetHeight - obj_top < 100) {
+        const firstChild = editor_main.firstChild as HTMLElement;
+        if (firstChild.offsetHeight - (obj_top + editor_main.scrollTop) < 100) {
           project.canvas_height += 100;
         }
 
-        document.getElementById("editor_main").scrollTop += 30;
-      } else if (
-        obj_top < 50 &&
-        document.getElementById("editor_main").scrollTop > 0
-      ) {
+        editor_main.scrollTop += 30;
+      } else if (obj_top < 50 && editor_main.scrollTop > 0) {
         // @TODO: bind editor_main?
-        document.getElementById("editor_main").scrollTop =
-          document.getElementById("editor_main").scrollTop - 30;
+        editor_main.scrollTop = editor_main.scrollTop - 30;
         document
-          .getElementById("block_" + e.detail.id)
+          .getElementById(`block_${id}`)!
           .parentElement.dispatchEvent(new Event("mousemove"));
       }
 
@@ -764,20 +706,21 @@
 
 <div id="editor" class="overflow-hidden">
   <!--<a href="/dashboard">-->
-  <img src="images/tilbot_logo.svg" class="ml-1 mt-2 w-48" />
+  <img src="images/tilbot_logo.svg" alt="Tilbot logo" class="ml-1 mt-2 w-48" />
   <!--</a>-->
 
   <Variables
     bind:variablewindow={variables_window}
     variables={project.variables}
-  ></Variables>
+  />
+
   <Settings
     bind:settingswindow={settings_window}
     settings={project.settings}
     gensettings={gen_settings}
     path={path + "avatar/"}
     on:message={handleSettingsMessage}
-  ></Settings>
+  />
 
   <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
   <div class="modal">
@@ -1112,7 +1055,13 @@
     </ul>
   </div>
 
-  <div id="alert" class="flex justify-center w-full absolute top-4 invisible">
+  <div
+    id="alert"
+    class={[
+      "flex justify-center w-full absolute top-4",
+      { invisible: !alert_visible },
+    ]}
+  >
     <div class="alert alert-success shadow-lg w-[250px]">
       <div>
         <svg
@@ -1127,7 +1076,7 @@
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           /></svg
         >
-        <span id="alert_text">Project saved!</span>
+        <span>Project saved!</span>
       </div>
     </div>
   </div>
