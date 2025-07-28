@@ -78,6 +78,8 @@
 
   let alert_visible = $state(false);
 
+  let btn_del_line_visible = $state(false);
+
   const window_api: any = (window as any)?.api;
 
   onMount(() => {
@@ -313,67 +315,53 @@
       registerBlock(id, blocks[id]);
 
       // Update look-up table
-      const block_in_rect = document
+      const block_rect = document
         .getElementById(`block_${id}_in`)!
         .getBoundingClientRect();
 
-      const obj_left = block_in_rect.left + block_in_rect.width / 2;
-      const obj_top = block_in_rect.top + block_in_rect.height / 2;
+      const obj_left = block_rect.left + block_rect.width / 2;
+      const obj_top = block_rect.top + block_rect.height / 2;
 
       const editor_main: HTMLElement = document.getElementById("editor_main")!;
       const scrollLeft = editor_main.scrollLeft;
       const scrollTop = editor_main.scrollTop;
+      const firstChild = editor_main.firstChild as HTMLElement;
 
       if (editor_main.offsetHeight - obj_top < 100) {
-        const firstChild = editor_main.firstChild as HTMLElement;
-        if (firstChild.offsetHeight - (obj_top + editor_main.scrollTop) < 100) {
+        if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
           project.canvas_height += 100;
         }
-
         editor_main.scrollTop += 30;
-      } else if (obj_top < 50 && editor_main.scrollTop > 0) {
+      } else if (obj_top < 50 && scrollTop > 0) {
         // @TODO: bind editor_main?
-        editor_main.scrollTop = editor_main.scrollTop - 30;
-        document
-          .getElementById(`block_${id}`)!
-          .parentElement.dispatchEvent(new Event("mousemove"));
+        editor_main.scrollTop = scrollTop - 30;
       }
 
-      if (document.getElementById("editor_main").offsetWidth - obj_left < 200) {
-        if (
-          document.getElementById("editor_main").firstChild.offsetWidth -
-            (obj_left + document.getElementById("editor_main").scrollLeft) <
-          200
-        ) {
+      if (editor_main.offsetWidth - obj_left < 200) {
+        if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
           project.canvas_width += 100;
         }
-        document.getElementById("editor_main").scrollLeft =
-          document.getElementById("editor_main").scrollLeft + 30;
-        document
-          .getElementById("block_" + e.detail.id)
-          .parentElement.dispatchEvent(new Event("mousemove"));
-      } else if (
-        obj_left < -50 &&
-        document.getElementById("editor_main").scrollLeft > 0
-      ) {
-        document.getElementById("editor_main").scrollLeft =
-          document.getElementById("editor_main").scrollLeft - 30;
-        document
-          .getElementById("block_" + e.detail.id)
-          .parentElement.dispatchEvent(new Event("mousemove"));
+        editor_main.scrollLeft = scrollLeft + 30;
+      } else if (obj_left < -50 && scrollLeft > 0) {
+        editor_main.scrollLeft = scrollLeft - 30;
       }
+
+      document
+        .getElementById(`block_${id}`)!
+        .parentElement!.dispatchEvent(new Event("mousemove"));
     }
   }
 
-  function handleSettingsMessage(e: Event) {
-    if (e.detail.event == "save_settings") {
-      project.settings = e.detail.settings;
-      gen_settings = e.detail.gen_settings;
-      window.api.send("save-settings", { settings: e.detail.gen_settings });
+  function handleSettingsMessage(e: CustomEvent) {
+    const detail = e.detail;
+    if (detail.event == "save_settings") {
+      project.settings = detail.settings;
+      gen_settings = detail.gen_settings;
+      window_api.send("save-settings", { settings: gen_settings });
     }
   }
 
-  function handleChatGPTMessage(e: Event) {
+  function handleChatGPTMessage(e: CustomEvent) {
     if (e.detail.event == "run_all") {
       run_all();
       chatgpt_running = true;
@@ -386,86 +374,58 @@
     }
   }
 
-  function handleEditBlockMessage(e: Event) {
-    if (e.detail.event == "cancel") {
+  function handleEditBlockMessage(e: CustomEvent) {
+    const detail = e.detail;
+    const event = detail.event;
+    if (event == "cancel") {
       edit_block = null;
-      modal_edit.click();
-    } else if (e.detail.event == "save") {
+      modal_edit!.click();
+    } else if (event == "save") {
       // Remove the line_locations for the connectors in case some were deleted/moved
-      for (const [key, value] of Object.entries(
-        line_locations[selected_id].connectors
-      )) {
-        if (!(key in e.detail.block.connectors)) {
-          delete line_locations[selected_id].connectors[key];
+      const block = detail.block;
+      const blockConnectors = block.connectors;
+      const lineConnectors = line_locations[selected_id].connectors;
+      for (const key of lineConnectors.keys()) {
+        if (!(key in blockConnectors)) {
+          delete lineConnectors[key];
         }
       }
 
-      project.blocks[selected_id] = e.detail.block;
+      project.blocks[selected_id] = block;
       edit_block = null;
-      modal_edit.click();
+      modal_edit!.click();
     }
   }
 
-  function handleBlockMessage(e: Event) {
-    if (e.detail.event == "block_selected") {
+  function handleBlockMessage(e: CustomEvent) {
+    const detail = e.detail;
+    const event = detail.event;
+    const blockId = detail.block_id;
+    if (event == "block_selected") {
       deselect_all();
-      selected_id = e.detail.block_id;
-    } else if (e.detail.event == "edit_block") {
-      edit_block = project.blocks[e.detail.block_id];
-      modal_edit.click();
-    } else if (e.detail.event == "delete_block") {
+      selected_id = blockId;
+    } else if (event == "edit_block") {
+      edit_block = project.blocks[blockId];
+      modal_edit!.click();
+    } else if (event == "delete_block") {
       deselect_all();
 
+      const intBlockId = parseInt(blockId);
       // Delete any blocks connecting to this one
-      for (const [key, value] of Object.entries(project.blocks)) {
-        for (let ci = 0; ci < value.connectors.length; ci++) {
-          let idx = value.connectors[ci].targets.indexOf(
-            parseInt(e.detail.block_id)
-          );
-
-          if (idx != -1) {
-            value.connectors[ci].targets.splice(idx, 1);
+      for (const block of Object.values(project.blocks) as any[]) {
+        for (const connector of block.connectors) {
+          const targets = connector.targets;
+          const index = targets.indexOf(intBlockId);
+          if (index != -1) {
+            targets.splice(index, 1);
           }
         }
       }
 
-      delete project.blocks[e.detail.block_id];
-      delete line_locations[e.detail.block_id];
-
-      project.blocks = project.blocks;
-    } else if (e.detail.event == "connector_loaded") {
-      if (e.detail.block_id in line_locations) {
-        // Location of the block should also be updated just in case, because the size of the block can change when adding/removing connectors.
-        let in_obj = document
-          .getElementById("block_" + e.detail.block_id + "_in")
-          .getBoundingClientRect();
-
-        line_locations[e.detail.block_id].x =
-          in_obj.left +
-          in_obj.width / 2 +
-          document.getElementById("editor_main").scrollLeft;
-        line_locations[e.detail.block_id].y =
-          in_obj.top +
-          in_obj.height / 2 +
-          document.getElementById("editor_main").scrollTop;
-
-        // Update the location of the connector for building lines
-        var con_obj = document
-          .getElementById(
-            "block_" + e.detail.block_id + "_c_" + e.detail.connector_id
-          )
-          .getBoundingClientRect();
-        line_locations[e.detail.block_id].connectors[e.detail.connector_id] = {
-          x:
-            con_obj.left +
-            con_obj.width / 2 +
-            document.getElementById("editor_main").scrollLeft,
-          y:
-            con_obj.top +
-            con_obj.height / 2 +
-            document.getElementById("editor_main").scrollTop,
-        };
-      }
+      delete project.blocks[blockId];
+      delete line_locations[blockId];
+    } else if (event == "connector_loaded") {
+      registerBlock(blockId, project.blocks[blockId]);
     }
   }
 
@@ -476,56 +436,40 @@
 
   function deselect_all() {
     selected_id = 0;
-    let lines = document.getElementsByTagName("path");
+    const lines = document.getElementsByTagName("path");
 
-    for (let i = 0; i < lines.length; i++) {
-      lines[i].classList.remove("stroke-tilbot-secondary-hardpink");
+    for (const line of lines) {
+      line.classList.remove("stroke-tilbot-secondary-hardpink");
     }
 
-    document.getElementById("btn_del_line")?.classList.add("invisible");
+    btn_del_line_visible = false;
   }
 
   function select_line(l: HTMLElement) {
     deselect_all();
 
-    let line = document.querySelector("[data-from-block='-1']");
-
-    let fromBlock = l.dataset.fromBlock;
+    const dataset = l.dataset;
+    const fromBlock = dataset.fromBlock;
 
     // Starting point
-    if (fromBlock != "-1") {
-      let fromConnector = l.dataset.fromConnector;
-      let toBlock = l.dataset.toBlock;
-
-      line = document.querySelector(
-        "[data-from-block='" +
-          fromBlock +
-          "'][data-from-connector='" +
-          fromConnector +
-          "'][data-to-block='" +
-          toBlock +
-          "']"
-      );
-    }
+    const line = document.querySelector(
+      fromBlock == "-1"
+        ? "[data-from-block='-1']"
+        : `[data-from-block='${fromBlock}'][data-from-connector='${dataset.fromConnector}'][data-to-block='${dataset.toBlock}']`
+    )!;
 
     line.classList.add("stroke-tilbot-secondary-hardpink");
-    let line_loc = line.getBoundingClientRect();
-    let btn_del = document.getElementById("btn_del_line");
-    btn_del?.setAttribute(
-      "style",
-      "left: " +
-        (line_loc.left +
-          line_loc.width / 2 +
-          document.getElementById("editor_main").scrollLeft -
-          8) +
-        "px; top: " +
-        (line_loc.top +
-          line_loc.height / 2 +
-          document.getElementById("editor_main").scrollTop -
-          28) +
-        "px"
-    );
-    btn_del?.classList.remove("invisible");
+
+    const editor_main: HTMLElement = document.getElementById("editor_main")!;
+
+    const rect = line.getBoundingClientRect();
+    const left = rect.left + rect.width / 2 + editor_main.scrollLeft - 8;
+    const top = rect.top + rect.height / 2 + editor_main.scrollTop - 28;
+
+    const style = document.getElementById("btn_del_line")!.style;
+    style.setProperty("left", `${left} px`);
+    style.setProperty("top", `${top} px`);
+    btn_del_line_visible = true;
   }
 
   function delete_selected_line() {
@@ -1238,7 +1182,10 @@
           {/if}
         </svg>
 
-        <div id="btn_del_line" class="absolute invisible">
+        <div
+          id="btn_del_line"
+          class={["absolute", { invisible: !btn_del_line_visible }]}
+        >
           <button
             class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink"
             onclick={delete_selected_line}
@@ -1249,13 +1196,14 @@
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              ><path
+            >
+              <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
                 d="M6 18L18 6M6 6l12 12"
-              /></svg
-            >
+              />
+            </svg>
           </button>
         </div>
 
