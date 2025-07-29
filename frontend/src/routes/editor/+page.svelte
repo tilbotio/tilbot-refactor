@@ -32,8 +32,8 @@
   let jsonfileinput: HTMLElement | undefined = $state();
   let simulator: HTMLIFrameElement | undefined = $state();
   let start: SvelteComponent | undefined = $state();
-  let variables_window: SvelteComponent | undefined = $state();
-  let settings_window: SvelteComponent | undefined = $state();
+  let variables_window: any = $state();
+  let settings_window: any = $state();
 
   let project: any = $state({
     current_block_id: 1,
@@ -51,7 +51,7 @@
   let modal_edit: HTMLInputElement | undefined = $state();
 
   let selected_id = $state(0);
-  let edit_block = $state(null);
+  let edit_block: any = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
   let line_locations: {
@@ -70,7 +70,14 @@
   let public_ip = $state("");
 
   // For creating lines
-  let dragging_connector = $state({});
+  let dragging_connector = $state(
+    {} as {
+      block_id: number | null;
+      connector_id: number | null;
+      mouseX: number;
+      mouseY: number;
+    }
+  );
 
   let gen_settings: { [key: string]: any } = $state({});
   let path = $state("");
@@ -445,18 +452,8 @@
     btn_del_line_visible = false;
   }
 
-  function select_line(l: HTMLElement) {
+  function select_line(line: HTMLElement) {
     deselect_all();
-
-    const dataset = l.dataset;
-    const fromBlock = dataset.fromBlock;
-
-    // Starting point
-    const line = document.querySelector(
-      fromBlock == "-1"
-        ? "[data-from-block='-1']"
-        : `[data-from-block='${fromBlock}'][data-from-connector='${dataset.fromConnector}'][data-to-block='${dataset.toBlock}']`
-    )!;
 
     line.classList.add("stroke-tilbot-secondary-hardpink");
 
@@ -473,114 +470,135 @@
   }
 
   function delete_selected_line() {
-    let l = document.querySelector("path.stroke-tilbot-secondary-hardpink");
+    const line: HTMLElement = document.querySelector(
+      "path.stroke-tilbot-secondary-hardpink"
+    )!;
 
-    let fromBlock = l.dataset.fromBlock;
+    const { fromBlock, fromConnector, toBlock } = line.dataset;
 
     // Starting point
-    if (fromBlock == "-1") {
+    if (fromBlock === "-1") {
       project.starting_block_id = -1;
     } else {
-      let fromConnector = l.dataset.fromConnector;
-      let toBlock = l.dataset.toBlock;
-
-      let idx = project.blocks[fromBlock].connectors[
-        fromConnector
-      ].targets.indexOf(parseInt(toBlock));
-
-      if (idx !== -1) {
-        project.blocks[fromBlock].connectors[fromConnector].targets.splice(
-          idx,
-          1
-        );
-
-        // To refresh things.
-        project.blocks[fromBlock].connectors[fromConnector].targets =
-          project.blocks[fromBlock].connectors[fromConnector].targets;
+      const targets =
+        project.blocks[fromBlock!].connectors[fromConnector!].targets;
+      const index = targets.indexOf(parseInt(toBlock!));
+      if (index !== -1) {
+        targets.splice(index, 1);
       }
     }
   }
+
+  const click_offset = 3;
+  const click_offsets: [number, number][] = [];
+  for (let x = -click_offset; x <= click_offset; x++) {
+    for (let y = -click_offset; y <= click_offset; y++) {
+      click_offsets.push([x, y]);
+    }
+  }
+
+  // Distance from origin
+  function distance(x: number, y: number) {
+    return Math.sqrt(x * x + y * y);
+  }
+
+  // Try the points around the mouse position first
+  click_offsets.sort((a, b) => distance(...a) - distance(...b));
 
   function editor_clicked(e: MouseEvent) {
     if (e.button == 0) {
       deselect_all();
 
       // Find and select a line if nearby, to increase the hitbox on the rather thin connector lines.
-      for (let x = -3; x <= 3; x++) {
-        for (let y = -3; y <= 3; y++) {
-          let el = document.elementFromPoint(e.clientX + x, e.clientY + y);
-          if (el && el.nodeName && el.nodeName.toLowerCase() == "path") {
-            select_line(el as HTMLElement);
-            return;
-          }
+      for (const [x, y] of click_offsets) {
+        const el = document.elementFromPoint(e.clientX + x, e.clientY + y);
+        if (el?.nodeName?.toLowerCase() === "path") {
+          select_line(el as HTMLElement);
+          return;
         }
       }
     }
   }
 
   function editor_mousemove(e: MouseEvent) {
-    if (dragging_connector.block_id !== undefined) {
-      dragging_connector.mouseX =
-        e.clientX + document.getElementById("editor_main").scrollLeft;
-      dragging_connector.mouseY =
-        e.clientY + document.getElementById("editor_main").scrollTop;
+    if (dragging_connector.block_id != null) {
+      const editor_main = document.getElementById("editor_main")!;
+      dragging_connector.mouseX = e.clientX + editor_main.scrollLeft;
+      dragging_connector.mouseY = e.clientY + editor_main.scrollTop;
     }
   }
 
   function editor_mousedown(e: MouseEvent) {
-    let block_id = e.target.getAttribute("data-block-id");
-    let conn_id = e.target.getAttribute("data-connector-id");
+    const target = e.target! as HTMLElement;
+    const { blockId, connectorId } = target.dataset;
 
-    // Only allow to connect something to the starting point if it is not already connected to something
-    if (block_id == "-1" && project.starting_block_id === -1) {
-      deselect_all();
-      dragging_connector = {
-        block_id: -1,
-        connector_id: 0,
-        mouseX: line_locations["-1"].connectors[0].x,
-        mouseY: line_locations["-1"].connectors[0].y,
-      };
+    if (blockId == undefined) {
+      return;
     }
+    const connectors = line_locations[blockId].connectors;
 
-    if (block_id !== null && conn_id !== null) {
+    const blockIdInt = parseInt(blockId);
+    if (blockIdInt === -1) {
+      // Only allow to connect something to the starting point if it is not already connected to something
+      if (project.starting_block_id === -1) {
+        deselect_all();
+        const connector = connectors[0];
+        dragging_connector = {
+          block_id: -1,
+          connector_id: 0,
+          mouseX: connector.x,
+          mouseY: connector.y,
+        };
+      }
+    } else if (connectorId != undefined) {
+      const connectorIdInt = parseInt(connectorId);
+      const connector = connectors[connectorIdInt];
       deselect_all();
       dragging_connector = {
-        block_id: block_id,
-        connector_id: conn_id,
-        mouseX: line_locations[block_id].connectors[conn_id].x,
-        mouseY: line_locations[block_id].connectors[conn_id].y,
+        block_id: blockIdInt,
+        connector_id: connectorIdInt,
+        mouseX: connector.x,
+        mouseY: connector.y,
       };
     }
   }
 
   function editor_mouseup(e: MouseEvent) {
-    let el = document.elementFromPoint(e.clientX, e.clientY);
-    let el_id = el?.getAttribute("data-block-id");
+    const dragging_connector_block_id = dragging_connector.block_id;
+    if(dragging_connector_block_id == null) {
+      return;
+    }
 
-    if (el_id !== null && el?.getAttribute("id") == "block_" + el_id + "_in") {
+    const element = document.elementFromPoint(
+      e.clientX,
+      e.clientY
+    ) as HTMLElement;
+    if (element == null) {
+      return;
+    }
+
+    const { blockId } = element.dataset;
+    if (blockId == null) {
+      return;
+    }
+
+    if (element.getAttribute("id") == `block_${blockId}_in`) {
       // Starting point
       if (dragging_connector.block_id == -1) {
-        project.starting_block_id = parseInt(el_id);
-      } else if (
-        project.blocks[dragging_connector.block_id].connectors[
-          dragging_connector.connector_id
-        ].targets.indexOf(parseInt(el_id)) == -1
-      ) {
-        project.blocks[dragging_connector.block_id].connectors[
-          dragging_connector.connector_id
-        ].targets.push(parseInt(el_id));
-
-        // Force refresh
-        project.blocks[dragging_connector.block_id].connectors[
-          dragging_connector.connector_id
-        ].targets =
-          project.blocks[dragging_connector.block_id].connectors[
-            dragging_connector.connector_id
+        project.starting_block_id = parseInt(blockId);
+      } else {
+        const targets =
+          project.blocks[dragging_connector_block_id].connectors[
+            dragging_connector.connector_id!
           ].targets;
+        const blockIdInt = parseInt(blockId);
+        if (targets.indexOf(blockIdInt) == -1) {
+          targets.push(blockIdInt);
+        }
       }
     }
 
-    dragging_connector = {};
+    dragging_connector.block_id = null;
   }
 
   function load_project(json_str: string) {
@@ -612,9 +630,10 @@
 
   function run_all() {
     chatgpt_running = false;
-    if (simulator.contentWindow !== null) {
-      window.api.send("load-project-db", project);
-      simulator.contentWindow.postMessage(
+    const contentWindow = simulator?.contentWindow;
+    if (contentWindow != null) {
+      window_api.send("load-project-db", project);
+      contentWindow.postMessage(
         { project: JSON.stringify(project), path: path },
         "*"
       );
@@ -622,28 +641,31 @@
   }
 
   function send_chatgpt_message(msg: string) {
-    if (simulator.contentWindow !== null) {
-      simulator.contentWindow.postMessage("chatgpt|" + msg, "*");
+    const contentWindow = simulator?.contentWindow;
+    if (contentWindow != null) {
+      contentWindow.postMessage("chatgpt|" + msg, "*");
     }
   }
 
   function send_chatgpt_variation(msg: string) {
-    if (simulator.contentWindow !== null) {
-      simulator.contentWindow.postMessage("variation|" + msg, "*");
+    const contentWindow = simulator?.contentWindow;
+    if (contentWindow != null) {
+      contentWindow.postMessage("variation|" + msg, "*");
     }
   }
 
   function run_selected() {
-    if (simulator.contentWindow !== null) {
-      let project_copy = JSON.parse(JSON.stringify(project));
+    const contentWindow = simulator?.contentWindow;
+    if (contentWindow != null) {
+      const project_copy = JSON.parse(JSON.stringify(project));
 
       if (selected_id !== 0) {
         project_copy.starting_block_id = selected_id;
       }
 
-      window.api.send("load-project-db", project_copy);
+      window_api.send("load-project-db", project_copy);
 
-      simulator.contentWindow.postMessage(JSON.stringify(project_copy), "*");
+      contentWindow.postMessage(JSON.stringify(project_copy), "*");
     }
   }
 </script>
