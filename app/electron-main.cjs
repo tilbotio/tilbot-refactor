@@ -66,7 +66,7 @@ const createWindow = () => {
         p + "/currentproject/electron-project.json",
         project_json
       );
-      ps = fork(`${__dirname}/app/electron-server.cjs`, ["-p=" + p]);
+      ps = fork(`${__dirname}/electron-server.cjs`, ["-p=" + p]);
 
       win.webContents.send("server-ip", { public_ip: ipv4, local_ip: address });
     });
