@@ -3,7 +3,7 @@
   import BarcodeScanner from "./BarcodeScanner.svelte";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { getContext } from "svelte";
-  import MessageList from "./MessageList.svelte";
+  import MessageList from "./ChatMessageList.svelte";
   import type {
     CurrentMessageType,
     McOption,
