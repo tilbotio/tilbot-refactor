@@ -43,9 +43,7 @@
     canvas_height: 1480,
     bot_name: "Tilbot",
     variables: [],
-    settings: {
-      project_name: "New project",
-    },
+    settings: { project_name: "New project" },
   });
   let modal_launch: HTMLInputElement | undefined = $state();
   let modal_edit: HTMLInputElement | undefined = $state();
@@ -489,21 +487,21 @@
     }
   }
 
-  const click_offset = 3;
+  const max_click_offset = 3;
   const click_offsets: [number, number][] = [];
-  for (let x = -click_offset; x <= click_offset; x++) {
-    for (let y = -click_offset; y <= click_offset; y++) {
+  for (let x = -max_click_offset; x <= max_click_offset; x++) {
+    for (let y = -max_click_offset; y <= max_click_offset; y++) {
       click_offsets.push([x, y]);
     }
   }
 
-  // Distance from origin
-  function distance(x: number, y: number) {
-    return Math.sqrt(x * x + y * y);
+  // Distance from origin, squared
+  function length2(x: number, y: number) {
+    return x * x + y * y;
   }
 
   // Try the points around the mouse position first
-  click_offsets.sort((a, b) => distance(...a) - distance(...b));
+  click_offsets.sort((a, b) => length2(...a) - length2(...b));
 
   function editor_clicked(e: MouseEvent) {
     if (e.button == 0) {
@@ -565,7 +563,7 @@
 
   function editor_mouseup(e: MouseEvent) {
     const dragging_connector_block_id = dragging_connector.block_id;
-    if(dragging_connector_block_id == null) {
+    if (dragging_connector_block_id == null) {
       return;
     }
 
