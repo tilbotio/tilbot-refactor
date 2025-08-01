@@ -29,9 +29,10 @@
     Trigger: TriggerBlockPopup,
   };
 
-  let jsonfileinput: HTMLElement | undefined = $state();
-  let simulator: HTMLIFrameElement | undefined = $state();
-  let start: SvelteComponent | undefined = $state();
+  let editor_main: HTMLElement = null as any;
+  let jsonfileinput: HTMLElement = null as any;
+  let simulator: HTMLIFrameElement = null as any;
+  let start: HTMLElement = $state(null as any);
   let variables_window: any = $state();
   let settings_window: any = $state();
 
@@ -144,8 +145,7 @@
   });
 
   function add_start_location() {
-    const rect = start!.getBoundingClientRect();
-    const editor_main: HTMLElement = document.getElementById("editor_main")!;
+    const rect = start.getBoundingClientRect();
     const xy = {
       x: rect.left + rect.width / 2 + editor_main.scrollLeft,
       y: rect.bottom + editor_main.scrollTop,
@@ -155,7 +155,6 @@
 
   function new_block(type: string) {
     // @TODO: take into account current level / groupblock
-    const editor_main: HTMLElement = document.getElementById("editor_main")!;
     const connectors: any[] = [];
     const current_block_id = project.current_block_id;
     const current_block: any = (project.blocks[current_block_id] = {
@@ -237,7 +236,6 @@
   }
 
   function registerBlock(id: string, block: any) {
-    const editor_main: HTMLElement = document.getElementById("editor_main")!;
     const scrollLeft = editor_main.scrollLeft;
     const scrollTop = editor_main.scrollTop;
 
@@ -327,7 +325,6 @@
       const obj_left = block_rect.left + block_rect.width / 2;
       const obj_top = block_rect.top + block_rect.height / 2;
 
-      const editor_main: HTMLElement = document.getElementById("editor_main")!;
       const scrollLeft = editor_main.scrollLeft;
       const scrollTop = editor_main.scrollTop;
       const firstChild = editor_main.firstChild as HTMLElement;
@@ -455,8 +452,6 @@
 
     line.classList.add("stroke-tilbot-secondary-hardpink");
 
-    const editor_main: HTMLElement = document.getElementById("editor_main")!;
-
     const rect = line.getBoundingClientRect();
     const left = rect.left + rect.width / 2 + editor_main.scrollLeft - 8;
     const top = rect.top + rect.height / 2 + editor_main.scrollTop - 28;
@@ -500,7 +495,7 @@
     return x * x + y * y;
   }
 
-  // Try the points around the mouse position first
+  // Try the points closest to the mouse position first
   click_offsets.sort((a, b) => length2(...a) - length2(...b));
 
   function editor_clicked(e: MouseEvent) {
@@ -520,7 +515,6 @@
 
   function editor_mousemove(e: MouseEvent) {
     if (dragging_connector.block_id != null) {
-      const editor_main = document.getElementById("editor_main")!;
       dragging_connector.mouseX = e.clientX + editor_main.scrollLeft;
       dragging_connector.mouseY = e.clientY + editor_main.scrollTop;
     }
@@ -628,7 +622,7 @@
 
   function run_all() {
     chatgpt_running = false;
-    const contentWindow = simulator?.contentWindow;
+    const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
       window_api.send("load-project-db", project);
       contentWindow.postMessage(
@@ -639,21 +633,21 @@
   }
 
   function send_chatgpt_message(msg: string) {
-    const contentWindow = simulator?.contentWindow;
+    const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
       contentWindow.postMessage("chatgpt|" + msg, "*");
     }
   }
 
   function send_chatgpt_variation(msg: string) {
-    const contentWindow = simulator?.contentWindow;
+    const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
       contentWindow.postMessage("variation|" + msg, "*");
     }
   }
 
   function run_selected() {
-    const contentWindow = simulator?.contentWindow;
+    const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
       const project_copy = JSON.parse(JSON.stringify(project));
 
@@ -1048,6 +1042,7 @@
   <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
     <div
       id="editor_main"
+      bind:this={editor_main}
       class="grow overflow-auto"
       style="max-width: calc(100vw - 24rem)"
       onclick={editor_clicked}
