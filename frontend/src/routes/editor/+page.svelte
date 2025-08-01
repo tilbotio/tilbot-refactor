@@ -1,6 +1,12 @@
 <script lang="ts">
-  import { onMount, SvelteComponent } from "svelte";
+  import { onMount, type Component } from "svelte";
   import { page } from "$app/stores";
+  import type {
+    Project,
+    ProjectBlock,
+    ProjectBlockType,
+    ProjectConnector,
+  } from "../../../../common/project/types";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import ChatGPT from "./chatgpt.svelte";
@@ -14,15 +20,30 @@
   import MCBlockPopup from "./block_popups/mc.svelte";
   import TextBlockPopup from "./block_popups/text.svelte";
   import TriggerBlockPopup from "./block_popups/trigger.svelte";
+  import {
+    SquaresPlus,
+    PlusCircle,
+    ListBullet,
+    Language,
+    BellAlert,
+    Play,
+    XMark,
+  } from "svelte-heros-v2";
 
-  let block_components: { [key: string]: any } = {
+  let block_components: {
+    [key: string]:
+      | typeof AutoBlock
+      | typeof MCBlock
+      | typeof TextBlock
+      | typeof TriggerBlock;
+  } = {
     Auto: AutoBlock,
     MC: MCBlock,
     Text: TextBlock,
     Trigger: TriggerBlock,
   };
 
-  let block_popup_components: { [key: string]: any } = {
+  let block_popup_components = {
     Auto: AutoBlockPopup,
     MC: MCBlockPopup,
     Text: TextBlockPopup,
@@ -36,7 +57,8 @@
   let variables_window: any = $state();
   let settings_window: any = $state();
 
-  let project: any = $state({
+  let project: Project = $state({
+    name: "New project",
     current_block_id: 1,
     blocks: {},
     starting_block_id: -1,
@@ -50,7 +72,7 @@
   let modal_edit: HTMLInputElement | undefined = $state();
 
   let selected_id = $state(0);
-  let edit_block: any = $state(null);
+  let edit_block: ProjectBlock | null = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
   let line_locations: {
@@ -153,11 +175,11 @@
     line_locations["-1"] = { ...xy, connectors: [xy] };
   }
 
-  function new_block(type: string) {
+  function new_block(type: ProjectBlockType) {
     // @TODO: take into account current level / groupblock
-    const connectors: any[] = [];
+    const connectors: ProjectConnector[] = [];
     const current_block_id = project.current_block_id;
-    const current_block: any = (project.blocks[current_block_id] = {
+    const current_block: ProjectBlock = (project.blocks[current_block_id] = {
       type: type,
       name: `Block ${project.current_block_id}`,
       content: "",
@@ -169,7 +191,7 @@
     if (type == "Auto") {
       connectors.push({
         type: "Basic",
-        targets: [],
+        targets: [] as number[],
       });
     } else if (type == "Text") {
       connectors.push({
@@ -474,7 +496,7 @@
       project.starting_block_id = -1;
     } else {
       const targets =
-        project.blocks[fromBlock!].connectors[fromConnector!].targets;
+        project.blocks[fromBlock!].connectors[parseInt(fromConnector!)].targets;
       const index = targets.indexOf(parseInt(toBlock!));
       if (index !== -1) {
         targets.splice(index, 1);
@@ -740,109 +762,47 @@
       class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md"
     >
       <li>
-        <a class="active:bg-tilbot-secondary-hardpink">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-6 h-6"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z"
-            />
-          </svg>
-        </a>
+        <a class="active:bg-tilbot-secondary-hardpink" id="add-block"
+          ><SquaresPlus class="w-6 h-6" /></a
+        >
         <ul class="bg-slate-100">
           <div class="tooltip tooltip-right" data-tip="Automatically proceed">
             <li>
               <a
                 class="active:bg-tilbot-secondary-hardpink"
                 onclick={() => new_block("Auto")}
+                onkeyup={() => new_block("Auto")}
+                id="add-block-auto"
+                role="button"
+                tabindex="0"
+                aria-label="add auto block"><PlusCircle class="w-6 h-6" /></a
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-6 h-6"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </a>
             </li>
           </div>
-          <!--<div class="tooltip tooltip-right" data-tip="List">
-                <li>
-                    <a>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-                        </svg>
-
-                    </a>
-                </li>
-                </div>-->
           <div class="tooltip tooltip-right" data-tip="Multiple choice">
             <li>
               <a
                 class="active:bg-tilbot-secondary-hardpink"
                 onclick={() => new_block("MC")}
+                onkeyup={() => new_block("MC")}
+                id="add-block-mc"
+                role="button"
+                tabindex="0"
+                aria-label="add MC block"><ListBullet class="w-6 h-6" /></a
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-6 h-6"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                  />
-                </svg>
-              </a>
             </li>
           </div>
-          <!--<div class="tooltip tooltip-right" data-tip="Python">
-                <li>
-                    <a>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
-                          </svg>
-                    </a>
-                </li>
-                </div>-->
           <div class="tooltip tooltip-right" data-tip="Text">
             <li>
               <a
                 class="active:bg-tilbot-secondary-hardpink"
                 onclick={() => new_block("Text")}
+                onkeyup={() => new_block("Text")}
+                id="add-block-text"
+                role="button"
+                tabindex="0"
+                aria-label="add text block"><Language class="w-6 h-6" /></a
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="w-6 h-6"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802"
-                  />
-                </svg>
-              </a>
             </li>
           </div>
         </ul>
@@ -852,34 +812,14 @@
           <a
             class="active:bg-tilbot-secondary-hardpink"
             onclick={() => new_block("Trigger")}
+            onkeyup={() => new_block("Trigger")}
+            id="add-trigger"
+            role="button"
+            tabindex="0"
+            aria-label="add trigger"><BellAlert class="w-6 h-6" /></a
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M3.124 7.5A8.969 8.969 0 015.292 3m13.416 0a8.969 8.969 0 012.168 4.5"
-              />
-            </svg>
-          </a>
         </li>
       </div>
-
-      <!--<div class="tooltip tooltip-right" data-tip="Add group">
-                <li>
-                <a>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
-                    </svg>
-                </a>
-                </li>
-            </div>-->
       <li>
         &nbsp;<br /><br />
       </li>
@@ -1045,25 +985,29 @@
       bind:this={editor_main}
       class="grow overflow-auto"
       style="max-width: calc(100vw - 24rem)"
+      role="button"
+      tabindex="-1"
       onclick={editor_clicked}
+      onkeyup={() => {}}
       onmousedown={editor_mousedown}
       onmousemove={editor_mousemove}
       onmouseup={editor_mouseup}
     >
       <div
         class="relative"
-        style="width: {project.canvas_width +
-          'px'}; height: {project.canvas_height + 'px'}"
+        style:width={`${project.canvas_width} px`}
+        style:height={`${project.canvas_height} px`}
       >
         <svg
-          style="width: {project.canvas_width +
-            'px'}; height: {project.canvas_height + 'px'}"
           class="absolute pointer-events-none z-40"
+          style:width={`${project.canvas_width} px`}
+          style:height={`${project.canvas_height} px`}
         >
           {#if Object.entries(line_locations).length > 1}
             {#each Object.entries(project.blocks) as [id, block]}
-              {#each Object.entries(block.connectors) as [cid, connector]}
+              {#each block.connectors.entries() as [cid, connector]}
                 {#each connector.targets as target}
+                  {@const source = line_locations[id].connectors[cid]}
                   <path
                     d={"M" +
                       line_locations[id].connectors[cid].x +
@@ -1180,7 +1124,7 @@
           {/if}
 
           <!-- For creating new lines -->
-          {#if dragging_connector.block_id !== undefined}
+          {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined }
             <line
               class="z-50"
               x1={line_locations[dragging_connector.block_id].connectors[
@@ -1205,20 +1149,7 @@
             class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink"
             onclick={delete_selected_line}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <XMark class="h-4 w-4" />
           </button>
         </div>
 
@@ -1229,11 +1160,11 @@
             <Draggable
               objAttributes={block}
               on:message={handleDraggableMessage}
-              {id}
+              id={parseInt(id)}
             >
               {@const SvelteComponent_2 = block_components[block.type]}
               <SvelteComponent_2
-                blockId={id}
+                blockId={parseInt(id)}
                 selectedId={selected_id}
                 objAttributes={block}
                 on:message={handleBlockMessage}
@@ -1247,30 +1178,9 @@
     <div class="flex flex-col w-full max-w-sm pr-1.5 pl-1.5 bottom-0">
       <div id="simulator_menu" class="w-full mr-1.5 mt-2 text-center">
         <button class="btn gap-2" onclick={run_all}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="w-6 h-6"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-            />
-          </svg>
+          <Play class="w-6 h-6" />
           Run all
         </button>
-
-        <!--<button class="btn gap-2 {selected_id === 0 ? 'btn-disabled' : ''}" on:click={run_selected}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
-                    </svg>
-                    From selected
-                </button>-->
 
         <ChatGPT
           is_running={chatgpt_running}
@@ -1285,32 +1195,15 @@
         <div class="camera"></div>
         <div class="display h-full w-full">
           <div class="artboard artboard-demo h-full">
-            <iframe src="/" class="w-full h-full" bind:this={simulator}>
-            </iframe>
+            <iframe
+              src="/"
+              class="w-full h-full"
+              bind:this={simulator}
+              title="Simulator"
+            ></iframe>
           </div>
         </div>
       </div>
-
-      <!--<div class="card shadow-md bg-tilbot-primary-200 w-84 fixed grid place-items-center bottom-2 left-2">
-                <div class="card-body p-4">
-                  <h2 class="card-title text-sm text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
-                    </svg>
-
-                    ThronoCrigger — Tilbot song
-                </h2>
-                  <p class="text-sm text-center text-white">02:00 <progress class="progress w-56 progress-accent" value="40" max="100"></progress> 05:00 <br />
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="inline w-6 h-6 mt-2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9v6m-4.5 0V9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="inline w-5 h-5 stroke-accent mt-2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                      </svg>
-
-                  </p>
-                </div>
-            </div>-->
     </div>
   </div>
 </div>
