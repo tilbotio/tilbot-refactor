@@ -28,22 +28,22 @@
     BellAlert,
     Play,
     XMark,
+    Variable,
+    Cog6Tooth,
+    RocketLaunch,
+    Folder,
+    FolderArrowDown,
+    CheckCircle,
   } from "svelte-heros-v2";
 
-  let block_components: {
-    [key: string]:
-      | typeof AutoBlock
-      | typeof MCBlock
-      | typeof TextBlock
-      | typeof TriggerBlock;
-  } = {
+  const block_components = {
     Auto: AutoBlock,
     MC: MCBlock,
     Text: TextBlock,
     Trigger: TriggerBlock,
   };
 
-  let block_popup_components = {
+  const block_popup_components = {
     Auto: AutoBlockPopup,
     MC: MCBlockPopup,
     Text: TextBlockPopup,
@@ -756,8 +756,30 @@
       </p>
     </div>
   </div>
-
   <div id="menu" class="fixed float-left z-10 mt-4">
+    {#snippet menuItem(tip: string, Icon: Component, action: any)}
+      <div class="tooltip tooltip-right" data-tip={tip}>
+        <li>
+          <!-- svelte-ignore a11y_missing_attribute -->
+          <a
+            class="active:bg-tilbot-secondary-hardpink"
+            onclick={action}
+            onkeyup={action}
+            role="button"
+            tabindex="0"
+            aria-label={tip}><Icon class="w-6 h-6" /></a
+          >
+        </li>
+      </div>
+    {/snippet}
+    {#snippet blockMenuItem(
+      tip: string,
+      Icon: Component,
+      type: ProjectBlockType
+    )}
+      {@render menuItem(tip, Icon, () => new_block(type))}
+    {/snippet}
+
     <ul
       class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md"
     >
@@ -766,190 +788,25 @@
           ><SquaresPlus class="w-6 h-6" /></a
         >
         <ul class="bg-slate-100">
-          <div class="tooltip tooltip-right" data-tip="Automatically proceed">
-            <li>
-              <a
-                class="active:bg-tilbot-secondary-hardpink"
-                onclick={() => new_block("Auto")}
-                onkeyup={() => new_block("Auto")}
-                id="add-block-auto"
-                role="button"
-                tabindex="0"
-                aria-label="add auto block"><PlusCircle class="w-6 h-6" /></a
-              >
-            </li>
-          </div>
-          <div class="tooltip tooltip-right" data-tip="Multiple choice">
-            <li>
-              <a
-                class="active:bg-tilbot-secondary-hardpink"
-                onclick={() => new_block("MC")}
-                onkeyup={() => new_block("MC")}
-                id="add-block-mc"
-                role="button"
-                tabindex="0"
-                aria-label="add MC block"><ListBullet class="w-6 h-6" /></a
-              >
-            </li>
-          </div>
-          <div class="tooltip tooltip-right" data-tip="Text">
-            <li>
-              <a
-                class="active:bg-tilbot-secondary-hardpink"
-                onclick={() => new_block("Text")}
-                onkeyup={() => new_block("Text")}
-                id="add-block-text"
-                role="button"
-                tabindex="0"
-                aria-label="add text block"><Language class="w-6 h-6" /></a
-              >
-            </li>
-          </div>
+          {@render blockMenuItem("Automatically proceed", PlusCircle, "Auto")}
+          {@render blockMenuItem("Multiple choice", ListBullet, "MC")}
+          {@render blockMenuItem("Text", Language, "Text")}
         </ul>
       </li>
-      <div class="tooltip tooltip-right" data-tip="Add trigger">
-        <li>
-          <a
-            class="active:bg-tilbot-secondary-hardpink"
-            onclick={() => new_block("Trigger")}
-            onkeyup={() => new_block("Trigger")}
-            id="add-trigger"
-            role="button"
-            tabindex="0"
-            aria-label="add trigger"><BellAlert class="w-6 h-6" /></a
-          >
-        </li>
-      </div>
-      <li>
-        &nbsp;<br /><br />
-      </li>
-      <div class="tooltip tooltip-right" data-tip="Variables & data">
-        <li>
-          <a
-            class="active:bg-tilbot-secondary-hardpink"
-            onclick={btn_variables_click}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M4.745 3A23.933 23.933 0 003 12c0 3.183.62 6.22 1.745 9M19.5 3c.967 2.78 1.5 5.817 1.5 9s-.533 6.22-1.5 9M8.25 8.885l1.444-.89a.75.75 0 011.105.402l2.402 7.206a.75.75 0 001.104.401l1.445-.889m-8.25.75l.213.09a1.687 1.687 0 002.062-.617l4.45-6.676a1.688 1.688 0 012.062-.618l.213.09"
-              />
-            </svg>
-          </a>
-        </li>
-      </div>
-      <div class="tooltip tooltip-right" data-tip="Settings">
-        <li>
-          <a
-            class="active:bg-tilbot-secondary-hardpink"
-            onclick={btn_settings_click}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </a>
-        </li>
-      </div>
+      {@render blockMenuItem("Add trigger", BellAlert, "Trigger")}
+
+      <li>&nbsp;<br /><br /></li>
+
+      {@render menuItem("Variables & data", Variable, btn_variables_click)}
+      {@render menuItem("Settings", Cog6Tooth, btn_settings_click)}
       {#if is_electron}
-        <div class="tooltip tooltip-right" data-tip="Launch project">
-          <li>
-            <a
-              class="active:bg-tilbot-secondary-hardpink"
-              onclick={btn_launch_click}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                class="w-6 h-6"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
-                />
-              </svg>
-            </a>
-          </li>
-        </div>
+        {@render menuItem("Launch project", RocketLaunch, btn_launch_click)}
       {/if}
 
-      <li>
-        &nbsp;<br /><br />
-      </li>
+      <li>&nbsp;<br /><br /></li>
 
-      <div class="tooltip tooltip-right" data-tip="Load project">
-        <li>
-          <a
-            class="active:bg-tilbot-secondary-hardpink"
-            onclick={btn_load_click}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"
-              />
-            </svg>
-          </a>
-        </li>
-      </div>
-      <div class="tooltip tooltip-right" data-tip="Save project">
-        <li>
-          <a
-            class="active:bg-tilbot-secondary-hardpink"
-            onclick={btn_save_click}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-              />
-            </svg>
-          </a>
-        </li>
-      </div>
+      {@render menuItem("Load project", Folder, btn_load_click)}
+      {@render menuItem("Save project", FolderArrowDown, btn_save_click)}
     </ul>
   </div>
 
@@ -962,18 +819,7 @@
   >
     <div class="alert alert-success shadow-lg w-[250px]">
       <div>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="stroke-current flex-shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          ><path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          /></svg
-        >
+        <CheckCircle />
         <span>Project saved!</span>
       </div>
     </div>
@@ -1008,131 +854,69 @@
               {#each block.connectors.entries() as [cid, connector]}
                 {#each connector.targets as target}
                   {@const source = line_locations[id].connectors[cid]}
+                  {@const destination = line_locations[target]}
+                  {@const x_offset = Math.abs(destination.x - source.x)}
                   <path
-                    d={"M" +
-                      line_locations[id].connectors[cid].x +
-                      "," +
-                      line_locations[id].connectors[cid].y +
-                      " L" +
-                      (Math.abs(
-                        line_locations[target].x -
-                          line_locations[id].connectors[cid].x
-                      ) *
-                        0.05 +
-                        line_locations[id].connectors[cid].x) +
-                      "," +
-                      line_locations[id].connectors[cid].y +
-                      " C" +
-                      (line_locations[id].connectors[cid].x +
-                        Math.abs(
-                          line_locations[target].x -
-                            line_locations[id].connectors[cid].x
-                        ) *
-                          0.5) +
-                      "," +
-                      line_locations[id].connectors[cid].y +
-                      " " +
-                      (line_locations[target].x -
-                        Math.abs(
-                          line_locations[target].x -
-                            line_locations[id].connectors[cid].x
-                        ) *
-                          0.5) +
-                      "," +
-                      line_locations[target].y +
-                      " " +
-                      (-Math.abs(
-                        line_locations[target].x -
-                          line_locations[id].connectors[cid].x
-                      ) *
-                        0.05 +
-                        line_locations[target].x) +
-                      "," +
-                      line_locations[target].y +
-                      " L" +
-                      line_locations[target].x +
-                      "," +
-                      line_locations[target].y}
+                    d={`
+                      M${source.x},${source.y}
+                      L${source.x + x_offset * 0.05},${source.y}
+                      C${source.x + x_offset * 0.5},${source.y}
+                       ${destination.x - x_offset * 0.5},${destination.y}
+                       ${destination.x - x_offset * 0.05},${destination.y}
+                      L${destination.x},${destination.y}
+                    `}
                     stroke-width="2"
                     fill="none"
                     data-from-block={id}
                     data-from-connector={cid}
                     data-to-block={target}
                     onclick={line_clicked}
+                    onkeyup={() => {}}
+                    role="button"
+                    tabindex="0"
                     class="pointer-events-auto stroke-tilbot-primary-300"
-                  >
-                  </path>
+                  />
                 {/each}
               {/each}
             {/each}
 
             {#if project.starting_block_id !== -1}
+              {@const source = line_locations["-1"].connectors[0]}
+              {@const destination =
+                line_locations[`${project.starting_block_id}`]}
+              {@const x_offset = Math.abs(destination.x - source.x)}
               <path
-                d={"M" +
-                  line_locations["-1"].connectors[0].x +
-                  "," +
-                  line_locations["-1"].connectors[0].y +
-                  " L" +
-                  (Math.abs(
-                    line_locations[project.starting_block_id.toString()].x -
-                      line_locations["-1"].connectors[0].x
-                  ) *
-                    0.05 +
-                    line_locations["-1"].connectors[0].x) +
-                  "," +
-                  line_locations["-1"].connectors[0].y +
-                  " C" +
-                  (line_locations["-1"].connectors[0].x +
-                    Math.abs(
-                      line_locations[project.starting_block_id.toString()].x -
-                        line_locations["-1"].connectors[0].x
-                    ) *
-                      0.5) +
-                  "," +
-                  line_locations["-1"].connectors[0].y +
-                  " " +
-                  (line_locations[project.starting_block_id.toString()].x -
-                    Math.abs(
-                      line_locations[project.starting_block_id.toString()].x -
-                        line_locations["-1"].connectors[0].x
-                    ) *
-                      0.5) +
-                  "," +
-                  line_locations[project.starting_block_id.toString()].y +
-                  " " +
-                  (-Math.abs(
-                    line_locations[project.starting_block_id.toString()].x -
-                      line_locations["-1"].connectors[0].x
-                  ) *
-                    0.05 +
-                    line_locations[project.starting_block_id.toString()].x) +
-                  "," +
-                  line_locations[project.starting_block_id.toString()].y +
-                  " L" +
-                  line_locations[project.starting_block_id.toString()].x +
-                  "," +
-                  line_locations[project.starting_block_id.toString()].y}
+                d={`
+                  M${source.x},${source.y}
+                  L${source.x + x_offset * 0.05},${source.y}
+                  C${source.x + x_offset * 0.5},${source.y}
+                   ${destination.x - x_offset * 0.5},${destination.y}
+                   ${destination.x - x_offset * 0.05},${destination.y}
+                  L${destination.x},${destination.y}
+                `}
                 stroke-width="2"
                 fill="none"
                 data-from-block="-1"
                 data-to-block={project.starting_block_id}
                 onclick={line_clicked}
+                onkeyup={() => {}}
+                role="button"
+                tabindex="0"
                 class="pointer-events-auto stroke-tilbot-primary-300"
-              >
-              </path>
+              />
             {/if}
           {/if}
 
           <!-- For creating new lines -->
-          {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined }
+          {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined}
+            {@const line_connector =
+              line_locations[dragging_connector.block_id].connectors[
+                dragging_connector.connector_id
+              ]}
             <line
               class="z-50"
-              x1={line_locations[dragging_connector.block_id].connectors[
-                dragging_connector.connector_id
-              ].x}
-              y1={line_locations[dragging_connector.block_id].connectors[
-                dragging_connector.connector_id
-              ].y}
+              x1={line_connector.x}
+              y1={line_connector.y}
               x2={dragging_connector.mouseX}
               y2={dragging_connector.mouseY}
               stroke="black"
@@ -1147,10 +931,8 @@
         >
           <button
             class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink"
-            onclick={delete_selected_line}
+            onclick={delete_selected_line}><XMark class="h-4 w-4" /></button
           >
-            <XMark class="h-4 w-4" />
-          </button>
         </div>
 
         <Start bind:el={start}></Start>
