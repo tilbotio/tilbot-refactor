@@ -849,61 +849,43 @@
           style:width={`${project.canvas_width} px`}
           style:height={`${project.canvas_height} px`}
         >
+          {#snippet line(id: string, cid: number, target: string)}
+            {@const source = line_locations[id].connectors[cid]}
+            {@const destination = line_locations[target]}
+            {@const x_offset = Math.abs(destination.x - source.x)}
+            <path
+              d={`
+                M${source.x},${source.y}
+                L${source.x + x_offset * 0.05},${source.y}
+                C${source.x + x_offset * 0.5},${source.y}
+                  ${destination.x - x_offset * 0.5},${destination.y}
+                  ${destination.x - x_offset * 0.05},${destination.y}
+                L${destination.x},${destination.y}
+              `}
+              stroke-width="2"
+              fill="none"
+              data-from-block={id}
+              data-from-connector={cid}
+              data-to-block={target}
+              onclick={line_clicked}
+              onkeyup={() => {}}
+              role="button"
+              tabindex="0"
+              class="pointer-events-auto stroke-tilbot-primary-300"
+            />
+          {/snippet}
+
           {#if Object.entries(line_locations).length > 1}
             {#each Object.entries(project.blocks) as [id, block]}
               {#each block.connectors.entries() as [cid, connector]}
                 {#each connector.targets as target}
-                  {@const source = line_locations[id].connectors[cid]}
-                  {@const destination = line_locations[target]}
-                  {@const x_offset = Math.abs(destination.x - source.x)}
-                  <path
-                    d={`
-                      M${source.x},${source.y}
-                      L${source.x + x_offset * 0.05},${source.y}
-                      C${source.x + x_offset * 0.5},${source.y}
-                       ${destination.x - x_offset * 0.5},${destination.y}
-                       ${destination.x - x_offset * 0.05},${destination.y}
-                      L${destination.x},${destination.y}
-                    `}
-                    stroke-width="2"
-                    fill="none"
-                    data-from-block={id}
-                    data-from-connector={cid}
-                    data-to-block={target}
-                    onclick={line_clicked}
-                    onkeyup={() => {}}
-                    role="button"
-                    tabindex="0"
-                    class="pointer-events-auto stroke-tilbot-primary-300"
-                  />
+                  {@render line(id, cid, `${target}`)}
                 {/each}
               {/each}
             {/each}
 
             {#if project.starting_block_id !== -1}
-              {@const source = line_locations["-1"].connectors[0]}
-              {@const destination =
-                line_locations[`${project.starting_block_id}`]}
-              {@const x_offset = Math.abs(destination.x - source.x)}
-              <path
-                d={`
-                  M${source.x},${source.y}
-                  L${source.x + x_offset * 0.05},${source.y}
-                  C${source.x + x_offset * 0.5},${source.y}
-                   ${destination.x - x_offset * 0.5},${destination.y}
-                   ${destination.x - x_offset * 0.05},${destination.y}
-                  L${destination.x},${destination.y}
-                `}
-                stroke-width="2"
-                fill="none"
-                data-from-block="-1"
-                data-to-block={project.starting_block_id}
-                onclick={line_clicked}
-                onkeyup={() => {}}
-                role="button"
-                tabindex="0"
-                class="pointer-events-auto stroke-tilbot-primary-300"
-              />
+              {@render line("-1", 0, `${project.starting_block_id}`)}
             {/if}
           {/if}
 
