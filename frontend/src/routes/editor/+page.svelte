@@ -780,9 +780,7 @@
       {@render menuItem(tip, Icon, () => new_block(type))}
     {/snippet}
 
-    <ul
-      class="menu bg-base-100 p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md"
-    >
+    <ul class="menu p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md">
       <li>
         <a class="active:bg-tilbot-secondary-hardpink" id="add-block"
           ><SquaresPlus class="w-6 h-6" /></a
@@ -858,8 +856,8 @@
                 M${source.x},${source.y}
                 L${source.x + x_offset * 0.05},${source.y}
                 C${source.x + x_offset * 0.5},${source.y}
-                  ${destination.x - x_offset * 0.5},${destination.y}
-                  ${destination.x - x_offset * 0.05},${destination.y}
+                 ${destination.x - x_offset * 0.5},${destination.y}
+                 ${destination.x - x_offset * 0.05},${destination.y}
                 L${destination.x},${destination.y}
               `}
               stroke-width="2"
