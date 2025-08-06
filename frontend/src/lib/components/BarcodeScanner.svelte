@@ -16,6 +16,7 @@
   } = $props();
 
   let html5Qrcode: Html5Qrcode | null = null;
+  let scannerStartPromise: Promise<null> | null = null;
 
   function qrboxFunction(viewfinderWidth: number, viewfinderHeight: number) {
     const qrboxSize = Math.floor(
@@ -33,27 +34,26 @@
   }
 
   onMount(() => {
-    if (html5Qrcode === null) {
+    try {
       html5Qrcode = new Html5Qrcode("barcodeScanner");
-      (async () => {
+      scannerStartPromise = html5Qrcode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: qrboxFunction },
+        onScanSuccess,
+        undefined
+      );
+
+      return async () => {
         try {
-          await html5Qrcode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: qrboxFunction },
-            onScanSuccess,
-            undefined
-          );
+          await scannerStartPromise;
+          await html5Qrcode?.stop();
         } catch (err) {
-          console.error(`QR starting error ${err}`);
+          console.error(`Error stopping the scanner: ${err}`);
         }
-      })();
+      };
+    } catch (err) {
+      console.error(`Failed to start the scanner: ${err}`);
     }
-    return () => {
-      html5Qrcode?.stop().catch((err) => {
-        console.error("QR stopping error: ", err);
-      });
-      html5Qrcode = null;
-    };
   });
 </script>
 

@@ -4,7 +4,7 @@ const { fork } = require('child_process');
 const fs = require('fs');
 const publicIp = require('public-ip');
 const AdmZip = require('adm-zip');
-const CsvData = require('./electron/csvdata.cjs');
+const CsvData = require('./csvdata.cjs');
 
 let ps = undefined;
 
@@ -61,7 +61,7 @@ const createWindow = () => {
         fs.mkdirSync(p + '/currentproject');
       }
       fs.writeFileSync(p + '/currentproject/electron-project.json', project_json);
-      ps = fork(`${__dirname}/electron/electron-server.cjs`,
+      ps = fork(`${__dirname}/electron-server.cjs`,
         ['-p=' + p]
       );
 
