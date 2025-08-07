@@ -4,15 +4,14 @@ https://svelte.dev/e/js_parse_error -->
     <slot></slot>
 </div>
 
-<script type="ts">
+<script lang="ts">
     import { onMount, createEventDispatcher } from "svelte";
 
     let draggable: HTMLDivElement;
     let is_dragging: boolean = false;
     let has_moved: boolean = false;
 
-    export let objAttributes = {};
-    export let id = 0;
+    let { objAttributes = $bindable({}), id = $bindable(0) } = $props();
 
     const dispatch = createEventDispatcher();
 
@@ -37,7 +36,7 @@ https://svelte.dev/e/js_parse_error -->
             });
 
         }
-        
+
     }
 
     function mouse_up(e: MouseEvent) {
@@ -47,7 +46,7 @@ https://svelte.dev/e/js_parse_error -->
 
             if (has_moved) {
                 objAttributes.x = Math.round((e.x - (draggable.offsetWidth / 2) + document.getElementById('editor_main').scrollLeft) / 20) * 20;
-                objAttributes.y = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20;        
+                objAttributes.y = Math.round((e.y - (draggable.offsetHeight / 2) + document.getElementById('editor_main').scrollTop) / 20) * 20;
 
                 dispatch('message', {
                     event: 'draggable_dropped'

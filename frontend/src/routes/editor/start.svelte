@@ -3,6 +3,6 @@
     <div class="pb-4">START</div>
 </div>
 
-<script type="ts">
+<script lang="ts">
     let { el = $bindable() } = $props();
 </script>

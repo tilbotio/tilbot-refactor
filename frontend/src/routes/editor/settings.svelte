@@ -29,7 +29,7 @@ https://svelte.dev/e/node_invalid_placement -->
                                 <td data-setting-id="3" class="cursor-pointer {selected_setting == 3 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>ChatGPT prompts</td>
                             </tr>
                         </tbody>
-                        </table>    
+                        </table>
 
                         <table class="table w-full mt-16">
                         <thead>
@@ -42,8 +42,8 @@ https://svelte.dev/e/node_invalid_placement -->
                                 <td data-setting-id="4" class="cursor-pointer {selected_setting == 4 ? 'bg-tilbot-primary-200' : ''}" on:click={settings_row_clicked}>LLM integration</td>
                             </tr>
                         </tbody>
-                        </table>          
-                    </div>     
+                        </table>
+                    </div>
                 </div>
                 <div class="flex-1 px-4" style="width: calc(100% - 16rem)">
 
@@ -73,7 +73,7 @@ https://svelte.dev/e/node_invalid_placement -->
                     <div class="p-8">
                         <table class="table w-full">
                             <thead>
-                                <th colspan="2">Avatar</th>
+                                <tr><th colspan="2">Avatar</th></tr>
                             </thead>
                             <tbody>
                                 <tr>
@@ -103,12 +103,12 @@ https://svelte.dev/e/node_invalid_placement -->
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
                                             </svg>
-                                        </button>                                        
+                                        </button>
                                         <button class="btn-sm btn-square mt-6" on:click={delete_avatar}>
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                             </svg>
-                                        </button> 
+                                        </button>
                                     </td>
                                 </tr>
                                 {/if}
@@ -140,27 +140,27 @@ https://svelte.dev/e/node_invalid_placement -->
                                                 </div>
                                                 {/if}
                                                 <div class="chat-bubble bg-tilbot-secondary-purple pr-16">Hello there!</div>
-                                            </div>                                            
+                                            </div>
                                         </div>
                                         <button class="btn-sm btn-square ml-4 mt-6" on:click={load_avatar_sm}>
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
                                             </svg>
-                                        </button>                                        
+                                        </button>
                                         <button class="btn-sm btn-square mt-6" on:click={delete_avatar_sm}>
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                             </svg>
-                                        </button> 
+                                        </button>
                                     </td>
                                 </tr>
-                                {/if}                                
+                                {/if}
                             </tbody>
                         </table>
 
                         <table class="table w-full mt-8">
                             <thead>
-                                <th colspan="2">Name</th>
+                                <tr><th colspan="2">Name</th></tr>
                             </thead>
                             <tbody>
                                 <tr>
@@ -168,7 +168,7 @@ https://svelte.dev/e/node_invalid_placement -->
                                     <td><input type="text" bind:value="{copy.name}" class="input input-sm input-bordered w-48" /></td>
                                 </tr>
                             </tbody>
-                        </table>                        
+                        </table>
                     </div>
                     {/if}
 
@@ -178,7 +178,7 @@ https://svelte.dev/e/node_invalid_placement -->
                     <div class="p-8">
                         <table class="table w-full">
                             <thead>
-                                <th colspan="2">Typing speed</th>
+                                <tr><th colspan="2">Typing speed</th></tr>
                             </thead>
                             <tbody>
                                 <tr>
@@ -214,7 +214,7 @@ https://svelte.dev/e/node_invalid_placement -->
 
                             <table class="table w-full">
                                 <thead>
-                                    <th>Temperature</th>
+                                    <tr><th>Temperature</th></tr>
                                 </thead>
                                 <tbody>
                                     <tr>
@@ -225,11 +225,11 @@ https://svelte.dev/e/node_invalid_placement -->
                                         </td>
                                     </tr>
                                 </tbody>
-                            </table>  
+                            </table>
 
                             <table class="table w-full mt-6">
                                 <thead>
-                                    <th>Use of data or scenario</th>
+                                    <tr><th>Use of data or scenario</th></tr>
                                 </thead>
                                 <tbody>
                                     <tr>
@@ -239,11 +239,11 @@ https://svelte.dev/e/node_invalid_placement -->
                                         </td>
                                     </tr>
                                 </tbody>
-                            </table>                        
+                            </table>
 
                             <table class="table w-full mt-8">
                                 <thead>
-                                    <th>Simulated user prompt</th>
+                                    <tr><th>Simulated user prompt</th></tr>
                                 </thead>
                                 <tbody>
                                     <tr>
@@ -253,7 +253,7 @@ https://svelte.dev/e/node_invalid_placement -->
                                         </td>
                                     </tr>
                                 </tbody>
-                            </table>                        
+                            </table>
                         </div>
                     </div>
                     {/if}
@@ -264,7 +264,7 @@ https://svelte.dev/e/node_invalid_placement -->
                     <div class="p-8">
                         <table class="table w-full">
                             <thead>
-                                <th colspan="2">Choice of large language model</th>
+                                <tr><th colspan="2">Choice of large language model</th></tr>
                             </thead>
                             <tbody>
                                 <tr>
@@ -274,7 +274,7 @@ https://svelte.dev/e/node_invalid_placement -->
                                 <tr>
                                     <td>ChatGPT</td>
                                     <td><input type="radio" name="llm-setting" class="radio" bind:group="{gen_copy.llm_setting}" value="chatgpt" /></td>
-                                </tr>                                
+                                </tr>
                             </tbody>
                         </table>
 
@@ -284,16 +284,16 @@ https://svelte.dev/e/node_invalid_placement -->
                         <span class="italic">Note: These settings are stored on this device, and will not be included in the project file to avoid anyone using your ChatGPT API key and ramping up costs.</span><br /><br />
                         <table class="table w-full">
                             <thead>
-                                <th>ChatGPT API key</th>
+                                <tr><th>ChatGPT API key</th></tr>
                             </thead>
                             <tbody>
-                                    <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.chatgpt_api_key}" />
+                                    <tr><td><input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.chatgpt_api_key}" /></td></tr>
                             </tbody>
-                        </table>          
-                        
+                        </table>
+
                         <table class="table w-full mt-8">
                             <thead>
-                                <th colspan="2">ChatGPT version for simulated user</th>
+                                <tr><th colspan="2">ChatGPT version for simulated user</th></tr>
                             </thead>
                             <tbody>
                                 <tr>
@@ -305,23 +305,23 @@ https://svelte.dev/e/node_invalid_placement -->
                                     <td><input type="radio" name="gpt-sim-version" class="radio" bind:group="{gen_copy.chatgpt_sim_version}" value="gpt-4-1106-preview" /></td>
                                 </tr>
                             </tbody>
-                        </table> 
-                        {:else}                        
+                        </table>
+                        {:else}
                         <table class="table w-full">
                             <thead>
-                                <th>API address</th>
+                                <tr><th>API address</th></tr>
                             </thead>
                             <tbody>
-                                    <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.llm_api_address}" />
+                                    <tr><td><input type="text" class="input input-bordered w-4/5 m-4" bind:value="{gen_copy.llm_api_address}" /></td></tr>
                             </tbody>
-                        </table>                         
+                        </table>
                         {/if}
                     </div>
                     {/if}
                 </div>
             </div>
             <div class="h-24 text-right">
-                <div class="divider"></div> 
+                <div class="divider"></div>
                 <button class="btn btn-active" on:click={save}>Save</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-outline" on:click={cancel}>Cancel</button>
             </div>
         </div>
@@ -332,23 +332,21 @@ https://svelte.dev/e/node_invalid_placement -->
     import { onMount, createEventDispatcher } from "svelte";
     let toggle: HTMLElement;
     let selected_setting: number = 0;
-    export let settings: any;
-    export let gensettings: any;
-    export let path: any;
+    let { settings = $bindable(), gensettings = $bindable(), path = $bindable() } = $props();
 
     const dispatch = createEventDispatcher();
 
     let copy = {};
-    let gen_copy = {}; 
+    let gen_copy = {};
 
     let is_loading_avatar: boolean = false;
     let is_loading_avatar_sm: boolean = false;
 
-    let default_prompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create. 
+    let default_prompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create.
     You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
 
-    Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text. 
-    For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words. 
+    Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text.
+    For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
     You cannot provide answer options with curly brackets for the chatbot.`;
 
     function firstletter(str: string) {
@@ -411,7 +409,7 @@ https://svelte.dev/e/node_invalid_placement -->
                 }
                 if (copy.avatar_file_sm == undefined) {
                     copy.avatar_file_sm = '';
-                }                
+                }
                 if (copy.name == undefined) {
                     copy.name = 'Tilbot';
                 }
@@ -437,13 +435,13 @@ https://svelte.dev/e/node_invalid_placement -->
             window.api.receive('avatar-load', (param: any) => {
                 if (is_loading_avatar) {
                     copy.avatar_file = param.filename;
-                    is_loading_avatar = false;                    
+                    is_loading_avatar = false;
                 }
                 else if (is_loading_avatar_sm) {
                     copy.avatar_file_sm = param.filename;
-                    is_loading_avatar_sm = false;                    
+                    is_loading_avatar_sm = false;
                 }
-            });    
+            });
         }
 
         console.log(copy);
@@ -452,15 +450,15 @@ https://svelte.dev/e/node_invalid_placement -->
     function load_avatar() {
         is_loading_avatar = true;
         window.api.send('do-load-avatar', copy.avatar_file);
-    } 
+    }
 
     function delete_avatar() {
         if (copy.avatar_file !== '') {
             window.api.send('do-delete-avatar', copy.avatar_file);
             copy.avatar_file = '';
         }
-    } 
-    
+    }
+
     function load_avatar_sm() {
         is_loading_avatar_sm = true;
         window.api.send('do-load-avatar', copy.avatar_file_sm);

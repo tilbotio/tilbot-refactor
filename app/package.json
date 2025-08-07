@@ -9,6 +9,7 @@
   "scripts": {
     "start": "electron .",
     "package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64 --icon=../frontend/src/icon/win/icon.ico --out=../dist",
+    "package-linux": "electron-packager . tilbot --overwrite --platform=linux --arch=x64 --icon=../frontend/src/icon/win/icon.ico --out=../dist",
     "package-mac-x64": "electron-packager . tilbot --overwrite --platform=darwin --arch=x64 --icon=../frontend/src/icon/mac/icon.icns --out=../dist",
     "package-mac-arm": "electron-packager . tilbot --overwrite --platform=darwin --arch=arm64 --icon=../frontend/src/icon/mac/icon.icns --out=../dist"
   },

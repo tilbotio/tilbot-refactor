@@ -2,6 +2,7 @@
   "name": "tilbot",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "workspaces": {
     "packages": [
       "frontend",
@@ -21,6 +22,7 @@
     "build:app": "TILBOT_ENV=app yarn workspace frontend build",
     "app": "yarn build:app && yarn workspace app start",
     "package-win": "yarn build:app && yarn workspace app package-win",
+    "package-linux": "yarn build:app && yarn workspace app package-linux",
     "package-mac-x64": "yarn build:app && yarn workspace app package-mac-x64",
     "package-mac-arm": "yarn build:app && yarn workspace app package-mac-arm"
   },
