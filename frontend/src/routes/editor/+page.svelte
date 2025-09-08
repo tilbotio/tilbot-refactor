@@ -369,10 +369,6 @@
       } else if (obj_left < -50 && scrollLeft > 0) {
         editor_main.scrollLeft = scrollLeft - 30;
       }
-
-      document
-        .getElementById(`block_${id}`)!
-        .parentElement!.dispatchEvent(new Event("mousemove"));
     }
   }
 
