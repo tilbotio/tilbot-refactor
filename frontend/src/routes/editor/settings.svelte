@@ -1,103 +1,70 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
+  import { onMount } from "svelte";
+  import type {
+    GeneralSettings,
+    ProjectSettings,
+  } from "../../../../common/project/types";
+
+  const window_api: any = (window as any)?.api;
+
+  let selected_setting = $state(0);
+  function settings_row_clicked() {
+    selected_setting = this.dataset.settingId;
+  }
+
   let toggle: HTMLElement;
-  let selected_setting: number = 0;
-  let {
-    settings = $bindable(),
-    gensettings = $bindable(),
-    path = $bindable(),
-  } = $props();
-
-  const dispatch = createEventDispatcher();
-
-  let copy = {};
-  let gen_copy = {};
+  let { projectSettings, settings, path, save: onSave } = $props();
 
   let is_loading_avatar: boolean = false;
   let is_loading_avatar_sm: boolean = false;
 
-  let default_prompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create.
+  const defaultPrompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create.
     You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
 
     Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text.
     For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
     You cannot provide answer options with curly brackets for the chatbot.`;
 
-  function firstletter(str: string) {
-    return str.charAt(0).toUpperCase();
+  const defaultSettings: GeneralSettings = {
+    llm_setting: "chatgpt",
+    llm_api_address: "",
+  };
+
+  const defaultProjectSettings: ProjectSettings = {
+    project_name: "New project",
+    typing_style: "fixed",
+    typing_time: 2,
+    typing_charpsec: 40,
+    llm_prompt: defaultPrompt,
+    llm_prompt_data: "",
+    temperature: 0.5,
+    show_avatar: true,
+    avatar_file: "",
+    show_avatar_sm: false,
+    avatar_file_sm: "",
+    name: "Tilbot",
+  };
+
+  function copySettings(): GeneralSettings {
+    return JSON.parse(
+      JSON.stringify(Object.assign({}, defaultSettings, settings ?? {}))
+    );
   }
 
-  export const settingswindow = {
-    show() {
-      if (settings == undefined) {
-        copy = {
-          project_name: "New project",
-          typing_style: "fixed",
-          typing_time: 2,
-          typing_charpsec: 40,
-          llm_prompt: default_prompt,
-          llm_prompt_data: "",
-          temperature: 0.5,
-          show_avatar: "yes",
-          avatar_file: "",
-          show_avatar_sm: "no",
-          avatar_file_sm: "",
-          name: "Tilbot",
-        };
-      } else {
-        copy = JSON.parse(JSON.stringify(settings));
+  function copyProjectSettings(): ProjectSettings {
+    return JSON.parse(
+      JSON.stringify(
+        Object.assign({}, defaultProjectSettings, projectSettings ?? {})
+      )
+    );
+  }
 
-        // Defaults
-        if (copy.project_name == undefined) {
-          copy.project_name = "New project";
-        }
-        if (copy.typing_style == undefined) {
-          copy.typing_style = "fixed";
-        }
-        if (copy.typing_time == undefined) {
-          copy.typing_time = 2;
-        }
-        if (copy.typing_charpsec == undefined) {
-          copy.typing_charpsec = 40;
-        }
-        if (copy.llm_prompt == undefined) {
-          copy.llm_prompt = default_prompt;
-        }
-        if (copy.llm_prompt_data == undefined) {
-          copy.llm_prompt_data = "";
-        }
-        if (copy.temperature == undefined) {
-          copy.temperature = 0.5;
-        }
-        if (copy.show_avatar == undefined) {
-          copy.show_avatar = "yes";
-        }
-        if (copy.avatar_file == undefined) {
-          copy.avatar_file = "";
-        }
-        if (copy.show_avatar_sm == undefined) {
-          copy.show_avatar_sm = "no";
-        }
-        if (copy.avatar_file_sm == undefined) {
-          copy.avatar_file_sm = "";
-        }
-        if (copy.name == undefined) {
-          copy.name = "Tilbot";
-        }
-      }
+  let settingsCopy: GeneralSettings = $derived.by(copySettings);
+  let projectSettingsCopy: ProjectSettings = $derived.by(copyProjectSettings);
 
-      gen_copy = JSON.parse(JSON.stringify(gensettings));
-
-      if (gen_copy.llm_setting == undefined) {
-        gen_copy.llm_setting = "chatgpt";
-      }
-      if (gen_copy.llm_api_address == undefined) {
-        gen_copy.llm_api_address = "";
-      }
-
-      toggle.click();
-    },
-  };
+  function firstletter(str: string): string {
+    return str.charAt(0).toUpperCase();
+  }
 
   onMount(() => {
     // Only works in Electron for now. @TODO: implement for online version of Tilbot.
@@ -106,41 +73,41 @@
       typeof navigator.userAgent === "string" &&
       navigator.userAgent.indexOf("Electron") >= 0
     ) {
-      window.api.receive("avatar-load", (param: any) => {
+      window_api.receive("avatar-load", (param: any) => {
         if (is_loading_avatar) {
-          copy.avatar_file = param.filename;
+          projectSettingsCopy.avatar_file = param.filename;
           is_loading_avatar = false;
         } else if (is_loading_avatar_sm) {
-          copy.avatar_file_sm = param.filename;
+          projectSettingsCopy.avatar_file_sm = param.filename;
           is_loading_avatar_sm = false;
         }
       });
     }
 
-    console.log(copy);
+    console.log(projectSettingsCopy);
   });
 
   function load_avatar() {
     is_loading_avatar = true;
-    window.api.send("do-load-avatar", copy.avatar_file);
+    window_api.send("do-load-avatar", projectSettingsCopy.avatar_file);
   }
 
   function delete_avatar() {
-    if (copy.avatar_file !== "") {
-      window.api.send("do-delete-avatar", copy.avatar_file);
-      copy.avatar_file = "";
+    if (projectSettingsCopy.avatar_file !== "") {
+      window_api.send("do-delete-avatar", projectSettingsCopy.avatar_file);
+      projectSettingsCopy.avatar_file = "";
     }
   }
 
   function load_avatar_sm() {
     is_loading_avatar_sm = true;
-    window.api.send("do-load-avatar", copy.avatar_file_sm);
+    window_api.send("do-load-avatar", projectSettingsCopy.avatar_file_sm);
   }
 
   function delete_avatar_sm() {
-    if (copy.avatar_file_sm !== "") {
-      window.api.send("do-delete-avatar", copy.avatar_file_sm);
-      copy.avatar_file_sm = "";
+    if (projectSettingsCopy.avatar_file_sm !== "") {
+      window_api.send("do-delete-avatar", projectSettingsCopy.avatar_file_sm);
+      projectSettingsCopy.avatar_file_sm = "";
     }
   }
 
@@ -148,11 +115,10 @@
     //copy.typing_style = event.currentTarget.value;
   }
 
-  function settings_row_clicked() {
-    selected_setting = this.dataset.settingId;
+  function reset() {
+    settingsCopy = copySettings();
+    projectSettingsCopy = copyProjectSettings();
   }
-
-  function reset() {}
 
   function cancel() {
     reset();
@@ -160,19 +126,11 @@
   }
 
   function save() {
-    dispatch("message", {
-      event: "save_settings",
-      settings: copy,
-      gen_settings: gen_copy,
-    });
-
-    reset();
+    onSave(settingsCopy, projectSettingsCopy);
     toggle.click();
   }
 </script>
 
-<!-- @migration-task Error while migrating Svelte code: `<th>` cannot be a child of `<thead>`. `<thead>` only allows these children: `<tr>`, `<style>`, `<script>`, `<template>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
-https://svelte.dev/e/node_invalid_placement -->
 <input
   type="checkbox"
   id="my-modal-settings"
@@ -183,8 +141,7 @@ https://svelte.dev/e/node_invalid_placement -->
   <div class="modal-box relative w-11/12 max-w-full h-5/6 max-h-full">
     <label
       for="my-modal-settings"
-      class="btn btn-sm btn-circle absolute right-2 top-2"
-      on:click={reset}>✕</label
+      class="btn btn-sm btn-circle absolute right-2 top-2">✕</label
     >
     <div class="flex w-full h-full flex-col">
       <div class="flex w-full" style="height: calc(100% - 6rem)">
@@ -273,7 +230,7 @@ https://svelte.dev/e/node_invalid_placement -->
                     <td
                       ><input
                         type="text"
-                        bind:value={copy.project_name}
+                        bind:value={projectSettingsCopy.project_name}
                         class="input input-sm input-bordered w-96"
                       /></td
                     >
@@ -299,7 +256,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         type="radio"
                         name="radio-1"
                         class="radio"
-                        bind:group={copy.show_avatar}
+                        bind:group={projectSettingsCopy.show_avatar}
                         value="yes"
                       /></td
                     >
@@ -311,27 +268,31 @@ https://svelte.dev/e/node_invalid_placement -->
                         type="radio"
                         name="radio-1"
                         class="radio"
-                        bind:group={copy.show_avatar}
+                        bind:group={projectSettingsCopy.show_avatar}
                         value="no"
                       /></td
                     >
                   </tr>
-                  {#if copy.show_avatar == "yes"}
+                  {#if projectSettingsCopy.show_avatar}
                     <tr>
                       <td class="w-48">Avatar</td>
                       <td>
                         <div
                           class="avatar online placeholder mt-4 ml-4 w-12 float-left"
                         >
-                          {#if copy.avatar_file == ""}
+                          {#if projectSettingsCopy.avatar_file == ""}
                             <div
                               class="bg-neutral-focus text-neutral-content rounded-full w-12"
                             >
-                              <span>{firstletter(copy.name)}</span>
+                              <span
+                                >{firstletter(projectSettingsCopy.name)}</span
+                              >
                             </div>
                           {:else}
                             <div class="rounded-full w-12">
-                              <img src={path + copy.avatar_file} />
+                              <img
+                                src={path + projectSettingsCopy.avatar_file}
+                              />
                             </div>
                           {/if}
                         </div>
@@ -383,7 +344,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         type="radio"
                         name="radio-2"
                         class="radio"
-                        bind:group={copy.show_avatar_sm}
+                        bind:group={projectSettingsCopy.show_avatar_sm}
                         value="yes"
                       /></td
                     >
@@ -395,29 +356,34 @@ https://svelte.dev/e/node_invalid_placement -->
                         type="radio"
                         name="radio-2"
                         class="radio"
-                        bind:group={copy.show_avatar_sm}
+                        bind:group={projectSettingsCopy.show_avatar_sm}
                         value="no"
                       /></td
                     >
                   </tr>
-                  {#if copy.show_avatar_sm == "yes"}
+                  {#if projectSettingsCopy.show_avatar_sm}
                     <tr>
                       <td class="w-48">Small avatar</td>
                       <td>
                         <div class="float-left">
                           <div class="chat chat-start">
-                            {#if copy.avatar_file_sm == ""}
+                            {#if projectSettingsCopy.avatar_file_sm == ""}
                               <div class="chat-image avatar">
                                 <div
                                   class="bg-neutral-focus text-neutral-content rounded-full w-10 !flex items-center justify-center"
                                 >
-                                  <div>{firstletter(copy.name)}</div>
+                                  <div>
+                                    {firstletter(projectSettingsCopy.name)}
+                                  </div>
                                 </div>
                               </div>
                             {:else}
                               <div class="chat-image avatar">
                                 <div class="w-10 rounded-full">
-                                  <img src={path + copy.avatar_file_sm} />
+                                  <img
+                                    src={path +
+                                      projectSettingsCopy.avatar_file_sm}
+                                  />
                                 </div>
                               </div>
                             {/if}
@@ -482,7 +448,7 @@ https://svelte.dev/e/node_invalid_placement -->
                     <td
                       ><input
                         type="text"
-                        bind:value={copy.name}
+                        bind:value={projectSettingsCopy.name}
                         class="input input-sm input-bordered w-48"
                       /></td
                     >
@@ -511,18 +477,18 @@ https://svelte.dev/e/node_invalid_placement -->
                         name="radio-1"
                         class="radio"
                         on:change={typing_style_change}
-                        bind:group={copy.typing_style}
+                        bind:group={projectSettingsCopy.typing_style}
                         value="variable"
                       /></td
                     >
                   </tr>
-                  {#if copy.typing_style == "variable"}
+                  {#if projectSettingsCopy.typing_style == "variable"}
                     <tr>
                       <td>&nbsp;&nbsp;&nbsp;&nbsp;Characters typed per sec</td>
                       <td
                         ><input
                           type="number"
-                          bind:value={copy.typing_charpsec}
+                          bind:value={projectSettingsCopy.typing_charpsec}
                           min="1"
                           class="input input-sm input-bordered w-24"
                         /></td
@@ -537,18 +503,18 @@ https://svelte.dev/e/node_invalid_placement -->
                         name="radio-1"
                         class="radio"
                         on:change={typing_style_change}
-                        bind:group={copy.typing_style}
+                        bind:group={projectSettingsCopy.typing_style}
                         value="fixed"
                       /></td
                     >
                   </tr>
-                  {#if copy.typing_style == "fixed"}
+                  {#if projectSettingsCopy.typing_style == "fixed"}
                     <tr>
                       <td>&nbsp;&nbsp;&nbsp;&nbsp;Time spent typing (sec)</td>
                       <td
                         ><input
                           type="number"
-                          bind:value={copy.typing_time}
+                          bind:value={projectSettingsCopy.typing_time}
                           min="1"
                           class="input input-sm input-bordered w-24"
                         /></td
@@ -583,11 +549,11 @@ https://svelte.dev/e/node_invalid_placement -->
                           type="range"
                           min="0.1"
                           max="0.9"
-                          bind:value={copy.temperature}
+                          bind:value={projectSettingsCopy.temperature}
                           class="range w-1/2"
                           step="0.1"
                         /> <br />
-                        {copy.temperature}
+                        {projectSettingsCopy.temperature}
                       </td>
                     </tr>
                   </tbody>
@@ -608,7 +574,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         <textarea
                           class="textarea textarea-bordered w-full"
                           placeholder="[Characters]"
-                          bind:value={copy.llm_prompt_data}
+                          bind:value={projectSettingsCopy.llm_prompt_data}
                         ></textarea>
                       </td>
                     </tr>
@@ -628,7 +594,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         ><br /><br />
                         <textarea
                           class="textarea textarea-bordered w-full h-64"
-                          bind:value={copy.llm_prompt}
+                          bind:value={projectSettingsCopy.llm_prompt}
                         ></textarea>
                       </td>
                     </tr>
@@ -656,7 +622,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         type="radio"
                         name="llm-setting"
                         class="radio"
-                        bind:group={gen_copy.llm_setting}
+                        bind:group={settingsCopy.llm_setting}
                         value="llama"
                       /></td
                     >
@@ -668,7 +634,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         type="radio"
                         name="llm-setting"
                         class="radio"
-                        bind:group={gen_copy.llm_setting}
+                        bind:group={settingsCopy.llm_setting}
                         value="chatgpt"
                       /></td
                     >
@@ -678,7 +644,7 @@ https://svelte.dev/e/node_invalid_placement -->
 
               <br /><br />
 
-              {#if gen_copy.llm_setting == "chatgpt"}
+              {#if settingsCopy.llm_setting == "chatgpt"}
                 <span class="italic"
                   >Note: These settings are stored on this device, and will not
                   be included in the project file to avoid anyone using your
@@ -694,7 +660,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         ><input
                           type="text"
                           class="input input-bordered w-4/5 m-4"
-                          bind:value={gen_copy.chatgpt_api_key}
+                          bind:value={settingsCopy.chatgpt_api_key}
                         /></td
                       ></tr
                     >
@@ -716,7 +682,7 @@ https://svelte.dev/e/node_invalid_placement -->
                           type="radio"
                           name="gpt-sim-version"
                           class="radio"
-                          bind:group={gen_copy.chatgpt_sim_version}
+                          bind:group={settingsCopy.chatgpt_sim_version}
                           value="gpt-3.5-turbo"
                         /></td
                       >
@@ -728,7 +694,7 @@ https://svelte.dev/e/node_invalid_placement -->
                           type="radio"
                           name="gpt-sim-version"
                           class="radio"
-                          bind:group={gen_copy.chatgpt_sim_version}
+                          bind:group={settingsCopy.chatgpt_sim_version}
                           value="gpt-4-1106-preview"
                         /></td
                       >
@@ -746,7 +712,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         ><input
                           type="text"
                           class="input input-bordered w-4/5 m-4"
-                          bind:value={gen_copy.llm_api_address}
+                          bind:value={settingsCopy.llm_api_address}
                         /></td
                       ></tr
                     >

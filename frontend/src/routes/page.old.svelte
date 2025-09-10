@@ -209,7 +209,7 @@
 
   function chatbot_settings(s: any, p: string = "") {
     if (s.show_avatar === undefined) {
-      s.show_avatar = "yes";
+      s.show_avatar = true;
     }
     if (s.name === undefined) {
       s.name = "Tilbot";
@@ -439,7 +439,7 @@
     {#each messages as message}
       {#if message.from == "bot"}
         <div class="chat chat-start">
-          {#if settings.show_avatar_sm == "yes"}
+          {#if settings.show_avatar_sm}
             {#if settings.avatar_file_sm == ""}
               <div class="chat-image avatar ml-2">
                 <div
@@ -478,7 +478,7 @@
     {/each}
     {#if show_typing_indicator}
       <div class="chat chat-start">
-        {#if settings.show_avatar_sm == "yes"}
+        {#if settings.show_avatar_sm}
           {#if settings.avatar_file_sm == ""}
             <div class="chat-image avatar ml-2">
               <div

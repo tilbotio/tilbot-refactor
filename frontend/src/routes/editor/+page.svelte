@@ -66,7 +66,7 @@
     canvas_height: 1480,
     bot_name: "Tilbot",
     variables: [],
-    settings: { project_name: "New project" },
+    settings: { name: "New project" },
   });
 
   let modal_launch = $state() as HTMLInputElement;
@@ -101,7 +101,7 @@
     }
   );
 
-  let gen_settings: { [key: string]: any } = $state({});
+  let generalSettings: { [key: string]: any } = $state({});
   let path = $state("");
   let chatgpt_running = $state(false);
 
@@ -144,11 +144,11 @@
       });
 
       window_api.receive("settings-load", (param: any) => {
-        gen_settings = param.settings;
+        generalSettings = param.settings;
         path = param.path;
 
-        if (gen_settings.chatgpt_sim_version === undefined) {
-          gen_settings.chatgpt_sim_version = "gpt-3.5-turbo";
+        if (generalSettings.chatgpt_sim_version === undefined) {
+          generalSettings.chatgpt_sim_version = "gpt-3.5-turbo";
         }
       });
 
@@ -378,8 +378,8 @@
     const detail = e.detail;
     if (detail.event == "save_settings") {
       project.settings = detail.settings;
-      gen_settings = detail.gen_settings;
-      window_api.send("save-settings", { settings: gen_settings });
+      generalSettings = detail.generalSettings;
+      window_api.send("save-settings", { settings: generalSettings });
     }
   }
 
@@ -694,10 +694,10 @@
 
   <Settings
     bind:settingswindow={settings_window}
-    settings={project.settings}
-    gensettings={gen_settings}
+    projectSettings={project.settings}
+    generalSettings={generalSettings}
     path={path + "avatar/"}
-    on:message={handleSettingsMessage}
+    save={handleSettingsMessage}
   />
 
   <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
@@ -944,8 +944,8 @@
 
         <ChatGPT
           is_running={chatgpt_running}
-          settings={project.settings}
-          gensettings={gen_settings}
+          projectSettings={project.settings}
+          generalSettings={generalSettings}
           variables={project.variables}
           on:message={handleChatGPTMessage}
         ></ChatGPT>

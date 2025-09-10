@@ -56,7 +56,7 @@ class ProjectController {
         'typing_style': 'fixed',
         'typing_time': 2,
         'typing_charpsec': 40,
-        'show_avatar': 'yes',
+        'show_avatar': true,
         'avatar_file': '',
         'name': 'Tilbot'
       };

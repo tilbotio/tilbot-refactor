@@ -1,4 +1,13 @@
+export type GeneralSettings = {
+    llm_setting: "chatgpt" | "";
+    llm_api_address: "";
+    chatgpt_api_key: string;
+    chatgpt_version: string;
+    user_id: string;
+};
+
 export type ProjectSettings = {
+  name: string; // bot name
   project_name: string;
   typing_style?: "fixed" | "variable";
   typing_time?: number;
@@ -6,6 +15,10 @@ export type ProjectSettings = {
   llm_prompt?: string;
   llm_prompt_data?: string;
   temperature?: number;
+  show_avatar?: boolean;
+  avatar_file?: string;
+  show_avatar_sm?: boolean;
+  avatar_file_sm?: string;
 };
 
 export type ProjectVariable = {

@@ -3,15 +3,15 @@
   import { Configuration, OpenAIApi } from "openai";
 
   interface Props {
-    settings: any;
-    gensettings: any;
+    projectSettings: any;
+    generalSettings: any;
     variables: any;
     is_running: boolean;
   }
 
   let {
-    settings,
-    gensettings,
+    projectSettings,
+    generalSettings,
     variables,
     is_running = $bindable(),
   }: Props = $props();
@@ -44,7 +44,7 @@
           msgs = [
             {
               role: "system",
-              content: settings.llm_prompt + "\n" + data_str,
+              content: projectSettings.llm_prompt + "\n" + data_str,
             },
           ];
 
@@ -77,9 +77,9 @@
         console.log("=====");
 
         const completion = await openai.createChatCompletion({
-          model: gensettings.chatgpt_sim_version,
+          model: generalSettings.chatgpt_sim_version,
           messages: msgs,
-          temperature: settings.temperature,
+          temperature: projectSettings.temperature,
         });
 
         console.log(completion);
@@ -116,7 +116,7 @@
               });
 
               // Deprecated, new turbo version does not need this delay (and won't get it)
-              if (gensettings.chatgpt_sim_version == "gpt-4") {
+              if (generalSettings.chatgpt_sim_version == "gpt-4") {
                 // Since the GPT-4 API call frequency seems to be very limited, add artificial delay.
                 setTimeout(function () {
                   dispatch("message", {
@@ -150,7 +150,7 @@
             content: resp,
           });
 
-          if (gensettings.chatgpt_sim_version == "gpt-4") {
+          if (generalSettings.chatgpt_sim_version == "gpt-4") {
             setTimeout(function () {
               dispatch("message", {
                 event: "send_chatgpt_message",
@@ -197,18 +197,18 @@
       let resp = "";
 
       // Check if ChatGPT or another LLM that is triggered via API
-      if (gensettings.llm_setting == "chatgpt") {
+      if (generalSettings.llm_setting == "chatgpt") {
         const configuration = new Configuration({
-          apiKey: gensettings.chatgpt_api_key,
+          apiKey: generalSettings.chatgpt_api_key,
         });
 
         let openai = new OpenAIApi(configuration);
 
         const completion = await openai.createChatCompletion({
           //model: "gpt-3.5-turbo",
-          model: gensettings.chatgpt_sim_version,
+          model: generalSettings.chatgpt_sim_version,
           messages: var_msgs,
-          temperature: settings.temperature,
+          temperature: projectSettings.temperature,
         });
 
         console.log(completion);
@@ -219,8 +219,8 @@
 
         resp = completion.data.choices[0].message.content;
       } else {
-        let url = gensettings.llm_api_address;
-        if (gensettings.llm_api_address.indexOf("http") == -1) {
+        let url = generalSettings.llm_api_address;
+        if (generalSettings.llm_api_address.indexOf("http") == -1) {
           url = "http://" + url;
         }
         let r = await fetch(
@@ -258,10 +258,10 @@
   }
 
   function run_chatgpt() {
-    data_str = settings.llm_prompt_data;
+    data_str = projectSettings.llm_prompt_data;
 
     const configuration = new Configuration({
-      apiKey: gensettings.chatgpt_api_key,
+      apiKey: generalSettings.chatgpt_api_key,
     });
 
     openai = new OpenAIApi(configuration);
@@ -285,7 +285,7 @@
       msgs = [
         {
           role: "system",
-          content: settings.llm_prompt + "\n" + data_str,
+          content: projectSettings.llm_prompt + "\n" + data_str,
         },
       ];
 
