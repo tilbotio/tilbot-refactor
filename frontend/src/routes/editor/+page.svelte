@@ -68,8 +68,9 @@
     variables: [],
     settings: { project_name: "New project" },
   });
-  let modal_launch: HTMLInputElement | undefined = $state();
-  let modal_edit: HTMLInputElement | undefined = $state();
+
+  let modal_launch = $state() as HTMLInputElement;
+  let modal_edit = $state() as HTMLInputElement;
 
   let selected_id = $state(0);
   let edit_block: ProjectBlock | null = $state(null);
@@ -230,12 +231,12 @@
   }
 
   function btn_launch_click() {
-    modal_launch!.click();
+    modal_launch.click();
     window_api.send("open-server", JSON.stringify(project));
   }
 
   function btn_close_server_click() {
-    modal_launch!.click();
+    modal_launch.click();
     window_api.send("close-server");
   }
 
@@ -257,7 +258,7 @@
     }
   }
 
-  function registerBlock(id: string, block: any) {
+  function registerBlock(id: string, block: ProjectBlock) {
     const scrollLeft = editor_main.scrollLeft;
     const scrollTop = editor_main.scrollTop;
 
@@ -272,7 +273,7 @@
       };
     }
 
-    const connectors: any = {};
+    const connectors: any[] = [];
 
     for (const cid in block.connectors) {
       const connector_rect = document
@@ -312,6 +313,7 @@
       let max_y = 0;
 
       for (const value of Object.values(line_locations)) {
+        console.log(JSON.stringify(value));
         const connectors = value.connectors;
         if (connectors.length == 0) {
           if (value.x + 200 > max_x) {
@@ -399,7 +401,7 @@
     const event = detail.event;
     if (event == "cancel") {
       edit_block = null;
-      modal_edit!.click();
+      modal_edit.click();
     } else if (event == "save") {
       // Remove the line_locations for the connectors in case some were deleted/moved
       const block = detail.block;
@@ -413,7 +415,7 @@
 
       project.blocks[selected_id] = block;
       edit_block = null;
-      modal_edit!.click();
+      modal_edit.click();
     }
   }
 
@@ -426,7 +428,7 @@
       selected_id = blockId;
     } else if (event == "edit_block") {
       edit_block = project.blocks[blockId];
-      modal_edit!.click();
+      modal_edit.click();
     } else if (event == "delete_block") {
       deselect_all();
 
