@@ -5,25 +5,29 @@
     ProjectSettings,
   } from "../../../../common/project/types";
 
-  const window_api: any = (window as any)?.api;
+  let window_api: any;
 
   let selected_setting = $state(0);
   function settings_row_clicked() {
     selected_setting = this.dataset.settingId;
   }
 
-  let toggle: HTMLElement;
+  let toggle = $state() as HTMLElement;
   let { projectSettings, settings, path, save: onSave } = $props();
+
+  export function show() {
+    toggle.click();
+  }
 
   let is_loading_avatar: boolean = false;
   let is_loading_avatar_sm: boolean = false;
 
   const defaultPrompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create.
-    You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
+  You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
 
-    Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text.
-    For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
-    You cannot provide answer options with curly brackets for the chatbot.`;
+  Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text.
+  For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
+  You cannot provide answer options with curly brackets for the chatbot.`;
 
   const defaultSettings: GeneralSettings = {
     llm_setting: "chatgpt",
@@ -67,6 +71,8 @@
   }
 
   onMount(() => {
+    window_api = (window as any)?.api;
+
     // Only works in Electron for now. @TODO: implement for online version of Tilbot.
     if (
       typeof navigator === "object" &&

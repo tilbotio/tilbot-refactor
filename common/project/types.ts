@@ -1,9 +1,9 @@
 export type GeneralSettings = {
     llm_setting: "chatgpt" | "";
     llm_api_address: "";
-    chatgpt_api_key: string;
-    chatgpt_version: string;
-    user_id: string;
+    chatgpt_api_key?: string;
+    chatgpt_version?: string;
+    user_id?: string;
 };
 
 export type ProjectSettings = {

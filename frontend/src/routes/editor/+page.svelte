@@ -66,7 +66,7 @@
     canvas_height: 1480,
     bot_name: "Tilbot",
     variables: [],
-    settings: { name: "New project" },
+    settings: { project_name: "New project", name: "Tilbot" },
   });
 
   let modal_launch = $state() as HTMLInputElement;
@@ -109,9 +109,11 @@
 
   let btn_del_line_visible = $state(false);
 
-  const window_api: any = (window as any)?.api;
+  let window_api: any;
 
   onMount(() => {
+    window_api = (window as any)?.api;
+
     // Set a property on the window so that the simulator knows it's part of the editor.
     window.isTilbotEditor = true;
 
@@ -227,7 +229,7 @@
   }
 
   function btn_settings_click() {
-    settings_window!.show();
+    settings_window.show();
   }
 
   function btn_launch_click() {
@@ -693,9 +695,9 @@
   />
 
   <Settings
-    bind:settingswindow={settings_window}
+    bind:this={settings_window}
     projectSettings={project.settings}
-    generalSettings={generalSettings}
+    {generalSettings}
     path={path + "avatar/"}
     save={handleSettingsMessage}
   />
@@ -945,7 +947,7 @@
         <ChatGPT
           is_running={chatgpt_running}
           projectSettings={project.settings}
-          generalSettings={generalSettings}
+          {generalSettings}
           variables={project.variables}
           on:message={handleChatGPTMessage}
         ></ChatGPT>
