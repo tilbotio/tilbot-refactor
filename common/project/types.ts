@@ -3,6 +3,7 @@ export type GeneralSettings = {
     llm_api_address: "";
     chatgpt_api_key?: string;
     chatgpt_version?: string;
+    chatgpt_sim_version?: string;
     user_id?: string;
 };
 

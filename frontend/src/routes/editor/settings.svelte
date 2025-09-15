@@ -7,11 +7,6 @@
   import { ArrowUpOnSquare, Trash } from "svelte-heros-v2";
   let window_api: any;
 
-  let selected_setting = $state(0);
-  function settings_row_clicked() {
-    selected_setting = this.dataset.settingId;
-  }
-
   let toggle = $state() as HTMLElement;
   let { projectSettings, settings, path, save: onSave } = $props();
 
@@ -63,8 +58,16 @@
     );
   }
 
-  let settingsCopy: GeneralSettings = $derived.by(copySettings);
-  let projectSettingsCopy: ProjectSettings = $derived.by(copyProjectSettings);
+  let settingsCopy: GeneralSettings = $state(copySettings());
+  let projectSettingsCopy: ProjectSettings = $state(copyProjectSettings());
+
+  $effect(() => {
+    settingsCopy = copySettings();
+  });
+
+  $effect(() => {
+    projectSettingsCopy = copyProjectSettings();
+  });
 
   function firstletter(str: string): string {
     return str.charAt(0).toUpperCase();
@@ -89,8 +92,6 @@
         }
       });
     }
-
-    console.log(projectSettingsCopy);
   });
 
   function load_avatar() {
@@ -115,10 +116,6 @@
       window_api.send("do-delete-avatar", projectSettingsCopy.avatar_file_sm);
       projectSettingsCopy.avatar_file_sm = "";
     }
-  }
-
-  function typing_style_change() {
-    //copy.typing_style = event.currentTarget.value;
   }
 
   function reset() {
@@ -178,7 +175,8 @@
                           type="text"
                           bind:value={projectSettingsCopy.project_name}
                           class="input input-sm input-bordered w-96"
-                        /></td
+                        />
+                        {projectSettingsCopy.project_name}</td
                       >
                     </tr>
                   </tbody>
@@ -242,17 +240,18 @@
                               <div class="rounded-full w-12">
                                 <img
                                   src={path + projectSettingsCopy.avatar_file}
+                                  alt="Avatar"
                                 />
                               </div>
                             {/if}
                           </div>
                           <button
                             class="btn-sm btn-square ml-4 mt-6"
-                            on:click={load_avatar}><ArrowUpOnSquare /></button
+                            onclick={load_avatar}><ArrowUpOnSquare /></button
                           >
                           <button
                             class="btn-sm btn-square mt-6"
-                            on:click={delete_avatar}><Trash /></button
+                            onclick={delete_avatar}><Trash /></button
                           >
                         </td>
                       </tr>
@@ -303,6 +302,7 @@
                                     <img
                                       src={path +
                                         projectSettingsCopy.avatar_file_sm}
+                                      alt="Avatar"
                                     />
                                   </div>
                                 </div>
@@ -316,12 +316,11 @@
                           </div>
                           <button
                             class="btn-sm btn-square ml-4 mt-6"
-                            on:click={load_avatar_sm}
-                            ><ArrowUpOnSquare /></button
+                            onclick={load_avatar_sm}><ArrowUpOnSquare /></button
                           >
                           <button
                             class="btn-sm btn-square mt-6"
-                            on:click={delete_avatar_sm}><Trash /></button
+                            onclick={delete_avatar_sm}><Trash /></button
                           >
                         </td>
                       </tr>
@@ -361,7 +360,11 @@
               <div class="p-8">
                 <table class="table w-full">
                   <thead>
-                    <tr><th colspan="2">Typing speed</th></tr>
+                    <tr
+                      ><th colspan="2"
+                        >Typing speed ({projectSettingsCopy.typing_style})</th
+                      ></tr
+                    >
                   </thead>
                   <tbody>
                     <tr>
@@ -369,9 +372,8 @@
                       <td
                         ><input
                           type="radio"
-                          name="radio-1"
+                          name="typing-style"
                           class="radio"
-                          on:change={typing_style_change}
                           bind:group={projectSettingsCopy.typing_style}
                           value="variable"
                         /></td
@@ -396,9 +398,8 @@
                       <td
                         ><input
                           type="radio"
-                          name="radio-1"
+                          name="typing-style"
                           class="radio"
-                          on:change={typing_style_change}
                           bind:group={projectSettingsCopy.typing_style}
                           value="fixed"
                         /></td
@@ -630,10 +631,10 @@
       </div>
       <div class="h-24 text-right">
         <div class="divider"></div>
-        <button class="btn btn-active" on:click={save}>Save</button
+        <button class="btn btn-active" onclick={save}>Save</button
         >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button
           class="btn btn-outline"
-          on:click={cancel}>Cancel</button
+          onclick={cancel}>Cancel</button
         >
       </div>
     </div>
