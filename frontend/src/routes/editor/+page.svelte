@@ -691,14 +691,14 @@
   <!--</a>-->
 
   <Variables
-    bind:variablewindow={variables_window}
+    bind:this={variables_window}
     variables={project.variables}
   />
 
   <Settings
     bind:this={settings_window}
     projectSettings={project.settings}
-    {generalSettings}
+    settings={generalSettings}
     path={path + "avatar/"}
     save={handleSettingsMessage}
   />

@@ -9,6 +9,14 @@
       "**"
     ]
   },
+  "build": {
+    "extraFiles": [
+      {
+        "from": "../common",
+        "to": "common"
+      }
+    ]
+  },
   "scripts": {
     "start": "electron .",
     "package-win": "electron-packager . tilbot --overwrite --platform=win32 --arch=x64 --icon=../frontend/src/icon/win/icon.ico --out=../dist",

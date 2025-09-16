@@ -1,18 +1,18 @@
-import { app, protocol, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, protocol, net, ProtocolResponse, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
-import { fileURLToPath } from "url";
-import { fork } from "child_process";
+import { fileURLToPath, pathToFileURL } from "url";
+import { fork, type ChildProcess } from "child_process";
 import fs from "fs";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
-import CsvData from "./csvdata.cjs";
+import { CsvData } from "../common/csvdata";
 import { networkInterfaces } from "os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-let ps = undefined;
+let ps: ChildProcess | undefined;
 
-let csv_datas = {};
+let csv_datas: { [key: string]: CsvData } = {};
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -38,8 +38,8 @@ function createWindow() {
 
     try {
       const ifaces = networkInterfaces();
-      for (var dev in ifaces) {
-        for (const details of ifaces[dev]) {
+      for (const dev in ifaces) {
+        for (const details of ifaces[dev]!) {
           if (details.family === "IPv4" && !details.internal) {
             address = details.address;
           }
@@ -351,6 +351,34 @@ function createWindow() {
       win.webContents.send("project-saved");
     }
   });
+
+  /* Causes infinite loop, so disabled:
+  protocol.handle("file", (request) => {
+
+    // Some paths need to be fixed
+    const url = request.url; //.substr(5);
+
+    if (url.indexOf("build") == -1) {
+      if (url.indexOf("_app") != -1) {
+        return net.fetch("build/" + url.substring(url.indexOf("_app")));
+      } else {
+        // This should not be triggered anymore with a fix in place in the editor code
+        return net.fetch("build/index.html");
+      }
+    } else {
+      //if (url.indexOf('electron') != -1) {
+      //  callback({path: path.normalize(__dirname) + '/' + url.substring(url.indexOf('electron'))});
+      //}
+      //else {
+      return net.fetch(
+        pathToFileURL(
+          path.normalize(__dirname) + "/" + url.substring(url.indexOf("build"))
+        ).toString()
+      );
+      //}
+    }
+  });
+  */
 
   win.loadFile("build/editor.html");
 }
