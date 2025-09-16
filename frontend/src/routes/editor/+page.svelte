@@ -626,6 +626,7 @@
       bot_name: "Tilbot",
       variables: [],
       settings: {
+        name: "Tilbot",
         project_name: "New project",
       },
     };
@@ -958,7 +959,7 @@
         <div class="display h-full w-full">
           <div class="artboard artboard-demo h-full">
             <iframe
-              src="/"
+              src="about:blank"
               class="w-full h-full"
               bind:this={simulator}
               title="Simulator"
