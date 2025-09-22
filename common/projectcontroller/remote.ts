@@ -3,14 +3,15 @@ import type {
   ProjectControllerOutputInterface,
 } from "./types";
 
-class RemoteProjectController
-  implements ProjectControllerInterface<ProjectControllerOutputInterface>
+class RemoteProjectController<
+  ProjectControllerOutputType extends ProjectControllerOutputInterface
+> implements ProjectControllerInterface<ProjectControllerOutputType>
 {
-  private _output: ProjectControllerOutputInterface;
+  private _output: ProjectControllerOutputType;
   private _pending: string[] = [];
   private _socket: any = null;
 
-  constructor(output: ProjectControllerOutputInterface) {
+  constructor(output: ProjectControllerOutputType) {
     this._output = output;
   }
 
@@ -34,7 +35,7 @@ class RemoteProjectController
     return this._socket;
   }
 
-  get output() {
+  get output(): ProjectControllerOutputType {
     return this._output;
   }
 
