@@ -1,10 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type {
-    GeneralSettings,
-    ProjectSettings,
+  import {
+    defaultGeneralSettings,
+    defaultProjectSettings,
+    type GeneralSettings,
+    type ProjectSettings,
   } from "../../../../common/project/types";
   import { ArrowUpOnSquare, Trash } from "svelte-heros-v2";
+
   let window_api: any;
 
   let toggle = $state() as HTMLElement;
@@ -17,36 +20,9 @@
   let is_loading_avatar: boolean = false;
   let is_loading_avatar_sm: boolean = false;
 
-  const defaultPrompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create.
-  You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
-
-  Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text.
-  For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
-  You cannot provide answer options with curly brackets for the chatbot.`;
-
-  const defaultSettings: GeneralSettings = {
-    llm_setting: "chatgpt",
-    llm_api_address: "",
-  };
-
-  const defaultProjectSettings: ProjectSettings = {
-    project_name: "New project",
-    typing_style: "fixed",
-    typing_time: 2,
-    typing_charpsec: 40,
-    llm_prompt: defaultPrompt,
-    llm_prompt_data: "",
-    temperature: 0.5,
-    show_avatar: true,
-    avatar_file: "",
-    show_avatar_sm: false,
-    avatar_file_sm: "",
-    name: "Tilbot",
-  };
-
-  function copySettings(): GeneralSettings {
+  function copyGeneralSettings(): GeneralSettings {
     return JSON.parse(
-      JSON.stringify(Object.assign({}, defaultSettings, settings ?? {}))
+      JSON.stringify(Object.assign({}, defaultGeneralSettings, settings ?? {}))
     );
   }
 
@@ -58,11 +34,11 @@
     );
   }
 
-  let settingsCopy: GeneralSettings = $state(copySettings());
+  let generalSettingsCopy: GeneralSettings = $state(copyGeneralSettings());
   let projectSettingsCopy: ProjectSettings = $state(copyProjectSettings());
 
   $effect(() => {
-    settingsCopy = copySettings();
+    generalSettingsCopy = copyGeneralSettings();
   });
 
   $effect(() => {
@@ -119,7 +95,7 @@
   }
 
   function reset() {
-    settingsCopy = copySettings();
+    generalSettingsCopy = copyGeneralSettings();
     projectSettingsCopy = copyProjectSettings();
   }
 
@@ -129,7 +105,7 @@
   }
 
   function save() {
-    onSave(settingsCopy, projectSettingsCopy);
+    onSave(generalSettingsCopy, projectSettingsCopy);
     toggle.click();
   }
 </script>
@@ -527,7 +503,7 @@
                           type="radio"
                           name="llm-setting"
                           class="radio"
-                          bind:group={settingsCopy.llm_setting}
+                          bind:group={generalSettingsCopy.llm_setting}
                           value="llama"
                         /></td
                       >
@@ -539,7 +515,7 @@
                           type="radio"
                           name="llm-setting"
                           class="radio"
-                          bind:group={settingsCopy.llm_setting}
+                          bind:group={generalSettingsCopy.llm_setting}
                           value="chatgpt"
                         /></td
                       >
@@ -549,7 +525,7 @@
 
                 <br /><br />
 
-                {#if settingsCopy.llm_setting == "chatgpt"}
+                {#if generalSettingsCopy.llm_setting == "chatgpt"}
                   <span class="italic"
                     >Note: These settings are stored on this device, and will
                     not be included in the project file to avoid anyone using
@@ -565,7 +541,7 @@
                           ><input
                             type="text"
                             class="input input-bordered w-4/5 m-4"
-                            bind:value={settingsCopy.chatgpt_api_key}
+                            bind:value={generalSettingsCopy.chatgpt_api_key}
                           /></td
                         ></tr
                       >
@@ -587,7 +563,7 @@
                             type="radio"
                             name="gpt-sim-version"
                             class="radio"
-                            bind:group={settingsCopy.chatgpt_sim_version}
+                            bind:group={generalSettingsCopy.chatgpt_sim_version}
                             value="gpt-3.5-turbo"
                           /></td
                         >
@@ -599,7 +575,7 @@
                             type="radio"
                             name="gpt-sim-version"
                             class="radio"
-                            bind:group={settingsCopy.chatgpt_sim_version}
+                            bind:group={generalSettingsCopy.chatgpt_sim_version}
                             value="gpt-4-1106-preview"
                           /></td
                         >
@@ -617,7 +593,7 @@
                           ><input
                             type="text"
                             class="input input-bordered w-4/5 m-4"
-                            bind:value={settingsCopy.llm_api_address}
+                            bind:value={generalSettingsCopy.llm_api_address}
                           /></td
                         ></tr
                       >
