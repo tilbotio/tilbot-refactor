@@ -3,14 +3,13 @@ node_modules
 !/.env.example
 !/.git*
 /.gitconfig
-/build
+*/build
 /certs
 /currentproject
 /logs
 /package
 /projects/
 /proj_pub/
-/settings.json
 /src/routes/avatar/
 /src/routes/gamble/
 /src/routes/guesswho/
@@ -27,3 +26,5 @@ node_modules
 /tilbot-darwin-x64
 /tilbot-win32-x64
 /tmp_upload/
+/app/.*
+/app/settings.json
