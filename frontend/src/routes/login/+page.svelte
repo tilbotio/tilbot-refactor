@@ -3,7 +3,7 @@
       <img class="w-72" src="/images/tilbot_logo.svg" alt="Tilbot logo" />
       <div class="card flex-shrink-0 w-full w-96 shadow-2xl bg-base-100">
         <div class="card-body">
-          <form on:submit|preventDefault={login}>
+          <form onsubmit={preventDefault(login)}>
             <div class="form-control">
                 <label class="label">
                 <span class="label-text">Name</span>
@@ -43,12 +43,14 @@
 
 
 <script lang="ts">
+    import { preventDefault } from 'svelte/legacy';
+
     import { onMount } from "svelte";
 
-    let error = false;
-    let error_txt = '';
-    let info = false;
-    let info_txt = '';
+    let error = $state(false);
+    let error_txt = $state('');
+    let info = $state(false);
+    let info_txt = $state('');
 
     onMount(async () => {
         // Check if an admin account exists, if not create one.

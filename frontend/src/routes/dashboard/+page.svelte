@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: `<th>` cannot be a child of `<thead>`. `<thead>` only allows these children: `<tr>`, `<style>`, `<script>`, `<template>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
+https://svelte.dev/e/node_invalid_placement -->
 <NewUser bind:newuserwindow={newuser_window} on:message={handleNewUserMessage}></NewUser>
 {#if loaded}
 <div>
@@ -216,7 +218,7 @@
 
                 <table class="table w-full">
                     <thead>
-                        <th colspan="2">Choice of large language model</th>
+                        <tr><th colspan="2">Choice of large language model</th></tr>
                     </thead>
                     <tbody>
                         <tr>
@@ -240,7 +242,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                            <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{data.settings.chatgpt_api_key}" />
+                            <tr><td><input type="text" class="input input-bordered w-4/5 m-4" bind:value="{data.settings.chatgpt_api_key}" /></td></tr>
                     </tbody>
                 </table>
 
@@ -264,10 +266,10 @@
                 {:else}
                 <table class="table w-full">
                     <thead>
-                        <th>Large language model API address</th>
+                        <tr><th>Large language model API address</th></tr>
                     </thead>
                     <tbody>
-                            <input type="text" class="input input-bordered w-4/5 m-4" bind:value="{data.settings.llm_api_address}" />
+                            <tr><td><input type="text" class="input input-bordered w-4/5 m-4" bind:value="{data.settings.llm_api_address}" /></td></tr>
                     </tbody>
                 </table>
                 {/if}
@@ -322,7 +324,7 @@ import { SvelteComponent, onMount } from 'svelte';
     let import_file: any;
     let selected_project_id: string;
 
-    $: {
+    $effect(() => {
         if (import_file && import_file[0]) {
             let data = new FormData();
             data.append('file', import_file[0], import_file[0].name);
@@ -349,7 +351,7 @@ import { SvelteComponent, onMount } from 'svelte';
 
             background_fetch();
         }
-    }
+    });
 
     // Load dashboard data
     onMount(load_data);

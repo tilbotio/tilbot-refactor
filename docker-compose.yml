@@ -1,8 +1,8 @@
 version: "3.8"
 services:
-  npm-ci:
+  yarn-install:
     build: .
-    command: ["npm", "ci"]
+    command: ["yarn", "install", "--frozen-lockfile"]
     volumes:
     - .:/home/node
 
@@ -10,7 +10,7 @@ services:
     build: .
     working_dir: /home/node/frontend
     depends_on:
-      npm-ci:
+      yarn-install:
         condition: service_completed_successfully
     ports:
     - 5173:5173
@@ -20,13 +20,13 @@ services:
     environment:
     - VITE_API_URL=http://backend:8000
     - MONGO_DB=mongodb://mongo/tilbot
-    command: ["npm", "run", "dev-vite"]
+    command: ["yarn", "run", "dev"]
 
   backend:
     build: .
     working_dir: /home/node/backend
     depends_on:
-      npm-ci:
+      yarn-install:
         condition: service_completed_successfully
     ports:
     - 8000-8010:8000-8010
@@ -36,7 +36,7 @@ services:
     environment:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
-    command: ["npm", "run", "start"]
+    command: ["yarn", "run", "start"]
 
   mongo:
     image: mongo

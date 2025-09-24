@@ -3,7 +3,8 @@ node_modules
 !/.env.example
 !/.git*
 /.gitconfig
-*/build
+!/.npmrc
+app/build
 /certs
 /currentproject
 /logs
@@ -26,5 +27,4 @@ node_modules
 /tilbot-darwin-x64
 /tilbot-win32-x64
 /tmp_upload/
-/app/.*
-/app/settings.json
+/dist

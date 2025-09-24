@@ -2,31 +2,35 @@
   "name": "tilbot",
   "version": "2.0.0",
   "private": true,
-  "workspaces": [
-    "frontend",
-    "backend",
-    "socket-io",
-    "app",
-    "tests/integration/app"
-  ],
+  "type": "module",
+  "workspaces": {
+    "packages": [
+      "frontend",
+      "backend",
+      "socket-io",
+      "app",
+      "tests/integration/app"
+    ]
+  },
   "scripts": {
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run start --workspace=backend",
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev-vite --workspace=frontend\"",
-    "prod": "TILBOT_ENV=web concurrently \"npm run build --workspace=frontend\" \"npm run dev:backend\"",
-    "preview": "npm run preview --workspace=frontend",
-    "check": "npm run check --workspace=frontend",
-    "check:watch": "npm run check:watch --workspace=frontend",
-    "app": "TILBOT_ENV=app npm run build --workspace=frontend && npm run start --workspace=app",
-    "package-win": "npm run package-win --workspace=app",
-    "package-mac-x64": "npm run package-mac-x64 --workspace=app",
-    "package-mac-arm": "npm run package-mac-arm --workspace=app",
+    "dev:frontend": "yarn workspace frontend dev",
+    "dev:backend": "yarn workspace backend start",
+    "dev": "concurrently \"yarn dev:frontend\" \"yarn dev:backend\"",
+    "prod": "TILBOT_ENV=web concurrently \"yarn workspace frontend build\" \"yarn dev:backend\"",
+    "preview": "yarn workspace frontend preview",
+    "check": "yarn workspace frontend check",
+    "check:watch": "yarn workspace frontend check:watch",
+    "build:app": "TILBOT_ENV=app yarn workspace frontend build",
+    "app": "yarn build:app && yarn workspace app start",
+    "package-win": "yarn build:app && yarn workspace app package-win",
+    "package-linux": "yarn build:app && yarn workspace app package-linux",
+    "package-mac-x64": "yarn build:app && yarn workspace app package-mac-x64",
+    "package-mac-arm": "yarn build:app && yarn workspace app package-mac-arm",
     "test-integration-app": "TILBOT_ENV=app npm run build --workspace=frontend && npm run test --workspace=tests/integration/app",
     "test-integration-app-ui": "TILBOT_ENV=app npm run build --workspace=frontend && npm run test-ui --workspace=tests/integration/app"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "del-cli": "^5.1.0",
     "tslib": "^2.3.1"
   }
 }

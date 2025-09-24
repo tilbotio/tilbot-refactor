@@ -5,6 +5,7 @@ const API_URL = process.env.VITE_API_URL || 'http://localhost:8000';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  build: { minify: false },
   server: {
     host: true,
     allowedHosts: true,
