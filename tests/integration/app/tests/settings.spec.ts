@@ -5,7 +5,7 @@ let window;
 
 test.beforeAll(async () => {
   let app = await electron.launch({
-    args: ["../../../app/electron-main.cjs", "--no-sandbox"],
+    args: ["../../../../app/electron-main.cjs", "--no-sandbox"],
   });
   window = await app.firstWindow();
   await window.waitForLoadState();
