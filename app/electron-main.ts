@@ -1,11 +1,11 @@
-import { app, protocol, net, ProtocolResponse, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, protocol, net, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { fork, type ChildProcess } from "child_process";
 import fs from "fs";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
-import { CsvData } from "../common/csvdata";
+import { CsvData } from "../common/csvdata.ts";
 import { networkInterfaces } from "os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -54,10 +54,7 @@ function createWindow() {
     }
 
     ipcMain.on("open-server", (event, project_json) => {
-      let p = `${__dirname}`;
-      if (process.platform === "darwin") {
-        p = app.getPath("userData");
-      }
+      const p = app.getPath("userData");
       if (!fs.existsSync(p + "/currentproject/")) {
         fs.mkdirSync(p + "/currentproject");
       }
@@ -89,10 +86,7 @@ function createWindow() {
     });
 
     if (load_file !== undefined) {
-      let p = `${__dirname}`;
-      if (process.platform === "darwin") {
-        p = app.getPath("userData");
-      }
+      const p = app.getPath("userData");
 
       // Remove the old temp project
       if (fs.existsSync(p + "/currentproject")) {
@@ -128,10 +122,7 @@ function createWindow() {
   });
 
   ipcMain.on("get-csv", (event, filename) => {
-    let p = `${__dirname}`;
-    if (process.platform === "darwin") {
-      p = app.getPath("userData");
-    }
+    const p = app.getPath("userData");
 
     if (fs.existsSync(p + "/currentproject/var/" + filename)) {
       let csv = fs.readFileSync(p + "/currentproject/var/" + filename, "utf8");
@@ -140,10 +131,7 @@ function createWindow() {
   });
 
   ipcMain.on("load-project-db", (event, project) => {
-    let p = `${__dirname}`;
-    if (process.platform === "darwin") {
-      p = app.getPath("userData");
-    }
+    const p = app.getPath("userData");
 
     csv_datas = {};
 
@@ -173,10 +161,7 @@ function createWindow() {
   });
 
   ipcMain.on("get-settings", (event, params) => {
-    let p = `${__dirname}`;
-    if (process.platform === "darwin") {
-      p = app.getPath("userData");
-    }
+    const p = app.getPath("userData");
 
     if (!fs.existsSync(p + "/settings.json")) {
       let settings = {
@@ -199,10 +184,7 @@ function createWindow() {
   });
 
   ipcMain.on("save-settings", (event, params) => {
-    let p = `${__dirname}`;
-    if (process.platform === "darwin") {
-      p = app.getPath("userData");
-    }
+    const p = app.getPath("userData");
 
     fs.writeFileSync(p + "/settings.json", JSON.stringify(params.settings));
   });
@@ -219,10 +201,7 @@ function createWindow() {
     });
 
     if (load_file !== undefined) {
-      let p = `${__dirname}`;
-      if (process.platform === "darwin") {
-        p = app.getPath("userData");
-      }
+      const p = app.getPath("userData");
 
       let fname = path.basename(load_file[0]);
 
@@ -254,10 +233,7 @@ function createWindow() {
     });
 
     if (load_file !== undefined) {
-      let p = `${__dirname}`;
-      if (process.platform === "darwin") {
-        p = app.getPath("userData");
-      }
+      const p = app.getPath("userData");
 
       if (!fs.existsSync(p + "/currentproject/")) {
         fs.mkdirSync(p + "/currentproject");
@@ -283,10 +259,7 @@ function createWindow() {
   });
 
   ipcMain.on("do-delete-avatar", (event, fname) => {
-    let p = `${__dirname}`;
-    if (process.platform === "darwin") {
-      p = app.getPath("userData");
-    }
+    const p = app.getPath("userData");
 
     // Delete avatar
     if (fname !== "" && fs.existsSync(p + "/currentproject/" + fname)) {
@@ -307,10 +280,7 @@ function createWindow() {
     });
 
     if (save_file !== undefined) {
-      let p = `${__dirname}`;
-      if (process.platform === "darwin") {
-        p = app.getPath("userData");
-      }
+      const p = app.getPath("userData");
 
       const file = new AdmZip();
       file.addFile("project.json", Buffer.from(project));
