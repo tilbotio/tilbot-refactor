@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { fork, type ChildProcess } from "child_process";
 import fs from "fs";
-import { rm, mkdir, copyFile } from "fs/promises";
+import { rm, mkdir, copyFile, readFile } from "fs/promises";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { CsvData } from "../common/csvdata.ts";
@@ -122,15 +122,6 @@ function createWindow() {
     }
   });
 
-  ipcMain.on("get-csv", (event, filename) => {
-    const p = app.getPath("userData");
-
-    if (fs.existsSync(p + "/currentproject/var/" + filename)) {
-      let csv = fs.readFileSync(p + "/currentproject/var/" + filename, "utf8");
-      win.webContents.send("csv-load", { filename: filename, csv: csv });
-    }
-  });
-
   ipcMain.on("load-project-db", (event, project) => {
     const p = app.getPath("userData");
 
@@ -163,8 +154,7 @@ function createWindow() {
 
   ipcMain.handle(
     "load-avatar",
-    async (event, params): Promise<string | null> => {
-      const { prev_name } = params;
+    async (event, prev_name): Promise<string | null> => {
       const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ["openFile"],
         filters: [
@@ -197,6 +187,66 @@ function createWindow() {
     }
   );
 
+  ipcMain.handle(
+    "load-csv",
+    async (
+      event,
+      params
+    ): Promise<{ filename: string; csv: string } | null> => {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ["openFile"],
+        filters: [
+          {
+            name: "Comma-separated value (CSV) file",
+            extensions: [".csv"],
+          },
+        ],
+      });
+
+      if (canceled) {
+        return null;
+      } else {
+        const p = app.getPath("userData");
+
+        await mkdir(`${p}/currentproject/var`, { recursive: true });
+
+        const [load_file] = filePaths;
+        let filename = path.basename(load_file);
+        await copyFile(load_file, `${p}/currentproject/var/${filename}`);
+        const csv = await readFile(load_file, "utf8");
+        return { filename, csv };
+
+        // @TODO: load into csvdb for use
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "get-csv",
+    async (
+      event,
+      filename
+    ): Promise<string | null> => {
+      const p = app.getPath("userData");
+
+      if (path.basename(filename) !== filename) {
+        return null;
+      }
+
+      try {
+        return await readFile(
+          `${p}/currentproject/var/${filename}`,
+          "utf8"
+        );
+      } catch (e: any) {
+        if (e.code !== "ENOENT") {
+          throw e;
+        }
+        return null;
+      }
+    }
+  );
+
   ipcMain.on("get-settings", (event, params) => {
     const p = app.getPath("userData");
 
@@ -224,38 +274,6 @@ function createWindow() {
     const p = app.getPath("userData");
 
     fs.writeFileSync(p + "/settings.json", JSON.stringify(params.settings));
-  });
-
-  ipcMain.on("do-load-csv-data", (event) => {
-    let load_file = dialog.showOpenDialogSync({
-      properties: ["openFile"],
-      filters: [
-        {
-          name: "Comma-separated value (CSV) file",
-          extensions: [".csv"],
-        },
-      ],
-    });
-
-    if (load_file !== undefined) {
-      const p = app.getPath("userData");
-
-      let fname = path.basename(load_file[0]);
-
-      if (!fs.existsSync(p + "/currentproject/")) {
-        fs.mkdirSync(p + "/currentproject");
-      }
-
-      if (!fs.existsSync(p + "/currentproject/var/")) {
-        fs.mkdirSync(p + "/currentproject/var");
-      }
-
-      fs.copyFileSync(load_file[0], p + "/currentproject/var/" + fname);
-      let csv = fs.readFileSync(load_file[0], "utf8");
-      win.webContents.send("csv-load", { filename: fname, csv: csv });
-
-      // @TODO: load into csvdb for use
-    }
   });
 
   ipcMain.on("do-delete-avatar", (event, fname) => {
