@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { fork, type ChildProcess } from "child_process";
 import fs from "fs";
+import { rm, mkdir, copyFile } from "fs/promises";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { CsvData } from "../common/csvdata.ts";
@@ -20,7 +21,7 @@ function createWindow() {
     title: "Tilbot",
     icon: path.join(__dirname, "src/icon/png/64x64.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.ts"),
     },
   });
   win.maximize();
@@ -160,6 +161,42 @@ function createWindow() {
     return res;
   });
 
+  ipcMain.handle(
+    "load-avatar",
+    async (event, params): Promise<string | null> => {
+      const { prev_name } = params;
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ["openFile"],
+        filters: [
+          {
+            name: "Avatar image",
+            extensions: ["png", "jpg", "jpeg", "svg"],
+          },
+        ],
+      });
+
+      if (canceled) {
+        return null;
+      } else {
+        const p = app.getPath("userData");
+
+        await mkdir(`${p}/currentproject/avatar`, { recursive: true });
+
+        if (prev_name) {
+          // Delete previous avatar
+          await rm(`${p}/currentproject/avatar/${prev_name}`, { force: true });
+        }
+
+        const [load_file] = filePaths;
+        let fname = path.basename(load_file);
+
+        await copyFile(load_file, `${p}/currentproject/avatar/${fname}`);
+
+        return fname;
+      }
+    }
+  );
+
   ipcMain.on("get-settings", (event, params) => {
     const p = app.getPath("userData");
 
@@ -218,43 +255,6 @@ function createWindow() {
       win.webContents.send("csv-load", { filename: fname, csv: csv });
 
       // @TODO: load into csvdb for use
-    }
-  });
-
-  ipcMain.on("do-load-avatar", (event, prev_name) => {
-    let load_file = dialog.showOpenDialogSync({
-      properties: ["openFile"],
-      filters: [
-        {
-          name: "Avatar image",
-          extensions: ["png", "jpg", "jpeg", "svg"],
-        },
-      ],
-    });
-
-    if (load_file !== undefined) {
-      const p = app.getPath("userData");
-
-      if (!fs.existsSync(p + "/currentproject/")) {
-        fs.mkdirSync(p + "/currentproject");
-      }
-
-      if (!fs.existsSync(p + "/currentproject/avatar")) {
-        fs.mkdirSync(p + "/currentproject/avatar");
-      }
-
-      // Delete previous avatar
-      if (
-        prev_name !== "" &&
-        fs.existsSync(p + "/currentproject/avatar/" + prev_name)
-      ) {
-        fs.rmSync(p + "/currentproject/avatar/" + prev_name);
-      }
-
-      let fname = path.basename(load_file[0]);
-
-      fs.copyFileSync(load_file[0], p + "/currentproject/avatar/" + fname);
-      win.webContents.send("avatar-load", { filename: fname });
     }
   });
 

@@ -8,7 +8,6 @@ const validSendChannels = new Set([
   "do-save",
   "do-load",
   "do-load-csv-data",
-  "do-load-avatar",
   "do-delete-avatar",
   "get-csv",
   "load-project-db",
@@ -21,7 +20,6 @@ const validReceiveChannels = new Set([
   "project-saved",
   "project-load",
   "csv-load",
-  "avatar-load",
   "settings-load",
 ]);
 
@@ -34,19 +32,19 @@ const validInvokeChannels = new Set([
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld("api", {
-  send: (channel, data) => {
+  send: (channel: string, data: any) => {
     // whitelist channels
     if (validSendChannels.has(channel)) {
       ipcRenderer.send(channel, data);
     }
   },
-  receive: (channel, func) => {
+  receive: (channel: string, func: Function) => {
     if (validReceiveChannels.has(channel)) {
       // Deliberately strip event as it includes `sender`
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
-  invoke: async (channel, data) => {
+  invoke: async (channel: string, data: any) => {
     if (validInvokeChannels.has(channel)) {
       return await ipcRenderer.invoke(channel, data);
     }
