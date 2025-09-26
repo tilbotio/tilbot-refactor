@@ -6,8 +6,6 @@ const validSendChannels = new Set([
   "open-server",
   "close-server",
   "do-save",
-  "do-load",
-  "do-load-csv-data",
   "do-delete-avatar",
   "get-csv",
   "load-project-db",
@@ -18,15 +16,15 @@ const validSendChannels = new Set([
 const validReceiveChannels = new Set([
   "server-ip",
   "project-saved",
-  "project-load",
-  "csv-load",
   "settings-load",
 ]);
 
 const validInvokeChannels = new Set([
+  "load-avatar",
+  "load-csv",
+  "load-project",
   "query-db",
   "query-db-random",
-  "load-avatar",
 ]);
 
 // Expose protected methods that allow the renderer process to use

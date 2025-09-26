@@ -133,10 +133,6 @@
         local_ip = data.local_ip;
       });
 
-      window_api.receive("project-load", (project_str: string) => {
-        load_project(project_str);
-      });
-
       window_api.receive("project-saved", () => {
         alert_visible = true;
 
@@ -215,8 +211,11 @@
     }, 50);
   }
 
-  function btn_load_click() {
-    window_api.send("do-load");
+  async function btn_load_click() {
+    const projectJson = await window_api.invoke("load-project");
+    if (projectJson != null) {
+      load_project(projectJson);
+    }
     //jsonfileinput.click(); // For web version
   }
 

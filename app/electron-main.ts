@@ -75,64 +75,17 @@ function createWindow() {
     });
   })();
 
-  ipcMain.on("do-load", (event) => {
-    let load_file = dialog.showOpenDialogSync({
-      properties: ["openFile"],
-      filters: [
-        {
-          name: "Tilbot project",
-          extensions: ["tilbot", "json"],
-        },
-      ],
-    });
-
-    if (load_file !== undefined) {
-      const p = app.getPath("userData");
-
-      // Remove the old temp project
-      if (fs.existsSync(p + "/currentproject")) {
-        fs.rmSync(p + "/currentproject", { recursive: true });
-      }
-      fs.mkdirSync(p + "/currentproject");
-
-      // Only one file should be allowed to be selected.
-      if (load_file[0].endsWith(".tilbot")) {
-        const zip = new AdmZip(load_file[0]);
-        var zipEntries = zip.getEntries(); // an array of ZipEntry records
-
-        zipEntries.forEach(function (zipEntry) {
-          if (zipEntry.entryName == "project.json") {
-            win.webContents.send(
-              "project-load",
-              zipEntry.getData().toString("utf8")
-            );
-          } else if (zipEntry.entryName.startsWith("var/")) {
-            zip.extractEntryTo(zipEntry, p + "/currentproject");
-          } else {
-            zip.extractEntryTo(zipEntry, p + "/currentproject");
-          }
-        });
-      } else {
-        let json = fs.readFileSync(load_file[0], "utf8");
-        console.log(json);
-        win.webContents.send("project-load", json);
-      }
-
-      // @TODO: something with additional files like avatar, data files, etc.
-    }
-  });
-
   ipcMain.on("load-project-db", (event, project) => {
     const p = app.getPath("userData");
 
     csv_datas = {};
 
     // Set up the data files
-    for (let v in project.variables) {
-      if (project.variables[v].type == "csv") {
-        csv_datas[project.variables[v].name] = new CsvData(
-          project.variables[v].csvfile,
-          p + "/currentproject/"
+    for (const variable of project.variables) {
+      if (variable.type == "csv") {
+        csv_datas[variable.name] = new CsvData(
+          variable.csvfile,
+          `${p}/currentproject/`
         );
       }
     }
@@ -187,6 +140,51 @@ function createWindow() {
     }
   );
 
+  ipcMain.handle("load-project", async (event): Promise<string | null> => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ["openFile"],
+      filters: [
+        {
+          name: "Tilbot project",
+          extensions: ["tilbot", "json"],
+        },
+      ],
+    });
+
+    let projectJson: string | null = null;
+
+    if (!canceled) {
+      const p = app.getPath("userData");
+
+      // Remove the old temp project
+      const projectDir = `${p}/currentproject`;
+      await rm(projectDir, { force: true, recursive: true });
+      await mkdir(projectDir);
+
+      const [filename] = filePaths;
+
+      // Only one file should be allowed to be selected.
+      if (filename.endsWith(".tilbot")) {
+        const zip = new AdmZip(filename);
+        const zipEntries = zip.getEntries(); // an array of ZipEntry records
+
+        for (const zipEntry of zipEntries) {
+          if (zipEntry.entryName == "project.json") {
+            projectJson = zipEntry.getData().toString("utf8");
+          } else {
+            zip.extractEntryTo(zipEntry, projectDir);
+          }
+        }
+      } else {
+        projectJson = await readFile(filename, "utf8");
+      }
+
+      // @TODO: something with additional files like avatar, data files, etc.
+    }
+
+    return projectJson;
+  });
+
   ipcMain.handle(
     "load-csv",
     async (
@@ -221,31 +219,22 @@ function createWindow() {
     }
   );
 
-  ipcMain.handle(
-    "get-csv",
-    async (
-      event,
-      filename
-    ): Promise<string | null> => {
-      const p = app.getPath("userData");
+  ipcMain.handle("get-csv", async (event, filename): Promise<string | null> => {
+    const p = app.getPath("userData");
 
-      if (path.basename(filename) !== filename) {
-        return null;
-      }
-
-      try {
-        return await readFile(
-          `${p}/currentproject/var/${filename}`,
-          "utf8"
-        );
-      } catch (e: any) {
-        if (e.code !== "ENOENT") {
-          throw e;
-        }
-        return null;
-      }
+    if (path.basename(filename) !== filename) {
+      return null;
     }
-  );
+
+    try {
+      return await readFile(`${p}/currentproject/var/${filename}`, "utf8");
+    } catch (e: any) {
+      if (e.code !== "ENOENT") {
+        throw e;
+      }
+      return null;
+    }
+  });
 
   ipcMain.on("get-settings", (event, params) => {
     const p = app.getPath("userData");
