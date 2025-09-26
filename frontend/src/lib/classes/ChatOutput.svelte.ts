@@ -1,6 +1,6 @@
 import type { ProjectControllerOutputInterface } from "../../../../common/projectcontroller/types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
-import type { ChatSettings } from "../../../../common/ChatSettings";
+import type { ProjectSettings } from "../../../../common/project/types";
 
 export class ChatOutput implements ProjectControllerOutputInterface {
   public isTypingIndicatorActive = $state(false);
@@ -15,5 +15,5 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     params: any;
     has_targets?: boolean;
   }): void {}
-  settings(settings: ChatSettings, path?: RuntimeContext["path"]): void {}
+  settings(settings: ProjectSettings, path?: RuntimeContext["path"]): void {}
 }
