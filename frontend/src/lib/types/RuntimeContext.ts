@@ -5,5 +5,4 @@ export interface RuntimeContext {
   showHeader: boolean;
   projectId: string | null;
   participantId: string | null;
-  showTypingIndicator: boolean;
 }

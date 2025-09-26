@@ -14,7 +14,6 @@ export const load: PageLoad = ({ url, fetch }) => {
     showHeader: showHeaderParam === "1",
     participantId: url.searchParams.get("pid") || null,
     projectId: url.searchParams.get("project") || null,
-    showTypingIndicator: false,
   };
 
   let settings: ChatSettings = {

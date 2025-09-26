@@ -10,12 +10,21 @@
     ShowBarcodeScanner,
   } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
+  import { ChatOutput } from "../classes/ChatOutput.svelte";
+  import { RemoteProjectController } from "../../../../common/projectcontroller/remote";
+
+  const chatOutput = new ChatOutput();
+  const projectController = new RemoteProjectController(chatOutput);
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");
   let mcOptions: McOption[] = $state([]);
+
+  let isTypingIndicatorActive = $derived(
+    projectController.output.isTypingIndicatorActive
+  );
 
   // let messages: Array<any> = $state([]);
   // Messages array below is for testing purposes only, replace with line above after development.
