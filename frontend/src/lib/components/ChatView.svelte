@@ -12,11 +12,13 @@
   import InputArea from "./InputArea.svelte";
   import { ChatOutput } from "../classes/ChatOutput.svelte";
   import { RemoteProjectController } from "../../../../common/projectcontroller/remote";
-
-  const chatOutput = new ChatOutput();
-  const projectController = new RemoteProjectController(chatOutput);
+  import type { ProjectSettings } from "../../../../common/project/types";
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
+  const settingsContext: ProjectSettings = getContext("settingsContext");
+
+  const chatOutput = new ChatOutput(settingsContext, runtimeContext);
+  const projectController = new RemoteProjectController(chatOutput);
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");
