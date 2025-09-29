@@ -128,10 +128,13 @@
       is_electron = true;
       simulator!.src = "index.html";
 
-      window_api.receive("server-ip", (data: any) => {
-        public_ip = data.public_ip;
-        local_ip = data.local_ip;
-      });
+      (async () => {
+        try {
+          ({ public_ip, local_ip } = await window_api.invoke("server-ip"));
+        } catch (e) {
+          console.log(`Error fetching server IP: ${e}`);
+        }
+      })();
 
       window_api.receive("project-saved", () => {
         alert_visible = true;
@@ -689,10 +692,7 @@
   <img src="images/tilbot_logo.svg" alt="Tilbot logo" class="ml-1 mt-2 w-48" />
   <!--</a>-->
 
-  <Variables
-    bind:this={variables_window}
-    variables={project.variables}
-  />
+  <Variables bind:this={variables_window} variables={project.variables} />
 
   <Settings
     bind:this={settings_window}

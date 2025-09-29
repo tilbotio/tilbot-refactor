@@ -15,6 +15,24 @@ let ps: ChildProcess | undefined;
 
 let csv_datas: { [key: string]: CsvData } = {};
 
+// Get external and internal ip-address
+const serverIP = (async () => {
+  let local_ip = "localhost";
+
+  const ifaces = networkInterfaces();
+  for (const dev in ifaces) {
+    for (const details of ifaces[dev]!) {
+      if (details.family === "IPv4" && !details.internal) {
+        local_ip = details.address;
+      }
+    }
+  }
+
+  const public_ip = await publicIp.v4({ timeout: 200 });
+
+  return { public_ip, local_ip };
+})();
+
 function createWindow() {
   const win = new BrowserWindow({
     show: false,
@@ -32,28 +50,7 @@ function createWindow() {
     }
   });
 
-  // Get external and internal ip-address
   (async () => {
-    let ipv4 = "localhost";
-    let address = "localhost";
-
-    try {
-      const ifaces = networkInterfaces();
-      for (const dev in ifaces) {
-        for (const details of ifaces[dev]!) {
-          if (details.family === "IPv4" && !details.internal) {
-            address = details.address;
-          }
-        }
-      }
-
-      ipv4 = await publicIp.v4({
-        timeout: 200,
-      });
-    } catch (e) {
-      console.log("error with ip", e);
-    }
-
     ipcMain.on("open-server", (event, project_json) => {
       const p = app.getPath("userData");
       if (!fs.existsSync(p + "/currentproject/")) {
@@ -64,8 +61,6 @@ function createWindow() {
         project_json
       );
       ps = fork(`${__dirname}/electron-server.cjs`, ["-p=" + p]);
-
-      win.webContents.send("server-ip", { public_ip: ipv4, local_ip: address });
     });
 
     ipcMain.on("close-server", (event) => {
@@ -85,10 +80,14 @@ function createWindow() {
       if (variable.type == "csv") {
         csv_datas[variable.name] = new CsvData(
           variable.csvfile,
-          `${p}/currentproject/`
+          `${p}/currentproject`
         );
       }
     }
+  });
+
+  ipcMain.handle("server-ip", async (event, params) => {
+    return await serverIP;
   });
 
   ipcMain.handle("query-db", async (event, params) => {
