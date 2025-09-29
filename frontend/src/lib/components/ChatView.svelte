@@ -7,6 +7,7 @@
   import type {
     CurrentMessageType,
     McOption,
+    Message,
     ShowBarcodeScanner,
   } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
@@ -16,6 +17,7 @@
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
+  const messages: Array<Message> = getContext("messageContext");
 
   const chatOutput = new ChatOutput(settingsContext, runtimeContext);
   const projectController = new RemoteProjectController(chatOutput);
@@ -28,9 +30,8 @@
     projectController.output.isTypingIndicatorActive
   );
 
-  // let messages: Array<any> = $state([]);
   // Messages array below is for testing purposes only, replace with line above after development.
-  let messages: Array<any> = $state([
+  /* let messages: Array<any> = $state([
     { from: "bot", content: "Hi there! I am a bot." },
     { from: "user", content: "Hi there bot, I am a user!" },
     { from: "bot", content: "Well hello there user!" },
@@ -51,7 +52,7 @@
       content: "Well, you do not see that every day.. let's get started!",
     },
   ]);
-
+ */
   function openBarcodeReader(): void {
     showBarcodeScanner = true;
   }
@@ -61,9 +62,9 @@
   }
 
   function handleScannedCode(decoded: string): void {
-    // Bug with receive_message not defined on BasicProjectController, hence this intermediate debug fix
-    // user_message(`barcode: ${decoded}`);
-    console.log(`Code scanned: ${decoded}`);
+    const messageText = `barcode: {$decoded}`;
+    messages.push({ from: "user", content: messageText });
+    projectController.receive_message(messageText);
   }
 
   //Temporary sendMessage function to test functionality between components
@@ -72,8 +73,31 @@
     // Reset currentMessageType to text by default
     currentMessageType = "text";
   }
+
+  // Temporary testing functions
+  // TODO: Remove after testing
+
+  function botmessage() {
+    messages.push({ from: "bot", content: "My first botmessage!" });
+  }
+  function chatgptmessage() {
+    messages.push({
+      from: "chatgpt",
+      content: "My first chatgptmessage!",
+    });
+  }
+
+  function usermessage() {
+    messages.push({ from: "user", content: "My first usermessage!" });
+  }
+
+  // Remove all functions between here and TODO
 </script>
 
+<button onclick={botmessage}>Botmessage</button>
+<button onclick={chatgptmessage}>Chatgptmessage</button>
+<button onclick={usermessage}>Usermessage</button>
+<!-- This section above is for testing purposes only, remove later-->
 {#if showBarcodeScanner}
   <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
 {/if}
