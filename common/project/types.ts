@@ -10,6 +10,7 @@ export type GeneralSettings = {
 export const defaultGeneralSettings: GeneralSettings = {
   llm_setting: "chatgpt",
   llm_api_address: "",
+  chatgpt_sim_version: "gpt-3.5-turbo",
 };
 
 export type ProjectSettings = {
