@@ -1,6 +1,6 @@
 // From: https://stackoverflow.com/questions/57807459/how-to-use-preload-js-properly-in-electron
 
-import { contextBridge, ipcRenderer } from "electron";
+const { contextBridge, ipcRenderer } = require("electron");
 
 const validSendChannels = new Set([
   "open-server",
@@ -10,7 +10,7 @@ const validSendChannels = new Set([
   "save-settings",
 ]);
 
-const validReceiveChannels: Set<string> = new Set([]);
+const validReceiveChannels = new Set([]);
 
 const validInvokeChannels = new Set([
   "get-csv",
@@ -27,19 +27,19 @@ const validInvokeChannels = new Set([
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld("api", {
-  send: (channel: string, data: any) => {
+  send: (channel, data) => {
     // whitelist channels
     if (validSendChannels.has(channel)) {
       ipcRenderer.send(channel, data);
     }
   },
-  receive: (channel: string, func: Function) => {
+  receive: (channel, func) => {
     if (validReceiveChannels.has(channel)) {
       // Deliberately strip event as it includes `sender`
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
-  invoke: async (channel: string, data: any) => {
+  invoke: async (channel, data) => {
     if (validInvokeChannels.has(channel)) {
       return await ipcRenderer.invoke(channel, data);
     }

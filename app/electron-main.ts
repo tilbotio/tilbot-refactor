@@ -41,7 +41,7 @@ function createWindow() {
     title: "Tilbot",
     icon: path.join(__dirname, "src/icon/png/64x64.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.ts"),
+      preload: path.join(__dirname, "preload.js"),
     },
   });
   win.maximize();
