@@ -5,7 +5,6 @@ import { contextBridge, ipcRenderer } from "electron";
 const validSendChannels = new Set([
   "open-server",
   "close-server",
-  "do-save",
   "do-delete-avatar",
   "get-csv",
   "load-project-db",
@@ -15,7 +14,6 @@ const validSendChannels = new Set([
 
 const validReceiveChannels = new Set([
   "server-ip",
-  "project-saved",
   "settings-load",
 ]);
 
@@ -25,6 +23,7 @@ const validInvokeChannels = new Set([
   "load-project",
   "query-db",
   "query-db-random",
+  "save-project",
 ]);
 
 // Expose protected methods that allow the renderer process to use

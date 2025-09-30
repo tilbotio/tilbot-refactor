@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { fork, type ChildProcess } from "child_process";
 import fs from "fs";
-import { rm, mkdir, copyFile, readFile } from "fs/promises";
+import { rm, mkdir, copyFile, readFile, writeFile } from "fs/promises";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { CsvData } from "../common/csvdata.ts";
@@ -275,8 +275,8 @@ function createWindow() {
     // @TODO: Should we send confirmation that it has been deleted?
   });
 
-  ipcMain.on("do-save", (event, project) => {
-    let save_file = dialog.showSaveDialogSync({
+  ipcMain.handle("save-project", async (event, projectJson) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
       filters: [
         {
           name: "Tilbot project",
@@ -285,47 +285,40 @@ function createWindow() {
       ],
     });
 
-    if (save_file !== undefined) {
+    if (!canceled) {
       const p = app.getPath("userData");
 
-      const file = new AdmZip();
-      file.addFile("project.json", Buffer.from(project));
+      const zip = new AdmZip();
+      zip.addFile("project.json", Buffer.from(projectJson));
 
-      let proj_obj = JSON.parse(project);
-      for (const v in proj_obj.variables) {
-        if (proj_obj.variables[v].type == "csv") {
-          file.addLocalFile(
-            p + "/currentproject/var/" + proj_obj.variables[v].csvfile,
+      const project = JSON.parse(projectJson);
+      for (const variable of project.variables) {
+        if (variable.type == "csv") {
+          zip.addLocalFile(
+            `${p}/currentproject/var/${variable.csvfile}`,
             "var"
           );
         }
       }
 
-      if (
-        proj_obj.settings !== undefined &&
-        proj_obj.settings.avatar_file !== undefined &&
-        proj_obj.settings.avatar_file !== ""
-      ) {
-        file.addLocalFile(
-          p + "/currentproject/avatar/" + proj_obj.settings.avatar_file,
+      if (project.settings?.avatar_file) {
+        zip.addLocalFile(
+          `${p}/currentproject/avatar/${project.settings.avatar_file}`,
           "avatar"
         );
       }
 
-      if (
-        proj_obj.settings !== undefined &&
-        proj_obj.settings.avatar_file_sm !== undefined &&
-        proj_obj.settings.avatar_file_sm !== ""
-      ) {
-        file.addLocalFile(
-          p + "/currentproject/avatar/" + proj_obj.settings.avatar_file_sm,
+      if (project.settings?.avatar_file_sm) {
+        zip.addLocalFile(
+          `${p}/currentproject/avatar/${project.settings.avatar_file_sm}`,
           "avatar"
         );
       }
 
-      fs.writeFileSync(save_file, file.toBuffer());
-      win.webContents.send("project-saved");
+      await writeFile(filePath, zip.toBuffer());
     }
+
+    return !canceled;
   });
 
   /* Causes infinite loop, so disabled:

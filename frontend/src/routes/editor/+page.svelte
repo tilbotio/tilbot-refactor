@@ -136,14 +136,6 @@
         }
       })();
 
-      window_api.receive("project-saved", () => {
-        alert_visible = true;
-
-        setTimeout(function () {
-          alert_visible = false;
-        }, 3000);
-      });
-
       window_api.receive("settings-load", (param: any) => {
         generalSettings = param.settings;
         path = param.path;
@@ -222,8 +214,14 @@
     //jsonfileinput.click(); // For web version
   }
 
-  function btn_save_click() {
-    window_api.send("do-save", JSON.stringify(project));
+  async function btn_save_click() {
+    if (await window_api.invoke("save-project", JSON.stringify(project))) {
+      alert_visible = true;
+
+      setTimeout(function () {
+        alert_visible = false;
+      }, 3000);
+    }
   }
 
   function btn_variables_click() {
