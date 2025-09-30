@@ -6,7 +6,6 @@ const validSendChannels = new Set([
   "open-server",
   "close-server",
   "do-delete-avatar",
-  "get-csv",
   "load-project-db",
   "save-settings",
 ]);
@@ -14,6 +13,7 @@ const validSendChannels = new Set([
 const validReceiveChannels: Set<string> = new Set([]);
 
 const validInvokeChannels = new Set([
+  "get-csv",
   "load-avatar",
   "load-csv",
   "load-project",
