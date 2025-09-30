@@ -87,7 +87,7 @@
   let num_draggable_loaded = 0;
   let is_loading = false;
 
-  let is_electron: boolean = $state(false);
+  let is_electron = $state() as boolean;
   let local_ip = $state("");
   let public_ip = $state("");
 
@@ -119,13 +119,13 @@
 
     add_start_location();
 
-    // Hack to fix the simulator in Electron (specifically on OS X)
-    if (
+    is_electron =
       typeof navigator === "object" &&
       typeof navigator.userAgent === "string" &&
-      navigator.userAgent.indexOf("Electron") >= 0
-    ) {
-      is_electron = true;
+      navigator.userAgent.indexOf("Electron") >= 0;
+
+    if (is_electron) {
+      // Hack to fix the simulator in Electron (specifically on OS X)
       simulator!.src = "index.html";
 
       (async () => {
@@ -136,22 +136,15 @@
         }
       })();
 
-      window_api.receive("settings-load", (param: any) => {
-        generalSettings = param.settings;
-        path = param.path;
-
-        if (generalSettings.chatgpt_sim_version === undefined) {
-          generalSettings.chatgpt_sim_version = "gpt-3.5-turbo";
+      (async () => {
+        try {
+          ({ generalSettings, path } =
+            await window_api.invoke("load-settings"));
+        } catch (e) {
+          console.log(`Error loading settings: ${e}`);
         }
-      });
-
-      window_api.send("get-settings");
-    }
-
-    if (!is_electron) {
-      const url = $page.url;
-      console.log(url.searchParams.get("project"));
-
+      })();
+    } else {
       // For now, since editor online is not yet working, we send the user back to the dashboard.
       window.location.href = "/dashboard/";
     }

@@ -8,22 +8,20 @@ const validSendChannels = new Set([
   "do-delete-avatar",
   "get-csv",
   "load-project-db",
-  "get-settings",
   "save-settings",
 ]);
 
-const validReceiveChannels = new Set([
-  "server-ip",
-  "settings-load",
-]);
+const validReceiveChannels: Set<string> = new Set([]);
 
 const validInvokeChannels = new Set([
   "load-avatar",
   "load-csv",
   "load-project",
+  "load-settings",
   "query-db",
   "query-db-random",
   "save-project",
+  "server-ip",
 ]);
 
 // Expose protected methods that allow the renderer process to use

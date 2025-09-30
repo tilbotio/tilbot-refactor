@@ -8,6 +8,7 @@ import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { CsvData } from "../common/csvdata.ts";
 import { networkInterfaces } from "os";
+import { defaultGeneralSettings } from "../common/project/types.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -15,7 +16,8 @@ let ps: ChildProcess | undefined;
 
 let csv_datas: { [key: string]: CsvData } = {};
 
-// Get external and internal ip-address
+// Get external and internal ip-address as a Promise;
+// this effectively functions as a cached result.
 const serverIP = (async () => {
   let local_ip = "localhost";
 
@@ -50,25 +52,16 @@ function createWindow() {
     }
   });
 
-  (async () => {
-    ipcMain.on("open-server", (event, project_json) => {
-      const p = app.getPath("userData");
-      if (!fs.existsSync(p + "/currentproject/")) {
-        fs.mkdirSync(p + "/currentproject");
-      }
-      fs.writeFileSync(
-        p + "/currentproject/electron-project.json",
-        project_json
-      );
-      ps = fork(`${__dirname}/electron-server.cjs`, ["-p=" + p]);
-    });
+  ipcMain.on("open-server", (event, project_json) => {
+    const p = app.getPath("userData");
+    fs.mkdirSync(`${p}/currentproject`, { recursive: true });
+    fs.writeFileSync(`${p}/currentproject/electron-project.json`, project_json);
+    ps = fork(`${__dirname}/electron-server.cjs`, ["-p=" + p]);
+  });
 
-    ipcMain.on("close-server", (event) => {
-      if (ps !== undefined) {
-        ps.kill("SIGTERM");
-      }
-    });
-  })();
+  ipcMain.on("close-server", (event) => {
+    ps?.kill("SIGTERM");
+  });
 
   ipcMain.on("load-project-db", (event, project) => {
     const p = app.getPath("userData");
@@ -91,17 +84,21 @@ function createWindow() {
   });
 
   ipcMain.handle("query-db", async (event, params) => {
-    if (Object.keys(csv_datas).indexOf(params.db) == -1) {
+    const csv_data = csv_datas[params.db];
+    if (csv_data === undefined) {
       return null;
     }
 
-    let res = await csv_datas[params.db].get(params.col, params.val);
-    return res;
+    return await csv_data.get(params.col, params.val);
   });
 
   ipcMain.handle("query-db-random", async (event, params) => {
-    let res = await csv_datas[params.db].get_random_line();
-    return res;
+    const csv_data = csv_datas[params.db];
+    if (csv_data === undefined) {
+      return null;
+    }
+
+    return await csv_data.get_random_line();
   });
 
   ipcMain.handle(
@@ -130,11 +127,11 @@ function createWindow() {
         }
 
         const [load_file] = filePaths;
-        let fname = path.basename(load_file);
+        const filename = path.basename(load_file);
 
-        await copyFile(load_file, `${p}/currentproject/avatar/${fname}`);
+        await copyFile(load_file, `${p}/currentproject/avatar/${filename}`);
 
-        return fname;
+        return filename;
       }
     }
   );
@@ -208,7 +205,7 @@ function createWindow() {
         await mkdir(`${p}/currentproject/var`, { recursive: true });
 
         const [load_file] = filePaths;
-        let filename = path.basename(load_file);
+        const filename = path.basename(load_file);
         await copyFile(load_file, `${p}/currentproject/var/${filename}`);
         const csv = await readFile(load_file, "utf8");
         return { filename, csv };
@@ -235,27 +232,24 @@ function createWindow() {
     }
   });
 
-  ipcMain.on("get-settings", (event, params) => {
+  ipcMain.handle("load-settings", async (event, params) => {
     const p = app.getPath("userData");
 
-    if (!fs.existsSync(p + "/settings.json")) {
-      let settings = {
-        chatgpt_api_key: "",
-        llm_setting: "chatgpt",
-        llm_api_address: "",
-      };
+    let generalSettings = "";
 
-      fs.writeFileSync(p + "/settings.json", JSON.stringify(settings));
-      win.webContents.send("settings-load", {
-        settings: settings,
-        path: p + "/currentproject/",
-      });
-    } else {
-      win.webContents.send("settings-load", {
-        settings: JSON.parse(fs.readFileSync(p + "/settings.json", "utf8")),
-        path: p + "/currentproject/",
-      });
+    try {
+      generalSettings = await readFile(`${p}/settings.json`, "utf8");
+      generalSettings = JSON.stringify(
+        Object.assign(JSON.parse(generalSettings), defaultGeneralSettings)
+      );
+    } catch (e: any) {
+      if (e.code !== "ENOENT") {
+        throw e;
+      }
+      generalSettings = JSON.stringify(defaultGeneralSettings);
     }
+
+    return { generalSettings, path: `${p}/currentproject` };
   });
 
   ipcMain.on("save-settings", (event, params) => {
