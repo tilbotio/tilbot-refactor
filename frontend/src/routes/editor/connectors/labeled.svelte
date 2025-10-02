@@ -1,31 +1,15 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
+  import { onMount } from "svelte";
 
-  /**
-   * @typedef {Object} Props
-   * @property {number} [blockId]
-   * @property {number} [connectorId]
-   * @property {string} [label]
-   * @property {boolean} [hasEvents]
-   */
-
-  /** @type {Props} */
-  let {
+  const {
     blockId = 0,
     connectorId = 0,
-    label = "",
     hasEvents = false,
+    mounted = () => {},
+    label = "",
   } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  onMount(() => {
-    dispatch("message", {
-      event: "connector_loaded",
-      block_id: blockId,
-      connector_id: connectorId,
-    });
-  });
+  onMount(mounted as () => unknown);
 </script>
 
 <div class="relative text-sm font-medium flex">

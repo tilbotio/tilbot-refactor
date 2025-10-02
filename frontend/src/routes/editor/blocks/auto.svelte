@@ -1,56 +1,39 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
   import BasicConnector from "../connectors/basic.svelte";
+  import type { ProjectBlock } from "../../../../../common/project/types.ts";
 
-  let {
-    objAttributes = $bindable({}),
+  const {
     blockId = $bindable(0),
-    selectedId = $bindable(0),
+    block = $bindable({} as ProjectBlock),
+    selected = $bindable(false),
+    connectorMounted = (blockId: string, connectorId: number) => {},
+    select = (blockId: string) => {},
+    edit = (blockId: string) => {},
+    remove = (blockId: string) => {},
   } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  onMount(() => {
-    if (objAttributes.connectors === undefined) {
-      objAttributes.connectors = [];
-    }
-  });
-
-  function click_event(e: MouseEvent) {
-    dispatch("message", {
-      event: "block_selected",
-      block_id: blockId,
-    });
-
+  function selectBlock(e: MouseEvent) {
+    select(blockId);
     e.stopPropagation();
   }
 
-  function edit_block(e: MouseEvent) {
-    dispatch("message", {
-      event: "edit_block",
-      block_id: blockId,
-    });
-
+  function editBlock(e: MouseEvent) {
+    edit(blockId);
     e.stopPropagation();
   }
 
-  function delete_block(e: MouseEvent) {
-    dispatch("message", {
-      event: "delete_block",
-      block_id: blockId,
-    });
-
+  function removeBlock(e: MouseEvent) {
+    remove(blockId);
     e.stopPropagation();
   }
 </script>
 
 <div
-  class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selectedId ==
-  blockId
+  class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selected
     ? 'scale-110 z-50'
     : ''}"
   id="block_{blockId}"
-  on:click={click_event}
+  onclick={selectBlock}
 >
   <span
     class="indicator-item indicator-middle indicator-start badge z-0"
@@ -58,10 +41,10 @@
     data-block-id={blockId}
   ></span>
 
-  {#if selectedId == blockId}
+  {#if selected}
     <button
       class="btn btn-sm btn-circle btn-outline absolute -right-4 -top-4 btn_del"
-      on:click={delete_block}
+      onclick={removeBlock}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -81,7 +64,7 @@
 
     <button
       class="btn btn-sm btn-circle btn-outline absolute -right-4 top-12 btn_edit"
-      on:click={edit_block}
+      onclick={editBlock}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -103,7 +86,7 @@
   <div class="card-body p-4">
     <div class="flex">
       <h2 class="card-title text-base grow">
-        {objAttributes.name}
+        {block.name}
       </h2>
       <div>
         <svg
@@ -123,22 +106,22 @@
       </div>
     </div>
     <div class="text-sm min-h-6 max-h-16 line-clamp-3">
-      {#if objAttributes.chatgpt_variation == true}
+      {#if block.chatgpt_variation == true}
         <mark>
-          {@html objAttributes.content}
+          {@html block.content}
         </mark>
       {:else}
-        {@html objAttributes.content}
+        {@html block.content}
       {/if}
     </div>
-    {#if objAttributes.connectors !== undefined && objAttributes.connectors.length > 0}
+    {#if block.connectors !== undefined && block.connectors.length > 0}
       <div class="divider m-0"></div>
-      {#each Object.entries(objAttributes.connectors) as [id, connector]}
+      {#each block.connectors.entries() as [id, connector]}
         <BasicConnector
           {blockId}
           connectorId={id}
-          hasEvents={connector.events !== undefined &&
-            connector.events.length > 0}
+          hasEvents={connector.events?.length! > 0}
+          mounted={() => connectorMounted(blockId, id)}
         ></BasicConnector>
       {/each}
     {/if}

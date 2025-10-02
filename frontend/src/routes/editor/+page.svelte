@@ -72,7 +72,7 @@
   let modal_launch = $state() as HTMLInputElement;
   let modal_edit = $state() as HTMLInputElement;
 
-  let selected_id = $state(0);
+  let selectedBlockId: number | null = $state(null);
   let edit_block: ProjectBlock | null = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
@@ -211,7 +211,7 @@
     deselect_all();
 
     setTimeout(function () {
-      selected_id = current_block_id;
+      selectedBlockId = current_block_id;
     }, 50);
   }
 
@@ -260,7 +260,7 @@
     }
   }
 
-  function registerBlock(id: string, block: ProjectBlock) {
+  function registerBlock(id: number, block: ProjectBlock) {
     const scrollLeft = editor_main.scrollLeft;
     const scrollTop = editor_main.scrollTop;
 
@@ -299,7 +299,7 @@
 
           // Build the look-up table for connecting lines.
           for (const [id, block] of blockEntries) {
-            registerBlock(id, block);
+            registerBlock(parseInt(id), block);
           }
         }
       } else {
@@ -404,53 +404,49 @@
     if (event == "cancel") {
       edit_block = null;
       modal_edit.click();
-    } else if (event == "save") {
+    } else if (event == "save" && selectedBlockId != null) {
       // Remove the line_locations for the connectors in case some were deleted/moved
       const block = detail.block;
       const blockConnectors = block.connectors;
-      const lineConnectors = line_locations[selected_id].connectors;
+      const lineConnectors = line_locations[selectedBlockId].connectors;
       for (const key of lineConnectors.keys()) {
         if (!(key in blockConnectors)) {
           delete lineConnectors[key];
         }
       }
 
-      project.blocks[selected_id] = block;
+      project.blocks[selectedBlockId] = block;
       edit_block = null;
       modal_edit.click();
     }
   }
 
-  function handleBlockMessage(e: CustomEvent) {
-    const detail = e.detail;
-    const event = detail.event;
-    const blockId = detail.block_id;
-    if (event == "block_selected") {
-      deselect_all();
-      selected_id = blockId;
-    } else if (event == "edit_block") {
-      edit_block = project.blocks[blockId];
-      modal_edit.click();
-    } else if (event == "delete_block") {
-      deselect_all();
+  function editBlock(blockId: number) {
+    edit_block = project.blocks[blockId];
+    modal_edit.click();
+  }
 
-      const intBlockId = parseInt(blockId);
-      // Delete any blocks connecting to this one
-      for (const block of Object.values(project.blocks) as any[]) {
-        for (const connector of block.connectors) {
-          const targets = connector.targets;
-          const index = targets.indexOf(intBlockId);
-          if (index != -1) {
-            targets.splice(index, 1);
-          }
+  function selectBlock(blockId: number) {
+    deselect_all();
+
+    // Delete any blocks connecting to this one
+    for (const block of Object.values(project.blocks)) {
+      for (const connector of block.connectors) {
+        const targets = connector.targets;
+        const index = targets.indexOf(blockId);
+        if (index != -1) {
+          targets.splice(index, 1);
         }
       }
-
-      delete project.blocks[blockId];
-      delete line_locations[blockId];
-    } else if (event == "connector_loaded") {
-      registerBlock(blockId, project.blocks[blockId]);
     }
+
+    delete project.blocks[blockId];
+    delete line_locations[blockId];
+  }
+
+  function removeBlock(blockId: number) {
+    deselect_all();
+    selectedBlockId = blockId;
   }
 
   function line_clicked(e: MouseEvent) {
@@ -459,7 +455,7 @@
   }
 
   function deselect_all() {
-    selected_id = 0;
+    selectedBlockId = 0;
     const lines = document.getElementsByTagName("path");
 
     for (const line of lines) {
@@ -674,8 +670,8 @@
     if (contentWindow != null) {
       const project_copy = JSON.parse(JSON.stringify(project));
 
-      if (selected_id !== 0) {
-        project_copy.starting_block_id = selected_id;
+      if (selectedBlockId !== 0) {
+        project_copy.starting_block_id = selectedBlockId;
       }
 
       window_api.send("load-project-db", project_copy);
@@ -690,10 +686,7 @@
   <img src="images/tilbot_logo.svg" alt="Tilbot logo" class="ml-1 mt-2 w-48" />
   <!--</a>-->
 
-  <Variables
-    bind:this={variables_window}
-    variables={project.variables}
-  />
+  <Variables bind:this={variables_window} variables={project.variables} />
 
   <Settings
     bind:this={settings_window}
@@ -919,18 +912,22 @@
         <Start bind:el={start}></Start>
 
         {#if project.blocks !== undefined}
-          {#each Object.entries(project.blocks) as [id, block]}
+          {#each Object.entries(project.blocks) as [key, block]}
+            {@const blockId = parseInt(key)}
             <Draggable
               objAttributes={block}
               on:message={handleDraggableMessage}
-              id={parseInt(id)}
+              id={blockId}
             >
-              {@const SvelteComponent_2 = block_components[block.type]}
-              <SvelteComponent_2
-                blockId={parseInt(id)}
-                selectedId={selected_id}
-                objAttributes={block}
-                on:message={handleBlockMessage}
+              {@const BlockComponent = block_components[block.type]}
+              <BlockComponent
+                {blockId}
+                {block}
+                selected={selectedBlockId === blockId}
+                edit={editBlock}
+                select={selectBlock}
+                remove={removeBlock}
+                connectorMounted={() => { registerBlock(blockId, block) }}
               />
             </Draggable>
           {/each}
