@@ -1,83 +1,69 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
-  let { objAttributes = $bindable({}) } = $props();
-  let copy = {};
+  import type {
+    ProjectBlock,
+    ProjectEvent,
+  } from "../../../../../common/project/types.ts";
 
-  let modal_event: HTMLInputElement;
-  let events_copy = [];
-  let edit_event_id: number = -1;
+  const {
+    block,
+    save = (block: ProjectBlock) => {},
+    cancel = () => {},
+  } = $props();
 
-  const dispatch = createEventDispatcher();
+  let blockCopy = $state({}) as ProjectBlock;
 
-  onMount(() => {
-    copy = JSON.parse(JSON.stringify(objAttributes));
+  let eventsModal: HTMLInputElement;
+  let eventsCopy = $state([]) as ProjectEvent[];
+  let selectedConnectorId = $state(-1);
+
+  $effect(() => {
+    blockCopy = JSON.parse(JSON.stringify(block));
   });
 
-  function name_keypress(e: KeyboardEvent) {
+  function ignoreEnterKey(e: KeyboardEvent) {
     if (e.key == "Enter") {
       e.preventDefault();
     }
   }
 
-  function btn_add_option_clicked() {
-    copy.connectors.push({
+  function addConnector() {
+    blockCopy.connectors.push({
       type: "Labeled",
       label: "",
       targets: [],
     });
-
-    copy.connectors = copy.connectors;
   }
 
-  function btn_del_option_clicked(id: number) {
-    copy.connectors.splice(id, 1);
-    copy.connectors = copy.connectors;
+  function removeConnector(id: number) {
+    blockCopy.connectors.splice(id, 1);
   }
 
-  function btn_add_event_clicked() {
-    events_copy.push({
+  function addEvent() {
+    eventsCopy.push({
       type: "message",
       content: "",
     });
-    events_copy = events_copy;
   }
 
-  function btn_del_event_clicked(id: number) {
-    events_copy.splice(id, 1);
-    events_copy = events_copy;
+  function removeEvent(id: number) {
+    eventsCopy.splice(id, 1);
   }
 
-  function btn_event(id: number) {
-    if (copy.connectors[id].events === undefined) {
-      events_copy = [];
-    } else {
-      events_copy = JSON.parse(JSON.stringify(copy.connectors[id].events));
-    }
-
-    edit_event_id = id;
-    modal_event.click();
+  function editEvents(id: number) {
+    selectedConnectorId = id;
+    eventsCopy = JSON.parse(
+      JSON.stringify(blockCopy.connectors[id].events ?? [])
+    );
+    eventsModal.click();
   }
 
-  function btn_event_save() {
-    copy.connectors[edit_event_id].events = events_copy;
-    modal_event.click();
+  function saveEvents() {
+    blockCopy.connectors[selectedConnectorId].events = eventsCopy;
+    eventsModal.click();
   }
 
-  function btn_event_cancel() {
-    modal_event.click();
-  }
-
-  function cancel() {
-    dispatch("message", {
-      event: "cancel",
-    });
-  }
-
-  function save() {
-    dispatch("message", {
-      event: "save",
-      block: copy,
-    });
+  function closeEvents() {
+    eventsModal.click();
   }
 </script>
 
@@ -85,13 +71,13 @@
   type="checkbox"
   id="modal-event"
   class="modal-toggle"
-  bind:this={modal_event}
+  bind:this={eventsModal}
 />
 <div class="modal">
   <div class="modal-box max-w-3xl">
     <h3 class="font-bold text-lg">Events for connector</h3>
 
-    {#if events_copy.length > 0}
+    {#if eventsCopy.length > 0}
       <table class="table table-zebra w-full mt-2">
         <!-- head -->
         <thead>
@@ -102,7 +88,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each Object.entries(events_copy) as [id, event]}
+          {#each eventsCopy.entries() as [id, event]}
             <tr>
               <td>
                 <select
@@ -128,7 +114,9 @@
                 <td>
                   <button
                     class="btn btn-square btn-outline btn-sm"
-                    on:click={() => btn_del_event_clicked(id)}
+                    onclick={() => {
+                      removeEvent(id);
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -165,7 +153,9 @@
                 <td>
                   <button
                     class="btn btn-square btn-outline btn-sm"
-                    on:click={() => btn_del_event_clicked(id)}
+                    onclick={() => {
+                      removeEvent(id);
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -192,7 +182,7 @@
 
     <br /><br />
 
-    <button class="btn gap-2" on:click={btn_add_event_clicked}>
+    <button class="btn gap-2" onclick={addEvent}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -213,9 +203,9 @@
 
     <div class="divider"></div>
     <div class="modal-action">
-      <div class="btn" on:click={btn_event_save}>Save</div>
+      <div class="btn" onclick={saveEvents}>Save</div>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <div class="btn btn-outline" on:click={btn_event_cancel}>Cancel</div>
+      <div class="btn btn-outline" onclick={closeEvents}>Cancel</div>
     </div>
   </div>
 </div>
@@ -223,7 +213,9 @@
 <label
   for="my-modal-3"
   class="btn btn-sm btn-circle absolute right-2 top-2"
-  on:click={cancel}>✕</label
+  onclick={() => {
+    cancel();
+  }}>✕</label
 >
 <h3 class="text-lg font-bold">
   <svg
@@ -245,8 +237,8 @@
   <div
     class="inline"
     contenteditable="true"
-    bind:textContent={copy.name}
-    on:keypress={name_keypress}
+    bind:textContent={blockCopy.name}
+    onkeypress={ignoreEnterKey}
   ></div>
 </h3>
 <div
@@ -255,7 +247,7 @@
 >
   <br />
   Answer options:<br />
-  {#if copy.connectors !== undefined && copy.connectors.length > 0}
+  {#if blockCopy.connectors !== undefined && blockCopy.connectors.length > 0}
     <table class="table table-zebra w-full mt-2">
       <!-- head -->
       <thead>
@@ -267,7 +259,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each Object.entries(copy.connectors) as [id, connector]}
+        {#each blockCopy.connectors.entries() as [id, connector]}
           <tr>
             <td>
               <select
@@ -291,7 +283,9 @@
                 class="btn btn-square btn-sm {connector.events === undefined
                   ? 'btn-outline'
                   : ''}"
-                on:click={() => btn_event(id)}
+                onclick={() => {
+                  editEvents(id);
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -312,7 +306,9 @@
             <td>
               <button
                 class="btn btn-square btn-outline btn-sm"
-                on:click={() => btn_del_option_clicked(id)}
+                onclick={() => {
+                  removeConnector(id);
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -338,7 +334,7 @@
 
   <br />
 
-  <button class="btn gap-2" on:click={btn_add_option_clicked}>
+  <button class="btn gap-2" onclick={addConnector}>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
@@ -359,9 +355,15 @@
 </div>
 <div class="divider"></div>
 <p>
-  <button class="btn btn-active" on:click={save}>Save</button
+  <button
+    class="btn btn-active"
+    onclick={() => {
+      save(blockCopy);
+    }}>Save</button
   >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button
     class="btn btn-outline"
-    on:click={cancel}>Cancel</button
+    onclick={() => {
+      cancel();
+    }}>Cancel</button
   >
 </p>

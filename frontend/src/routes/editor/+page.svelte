@@ -398,27 +398,24 @@
     }
   }
 
-  function handleEditBlockMessage(e: CustomEvent) {
-    const detail = e.detail;
-    const event = detail.event;
-    if (event == "cancel") {
-      edit_block = null;
-      modal_edit.click();
-    } else if (event == "save" && selectedBlockId != null) {
+  function saveBlock(block: ProjectBlock) {
       // Remove the line_locations for the connectors in case some were deleted/moved
-      const block = detail.block;
       const blockConnectors = block.connectors;
-      const lineConnectors = line_locations[selectedBlockId].connectors;
+      const lineConnectors = line_locations[selectedBlockId!].connectors;
       for (const key of lineConnectors.keys()) {
         if (!(key in blockConnectors)) {
           delete lineConnectors[key];
         }
       }
 
-      project.blocks[selectedBlockId] = block;
+      project.blocks[selectedBlockId!] = block;
       edit_block = null;
       modal_edit.click();
-    }
+  }
+
+  function cancelBlock() {
+      edit_block = null;
+      modal_edit.click();
   }
 
   function editBlock(blockId: number) {
@@ -700,10 +697,11 @@
   <div class="modal">
     <div class="modal-box relative max-w-4xl">
       {#if edit_block !== null}
-        {@const SvelteComponent_1 = block_popup_components[edit_block.type]}
-        <SvelteComponent_1
-          objAttributes={edit_block}
-          on:message={handleEditBlockMessage}
+        {@const BlockPopupComponent = block_popup_components[edit_block.type]}
+        <BlockPopupComponent
+          block={edit_block}
+          save={saveBlock}
+          cancel={cancelBlock}
         />
       {/if}
     </div>

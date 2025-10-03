@@ -84,6 +84,7 @@ export type ProjectBlock = {
   y?: number;
   connectors: ProjectConnector[];
   chatgpt_variation?: boolean;
+  chatgpt_memory?: boolean;
   variation_prompt?: string;
 };
 
