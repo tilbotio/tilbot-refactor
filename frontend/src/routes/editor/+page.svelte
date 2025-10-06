@@ -87,6 +87,10 @@
   let num_draggable_loaded = 0;
   let is_loading = false;
 
+  // Initialization will happen in onMount(), we don't know the value yet and
+  // there's no sane default we can give, so leave it undefined for now.
+  // Setting "boolean | undefined" as the type is also not quite a good fit,
+  // as this value should never be undefined during the normal lifetime.
   let is_electron = $state() as boolean;
   let local_ip = $state("");
   let public_ip = $state("");
