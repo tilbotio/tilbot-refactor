@@ -1,101 +1,87 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
-  let { objAttributes = $bindable({}) } = $props();
-  let copy = {};
+  import type {
+    ProjectBlock,
+    ProjectEvent,
+  } from "../../../../../common/project/types.ts";
 
-  let modal_event: HTMLInputElement;
-  let events_copy = [];
-  let edit_event_id: number = -1;
+  const {
+    block,
+    save = (block: ProjectBlock) => {},
+    cancel = () => {},
+  } = $props();
 
-  let show_img_select = false;
-  let tmp_image = "";
+  let blockCopy = $state({}) as ProjectBlock;
 
-  const dispatch = createEventDispatcher();
+  let eventsModal: HTMLInputElement;
+  let eventsCopy = $state([]) as ProjectEvent[];
+  let selectedConnectorId = $state(-1);
 
-  onMount(() => {
-    copy = JSON.parse(JSON.stringify(objAttributes));
+  let showImageSelector = $state(false);
+  let imageCopy = $state("");
+
+  $effect(() => {
+    blockCopy = JSON.parse(JSON.stringify(block));
   });
 
-  function name_keypress(e: KeyboardEvent) {
+  function ignoreEnterKey(e: KeyboardEvent) {
     if (e.key == "Enter") {
       e.preventDefault();
     }
   }
 
-  function btn_add_option_clicked() {
-    copy.connectors.push({
+  function addConnector() {
+    blockCopy.connectors.push({
       type: "Labeled",
       label: "",
       targets: [],
     });
-
-    copy.connectors = copy.connectors;
   }
 
-  function btn_del_option_clicked(id: number) {
-    copy.connectors.splice(id, 1);
-    copy.connectors = copy.connectors;
+  function removeConnector(id: number) {
+    blockCopy.connectors.splice(id, 1);
   }
 
-  function btn_add_event_clicked() {
-    events_copy.push({
+  function addEvent() {
+    eventsCopy.push({
       type: "message",
       content: "",
     });
-    events_copy = events_copy;
   }
 
-  function btn_del_event_clicked(id: number) {
-    events_copy.splice(id, 1);
-    events_copy = events_copy;
+  function removeEvent(id: number) {
+    eventsCopy.splice(id, 1);
   }
 
-  function btn_event(id: number) {
-    if (copy.connectors[id].events === undefined) {
-      events_copy = [];
-    } else {
-      events_copy = JSON.parse(JSON.stringify(copy.connectors[id].events));
-    }
-
-    edit_event_id = id;
-    modal_event.click();
+  function editEvents(id: number) {
+    selectedConnectorId = id;
+    eventsCopy = JSON.parse(
+      JSON.stringify(blockCopy.connectors[id].events ?? [])
+    );
+    eventsModal.click();
   }
 
-  function btn_event_save() {
-    copy.connectors[edit_event_id].events = events_copy;
-    modal_event.click();
+  function saveEvents() {
+    blockCopy.connectors[selectedConnectorId].events = eventsCopy;
+    eventsModal.click();
   }
 
-  function btn_event_cancel() {
-    modal_event.click();
+  function closeEvents() {
+    eventsModal.click();
   }
 
-  function cancel() {
-    dispatch("message", {
-      event: "cancel",
-    });
+  function toggleImageSelector() {
+    showImageSelector = !showImageSelector;
   }
 
-  function save() {
-    dispatch("message", {
-      event: "save",
-      block: copy,
-    });
+  function saveImage() {
+    blockCopy.content += '<img src="' + imageCopy + '" />';
+    showImageSelector = true;
+    imageCopy = "";
   }
 
-  function toggle_img_select() {
-    show_img_select = !show_img_select;
-  }
-
-  function image_save() {
-    copy.content += '<img src="' + tmp_image + '" />';
-    show_img_select = true;
-    tmp_image = "";
-  }
-
-  function image_cancel() {
-    show_img_select = false;
-    tmp_image = "";
+  function closeImage() {
+    showImageSelector = false;
+    imageCopy = "";
   }
 </script>
 
@@ -103,13 +89,13 @@
   type="checkbox"
   id="modal-event"
   class="modal-toggle"
-  bind:this={modal_event}
+  bind:this={eventsModal}
 />
 <div class="modal">
   <div class="modal-box max-w-3xl">
     <h3 class="font-bold text-lg">Events for connector</h3>
 
-    {#if events_copy.length > 0}
+    {#if eventsCopy.length > 0}
       <table class="table table-zebra w-full mt-2">
         <!-- head -->
         <thead>
@@ -120,7 +106,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each Object.entries(events_copy) as [id, event]}
+          {#each eventsCopy.entries() as [id, event]}
             <tr>
               <td>
                 <select
@@ -146,7 +132,9 @@
                 <td>
                   <button
                     class="btn btn-square btn-outline btn-sm"
-                    on:click={() => btn_del_event_clicked(id)}
+                    onclick={() => {
+                      removeEvent(id);
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -183,7 +171,9 @@
                 <td>
                   <button
                     class="btn btn-square btn-outline btn-sm"
-                    on:click={() => btn_del_event_clicked(id)}
+                    onclick={() => {
+                      removeEvent(id);
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -210,7 +200,7 @@
 
     <br /><br />
 
-    <button class="btn gap-2" on:click={btn_add_event_clicked}>
+    <button class="btn gap-2" onclick={addEvent}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -231,9 +221,9 @@
 
     <div class="divider"></div>
     <div class="modal-action">
-      <div class="btn" on:click={btn_event_save}>Save</div>
+      <div class="btn" onclick={saveEvents}>Save</div>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <div class="btn btn-outline" on:click={btn_event_cancel}>Cancel</div>
+      <div class="btn btn-outline" onclick={closeEvents}>Cancel</div>
     </div>
   </div>
 </div>
@@ -241,7 +231,9 @@
 <label
   for="my-modal-3"
   class="btn btn-sm btn-circle absolute right-2 top-2"
-  on:click={cancel}>✕</label
+  onclick={() => {
+    cancel();
+  }}>✕</label
 >
 <h3 class="text-lg font-bold">
   <svg
@@ -263,8 +255,8 @@
   <div
     class="inline"
     contenteditable="true"
-    bind:textContent={copy.name}
-    on:keypress={name_keypress}
+    bind:textContent={blockCopy.name}
+    onkeypress={ignoreEnterKey}
   ></div>
 </h3>
 
@@ -275,7 +267,7 @@
   <p class="py-4">Text for the bot to say:</p>
   <button
     class="btn btn-square btn-outline btn-sm mt-2 mb-2"
-    on:click={toggle_img_select}
+    onclick={toggleImageSelector}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -292,31 +284,29 @@
       />
     </svg>
   </button>
-  {#if show_img_select}
+  {#if showImageSelector}
     <div class="bg-slate-200 p-4">
       <input
         type="text"
         placeholder="images/tilbot_logo.svg"
         class="input input-bordered input-sm w-full max-w-xs"
-        bind:value={tmp_image}
+        bind:value={imageCopy}
       />
-      <button class="btn btn-active btn-sm" on:click={image_save}>Insert</button
-      >
-      <button class="btn btn-outline btn-sm" on:click={image_cancel}
-        >Cancel</button
+      <button class="btn btn-active btn-sm" onclick={saveImage}>Insert</button>
+      <button class="btn btn-outline btn-sm" onclick={closeImage}>Cancel</button
       >
     </div>
   {/if}
   <div
     class="textarea text-base textarea-bordered resize-none inset-y-2 w-full max-h-40 h-24 overflow-scroll"
     contenteditable="true"
-    bind:innerHTML={copy.content}
+    bind:innerHTML={blockCopy.content}
   ></div>
 
   <br /><br />
 
   Answer options:<br />
-  {#if copy.connectors !== undefined && copy.connectors.length > 0}
+  {#if blockCopy.connectors?.length! > 0}
     <table class="table table-zebra w-full mt-2">
       <!-- head -->
       <thead>
@@ -327,7 +317,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each Object.entries(copy.connectors) as [id, connector]}
+        {#each blockCopy.connectors.entries() as [id, connector]}
           <tr>
             <td
               ><input
@@ -342,7 +332,9 @@
                 class="btn btn-square btn-sm {connector.events === undefined
                   ? 'btn-outline'
                   : ''}"
-                on:click={() => btn_event(id)}
+                onclick={() => {
+                  editEvents(id);
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -363,7 +355,9 @@
             <td>
               <button
                 class="btn btn-square btn-outline btn-sm"
-                on:click={() => btn_del_option_clicked(id)}
+                onclick={() => {
+                  removeConnector(id);
+                }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -389,7 +383,7 @@
 
   <br />
 
-  <button class="btn gap-2" on:click={btn_add_option_clicked}>
+  <button class="btn gap-2" onclick={addConnector}>
     <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
@@ -410,9 +404,15 @@
 </div>
 <div class="divider"></div>
 <p>
-  <button class="btn btn-active" on:click={save}>Save</button
+  <button
+    class="btn btn-active"
+    onclick={() => {
+      save();
+    }}>Save</button
   >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button
     class="btn btn-outline"
-    on:click={cancel}>Cancel</button
+    onclick={() => {
+      cancel();
+    }}>Cancel</button
   >
 </p>

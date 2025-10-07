@@ -81,13 +81,13 @@
     showImageSelector = !showImageSelector;
   }
 
-  function image_save() {
+  function saveImage() {
     blockCopy.content += '<img src="' + imageCopy + '" />';
     showImageSelector = true;
     imageCopy = "";
   }
 
-  function image_cancel() {
+  function closeImage() {
     showImageSelector = false;
     imageCopy = "";
   }
@@ -299,8 +299,8 @@
         class="input input-bordered input-sm w-full max-w-xs"
         bind:value={imageCopy}
       />
-      <button class="btn btn-active btn-sm" onclick={image_save}>Insert</button>
-      <button class="btn btn-outline btn-sm" onclick={image_cancel}
+      <button class="btn btn-active btn-sm" onclick={saveImage}>Insert</button>
+      <button class="btn btn-outline btn-sm" onclick={closeImage}
         >Cancel</button
       >
     </div>
