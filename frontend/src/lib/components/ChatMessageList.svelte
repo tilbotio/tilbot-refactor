@@ -4,9 +4,10 @@
 
   type Props = {
     messages: Message[];
+    isTypingIndicatorActive: boolean;
   };
 
-  let { messages }: Props = $props();
+  let { messages, isTypingIndicatorActive }: Props = $props();
 </script>
 
 {#each messages as message, index}
@@ -16,3 +17,8 @@
 
   <ChatMessage {message} {newBotMessageBlock} />
 {/each}
+{#if isTypingIndicatorActive}
+  <div class="chat-bubble bg-tilbot-secondary-purple">
+    <span class="loading loading-dots loading-sm"></span>
+  </div>
+{/if}

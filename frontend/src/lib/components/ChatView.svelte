@@ -2,12 +2,11 @@
   import ChatHeader from "./ChatHeader.svelte";
   import BarcodeScanner from "./BarcodeScanner.svelte";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
-  import { getContext } from "svelte";
+  import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
   import type {
     CurrentMessageType,
     McOption,
-    Message,
     ShowBarcodeScanner,
   } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
@@ -17,7 +16,6 @@
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
-  const messages: Array<Message> = getContext("messageContext");
 
   const chatOutput = new ChatOutput(settingsContext, runtimeContext);
   const projectController = new RemoteProjectController(chatOutput);
@@ -25,6 +23,17 @@
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");
   let mcOptions: McOption[] = $state([]);
+
+  let scrollContainer: HTMLDivElement;
+
+  $effect(() => {
+    if (isTypingIndicatorActive || projectController.output.messages.length) {
+      (async () => {
+        await tick();
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      })();
+    }
+  });
 
   let isTypingIndicatorActive = $derived(
     projectController.output.isTypingIndicatorActive
@@ -63,13 +72,19 @@
 
   function handleScannedCode(decoded: string): void {
     const messageText = `barcode: {$decoded}`;
-    messages.push({ from: "user", content: messageText });
+    projectController.output.messages.push({
+      from: "user",
+      content: messageText,
+    });
     projectController.receive_message(messageText);
   }
 
   //Temporary sendMessage function to test functionality between components
   function sendUserMessage(messageText: string): void {
-    messages.push({ from: "user", content: messageText });
+    projectController.output.messages.push({
+      from: "user",
+      content: messageText,
+    });
     // Reset currentMessageType to text by default
     currentMessageType = "text";
   }
@@ -77,24 +92,41 @@
   // Temporary testing functions
   // TODO: Remove after testing
 
-  function botmessage() {
-    messages.push({ from: "bot", content: "My first botmessage!" });
+  async function botmessage() {
+    const message = {
+      type: "Text",
+      content: "Hi there, this is the bot speaking",
+      params: null,
+    };
+    await projectController.output.botMessage(message);
+  }
+  async function botmessage2() {
+    const message = {
+      type: "Text",
+      content: "Hi there, this is the second message from the chatbot!",
+      params: null,
+    };
+    await projectController.output.botMessage(message);
   }
   function chatgptmessage() {
-    messages.push({
+    projectController.output.messages.push({
       from: "chatgpt",
       content: "My first chatgptmessage!",
     });
   }
 
   function usermessage() {
-    messages.push({ from: "user", content: "My first usermessage!" });
+    projectController.output.messages.push({
+      from: "user",
+      content: "My first usermessage!",
+    });
   }
 
   // Remove all functions between here and TODO
 </script>
 
 <button onclick={botmessage}>Botmessage</button>
+<button onclick={botmessage2}>Botmessage2</button>
 <button onclick={chatgptmessage}>Chatgptmessage</button>
 <button onclick={usermessage}>Usermessage</button>
 <!-- This section above is for testing purposes only, remove later-->
@@ -106,8 +138,14 @@
   {#if runtimeContext.showHeader}
     <ChatHeader />
   {/if}
-  <div class="w-full h-full flex-1 overflow-y-scroll py-2">
-    <MessageList {messages} />
+  <div
+    bind:this={scrollContainer}
+    class="w-full h-full flex-1 overflow-y-scroll py-2"
+  >
+    <MessageList
+      messages={projectController.output.messages}
+      {isTypingIndicatorActive}
+    />
   </div>
   <InputArea
     {currentMessageType}
