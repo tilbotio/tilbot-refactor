@@ -1,94 +1,76 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
+  import { onMount } from "svelte";
 
   let draggable: HTMLDivElement;
-  let is_dragging: boolean = false;
-  let has_moved: boolean = false;
+  let isDragging: boolean = false;
+  let hasMoved: boolean = false;
 
-  let { objAttributes = $bindable({}), id = $bindable(0) } = $props();
+  let {
+    block,
+    editor_main,
+    mounted = () => {},
+    dragStart = () => {},
+    drag = () => {},
+    dragDrop = () => {},
+  } = $props();
 
-  const dispatch = createEventDispatcher();
+  onMount(mounted as () => unknown);
 
-  onMount(() => {
-    dispatch("message", {
-      event: "draggable_loaded",
-      id: id,
-    });
-  });
-
-  function mouse_down(e: MouseEvent) {
-    let btn_del = draggable.getElementsByClassName("btn_del");
-    let btn_edit = draggable.getElementsByClassName("btn_edit");
-    let conn_id = e.target.getAttribute("data-connector-id");
+  function mouseDown(e: MouseEvent) {
+    const btn_del = draggable.getElementsByClassName("btn_del");
+    const btn_edit = draggable.getElementsByClassName("btn_edit");
+    const target = e.target! as HTMLElement;
+    const connectorId = target.getAttribute("data-connector-id");
 
     if (
       e.button == 0 &&
-      conn_id === null &&
-      (btn_del.length == 0 || !btn_del[0].contains(e.target)) &&
-      (btn_edit.length == 0 || !btn_edit[0].contains(e.target))
+      connectorId === null &&
+      (btn_del.length == 0 || !btn_del[0].contains(target)) &&
+      (btn_edit.length == 0 || !btn_edit[0].contains(target))
     ) {
-      is_dragging = true;
-      has_moved = false;
+      isDragging = true;
+      hasMoved = false;
 
-      dispatch("message", {
-        event: "start_dragging",
-      });
+      dragStart();
     }
   }
 
-  function mouse_up(e: MouseEvent) {
-    if (e.button == 0 && is_dragging) {
-      is_dragging = false;
+  function mouseUp(e: MouseEvent) {
+    if (e.button == 0 && isDragging) {
+      isDragging = false;
 
-      if (has_moved) {
-        objAttributes.x =
+      if (hasMoved) {
+        block.x =
           Math.round(
-            (e.x -
-              draggable.offsetWidth / 2 +
-              document.getElementById("editor_main").scrollLeft) /
-              20
+            (e.x - draggable.offsetWidth / 2 + editor_main.scrollLeft) / 20
           ) * 20;
-        objAttributes.y =
+        block.y =
           Math.round(
-            (e.y -
-              draggable.offsetHeight / 2 +
-              document.getElementById("editor_main").scrollTop) /
-              20
+            (e.y - draggable.offsetHeight / 2 + editor_main.scrollTop) / 20
           ) * 20;
 
-        dispatch("message", {
-          event: "draggable_dropped",
-        });
+        dragDrop();
       }
     }
   }
 
-  function mouse_move(e: MouseEvent) {
-    if (is_dragging) {
-      has_moved = true;
+  function mouseMove(e: MouseEvent) {
+    if (isDragging) {
+      hasMoved = true;
 
       draggable.style.left =
         Math.round(
-          (e.x -
-            draggable.offsetWidth / 2 +
-            document.getElementById("editor_main").scrollLeft) /
-            20
+          (e.x - draggable.offsetWidth / 2 + editor_main.scrollLeft) / 20
         ) *
           20 +
         "px";
       draggable.style.top =
         Math.round(
-          (e.y -
-            draggable.offsetHeight / 2 +
-            document.getElementById("editor_main").scrollTop) /
-            20
+          (e.y - draggable.offsetHeight / 2 + editor_main.scrollTop) / 20
         ) *
           20 +
         "px";
-      dispatch("message", {
-        event: "dragging",
-        id: id,
-      });
+      drag();
     }
   }
 </script>
@@ -97,11 +79,11 @@
 https://svelte.dev/e/js_parse_error -->
 <div
   bind:this={draggable}
-  style="left: {objAttributes.x}px; top: {objAttributes.y}px"
-  on:mousedown={mouse_down}
-  on:mouseup={mouse_up}
-  on:mousemove={mouse_move}
-  on:mouseleave={mouse_move}
+  style="left: {block.x}px; top: {block.y}px"
+  onmousedown={mouseDown}
+  onmouseup={mouseUp}
+  onmousemove={mouseMove}
+  onmouseleave={mouseMove}
   class="select-none absolute"
 >
   <slot></slot>

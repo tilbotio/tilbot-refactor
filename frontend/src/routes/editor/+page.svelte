@@ -287,92 +287,95 @@
     line_locations[id] = { ...center(block_rect), connectors };
   }
 
-  function handleDraggableMessage(e: CustomEvent) {
+  function draggableMounted(id: number) {
     const blocks = project.blocks;
-    if (e.detail.event == "draggable_loaded") {
-      if (is_loading) {
-        num_draggable_loaded++;
+    if (is_loading) {
+      num_draggable_loaded++;
 
-        const blockEntries = Object.entries(blocks) as [string, any][];
-        if (num_draggable_loaded == blockEntries.length) {
-          is_loading = false;
+      const blockEntries = Object.entries(blocks) as [string, any][];
+      if (num_draggable_loaded == blockEntries.length) {
+        is_loading = false;
 
-          // Build the look-up table for connecting lines.
-          for (const [id, block] of blockEntries) {
-            registerBlock(parseInt(id), block);
-          }
+        // Build the look-up table for connecting lines.
+        for (const [id, block] of blockEntries) {
+          registerBlock(parseInt(id), block);
+        }
+      }
+    } else {
+      // Just add the one new entry in the collection
+      registerBlock(id, blocks[id]);
+    }
+  }
+
+  function draggableDragStart() {
+    deselect_all();
+  }
+
+  function draggableDragDrop() {
+    // See if we need to make the canvas smaller
+    let max_x = 0;
+    let max_y = 0;
+
+    for (const value of Object.values(line_locations)) {
+      console.log(JSON.stringify(value));
+      const connectors = value.connectors;
+      if (connectors.length == 0) {
+        if (value.x + 200 > max_x) {
+          max_x = value.x + 200;
+        }
+
+        if (value.y + 200 > max_y) {
+          max_y = value.y + 200;
         }
       } else {
-        // Just add the one new entry in the collection
-        const id = e.detail.id;
-        registerBlock(id, blocks[id]);
-      }
-    } else if (e.detail.event == "start_dragging") {
-      deselect_all();
-    } else if (e.detail.event == "draggable_dropped") {
-      // See if we need to make the canvas smaller
-      let max_x = 0;
-      let max_y = 0;
+        const lastConnector = connectors[connectors.length - 1];
+        if (lastConnector.x > max_x) {
+          max_x = value.x;
+        }
 
-      for (const value of Object.values(line_locations)) {
-        console.log(JSON.stringify(value));
-        const connectors = value.connectors;
-        if (connectors.length == 0) {
-          if (value.x + 200 > max_x) {
-            max_x = value.x + 200;
-          }
-
-          if (value.y + 200 > max_y) {
-            max_y = value.y + 200;
-          }
-        } else {
-          const lastConnector = connectors[connectors.length - 1];
-          if (lastConnector.x > max_x) {
-            max_x = value.x;
-          }
-
-          if (lastConnector.y > max_y) {
-            max_y = value.y;
-          }
+        if (lastConnector.y > max_y) {
+          max_y = value.y;
         }
       }
+    }
 
-      project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
-      project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
-    } else if (e.detail.event == "dragging") {
-      const id = e.detail.id;
-      registerBlock(id, blocks[id]);
+    project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
+    project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
+  }
 
-      // Update look-up table
-      const block_rect = document
-        .getElementById(`block_${id}_in`)!
-        .getBoundingClientRect();
+  function draggableDrag(id: number) {
+    const blocks = project.blocks;
+    registerBlock(id, blocks[id]);
 
-      const obj_left = block_rect.left + block_rect.width / 2;
-      const obj_top = block_rect.top + block_rect.height / 2;
+    // Update look-up table
+    const block_rect = document
+      .getElementById(`block_${id}_in`)!
+      .getBoundingClientRect();
 
-      const scrollLeft = editor_main.scrollLeft;
-      const scrollTop = editor_main.scrollTop;
-      const firstChild = editor_main.firstChild as HTMLElement;
+    const obj_left = block_rect.left + block_rect.width / 2;
+    const obj_top = block_rect.top + block_rect.height / 2;
 
-      if (editor_main.offsetHeight - obj_top < 100) {
-        if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
-          project.canvas_height += 100;
-        }
-        editor_main.scrollTop += 30;
-      } else if (obj_top < 50 && scrollTop > 0) {
-        // @TODO: bind editor_main?
-        editor_main.scrollTop = scrollTop - 30;
+    const scrollLeft = editor_main.scrollLeft;
+    const scrollTop = editor_main.scrollTop;
+    const firstChild = editor_main.firstChild as HTMLElement;
+
+    if (editor_main.offsetHeight - obj_top < 100) {
+      if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
+        project.canvas_height += 100;
       }
+      editor_main.scrollTop += 30;
+    } else if (obj_top < 50 && scrollTop > 0) {
+      // @TODO: bind editor_main?
+      editor_main.scrollTop = scrollTop - 30;
+    }
 
-      if (editor_main.offsetWidth - obj_left < 200) {
-        if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
-          project.canvas_width += 100;
-        }
-        editor_main.scrollLeft = scrollLeft + 30;
-      } else if (obj_left < -50 && scrollLeft > 0) {
-        editor_main.scrollLeft = scrollLeft - 30;
+    if (editor_main.offsetWidth - obj_left < 200) {
+      if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
+        project.canvas_width += 100;
       }
+      editor_main.scrollLeft = scrollLeft + 30;
+    } else if (obj_left < -50 && scrollLeft > 0) {
+      editor_main.scrollLeft = scrollLeft - 30;
     }
   }
 
@@ -399,23 +402,23 @@
   }
 
   function saveBlock(block: ProjectBlock) {
-      // Remove the line_locations for the connectors in case some were deleted/moved
-      const blockConnectors = block.connectors;
-      const lineConnectors = line_locations[selectedBlockId!].connectors;
-      for (const key of lineConnectors.keys()) {
-        if (!(key in blockConnectors)) {
-          delete lineConnectors[key];
-        }
+    // Remove the line_locations for the connectors in case some were deleted/moved
+    const blockConnectors = block.connectors;
+    const lineConnectors = line_locations[selectedBlockId!].connectors;
+    for (const key of lineConnectors.keys()) {
+      if (!(key in blockConnectors)) {
+        delete lineConnectors[key];
       }
+    }
 
-      project.blocks[selectedBlockId!] = block;
-      edit_block = null;
-      modal_edit.click();
+    project.blocks[selectedBlockId!] = block;
+    edit_block = null;
+    modal_edit.click();
   }
 
   function cancelBlock() {
-      edit_block = null;
-      modal_edit.click();
+    edit_block = null;
+    modal_edit.click();
   }
 
   function editBlock(blockId: number) {
@@ -913,9 +916,16 @@
           {#each Object.entries(project.blocks) as [key, block]}
             {@const blockId = parseInt(key)}
             <Draggable
-              objAttributes={block}
-              on:message={handleDraggableMessage}
-              id={blockId}
+              {block}
+              {editor_main}
+              mounted={() => {
+                draggableMounted(blockId);
+              }}
+              dragStart={draggableDragStart}
+              dragDrop={draggableDragDrop}
+              drag={() => {
+                draggableDrag(blockId);
+              }}
             >
               {@const BlockComponent = block_components[block.type]}
               <BlockComponent
@@ -925,7 +935,9 @@
                 edit={editBlock}
                 select={selectBlock}
                 remove={removeBlock}
-                connectorMounted={() => { registerBlock(blockId, block) }}
+                connectorMounted={() => {
+                  registerBlock(blockId, block);
+                }}
               />
             </Draggable>
           {/each}
