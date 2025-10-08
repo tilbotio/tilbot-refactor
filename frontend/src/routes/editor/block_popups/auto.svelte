@@ -101,7 +101,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each Object.entries(eventsCopy) as [id, event]}
+          {#each eventsCopy.entries() as [id, event]}
             <tr>
               <td>
                 <select
@@ -127,7 +127,9 @@
                 <td>
                   <button
                     class="btn btn-square btn-outline btn-sm"
-                    on:click={() => removeEvent(id)}
+                    onclick={() => {
+                      removeEvent(id);
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -164,7 +166,9 @@
                 <td>
                   <button
                     class="btn btn-square btn-outline btn-sm"
-                    on:click={() => removeEvent(id)}
+                    onclick={() => {
+                      removeEvent(id);
+                    }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -191,7 +195,7 @@
 
     <br /><br />
 
-    <button class="btn gap-2" on:click={addEvent}>
+    <button class="btn gap-2" onclick={addEvent}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -212,9 +216,9 @@
 
     <div class="divider"></div>
     <div class="modal-action">
-      <div class="btn" on:click={saveEvents}>Save</div>
+      <div class="btn" onclick={saveEvents}>Save</div>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <div class="btn btn-outline" on:click={closeEvents}>Cancel</div>
+      <div class="btn btn-outline" onclick={closeEvents}>Cancel</div>
     </div>
   </div>
 </div>
@@ -222,7 +226,9 @@
 <label
   for="my-modal-3"
   class="btn btn-sm btn-circle absolute right-2 top-2"
-  on:click={cancel}>✕</label
+  onclick={() => {
+    cancel();
+  }}>✕</label
 >
 
 <h3 class="text-lg font-bold">
@@ -246,13 +252,13 @@
     class="inline"
     contenteditable="true"
     bind:textContent={blockCopy.name}
-    on:keypress={ignoreEnterKey}
+    onkeypress={ignoreEnterKey}
   ></div>
 </h3>
 <p class="py-4">Text for the bot to say:</p>
 <button
   class="btn btn-square btn-outline btn-sm mt-2 mb-2"
-  on:click={toggleImageSelector}
+  onclick={toggleImageSelector}
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -277,10 +283,8 @@
       class="input input-bordered input-sm w-full max-w-xs"
       bind:value={imageCopy}
     />
-    <button class="btn btn-active btn-sm" on:click={saveImage}>Insert</button>
-    <button class="btn btn-outline btn-sm" on:click={closeImage}
-      >Cancel</button
-    >
+    <button class="btn btn-active btn-sm" onclick={saveImage}>Insert</button>
+    <button class="btn btn-outline btn-sm" onclick={closeImage}>Cancel</button>
   </div>
 {/if}
 <div
@@ -312,11 +316,12 @@
 <br />
 
 <button
-  class="btn btn-square btn-sm {blockCopy.connectors !== undefined &&
-  blockCopy.connectors[0].events === undefined
+  class="btn btn-square btn-sm {blockCopy.connectors[0]?.events === undefined
     ? 'btn-outline'
     : ''}"
-  on:click={() => editEvents()}
+  onclick={() => {
+    editEvents(0);
+  }}
 >
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -336,9 +341,15 @@
 
 <div class="divider"></div>
 <p>
-  <button class="btn btn-active" on:click={save}>Save</button
+  <button
+    class="btn btn-active"
+    onclick={() => {
+      save();
+    }}>Save</button
   >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button
     class="btn btn-outline"
-    on:click={cancel}>Cancel</button
+    onclick={() => {
+      cancel();
+    }}>Cancel</button
   >
 </p>
