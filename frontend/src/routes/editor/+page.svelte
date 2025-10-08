@@ -6,6 +6,8 @@
     ProjectBlock,
     ProjectBlockType,
     ProjectConnector,
+    ProjectSettings,
+    GeneralSettings,
   } from "../../../../common/project/types";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
@@ -50,7 +52,7 @@
     Trigger: TriggerBlockPopup,
   };
 
-  let editor_main: HTMLElement = null as any;
+  let editor_main: HTMLElement = $state(null) as any;
   let jsonfileinput: HTMLElement = null as any;
   let simulator: HTMLIFrameElement = null as any;
   let start: HTMLElement = $state(null as any);
@@ -379,26 +381,24 @@
     }
   }
 
-  function handleSettingsMessage(e: CustomEvent) {
-    const detail = e.detail;
-    if (detail.event == "save_settings") {
-      project.settings = detail.settings;
-      generalSettings = detail.generalSettings;
-      window_api.send("save-settings", { settings: generalSettings });
-    }
+  function saveSettings(
+    generalSettings: GeneralSettings,
+    projectSettings: ProjectSettings
+  ) {
+    project.settings = projectSettings;
+    generalSettings = generalSettings;
+    window_api.send("save-settings", { settings: generalSettings });
   }
 
-  function handleChatGPTMessage(e: CustomEvent) {
-    if (e.detail.event == "run_all") {
-      run_all();
-      chatgpt_running = true;
-    } else if (e.detail.event == "send_chatgpt_message") {
-      setTimeout(function () {
-        send_chatgpt_message(e.detail.msg);
-      }, 500);
-    } else if (e.detail.event == "send_chatgpt_variation") {
-      send_chatgpt_variation(e.detail.msg);
-    }
+  function chatgptRunAll() {
+    run_all();
+    chatgpt_running = true;
+  }
+
+  function chatgptSendMessage(message: string) {
+    setTimeout(function () {
+      send_chatgpt_message(message);
+    }, 500);
   }
 
   function saveBlock(block: ProjectBlock) {
@@ -693,7 +693,7 @@
     projectSettings={project.settings}
     settings={generalSettings}
     path={path + "avatar/"}
-    save={handleSettingsMessage}
+    save={saveSettings}
   />
 
   <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
@@ -957,7 +957,9 @@
           projectSettings={project.settings}
           {generalSettings}
           variables={project.variables}
-          on:message={handleChatGPTMessage}
+          runAll={chatgptRunAll}
+          sendMessage={chatgptSendMessage}
+          sendVariation={send_chatgpt_variation}
         ></ChatGPT>
       </div>
 
