@@ -423,7 +423,7 @@
     modal_edit.click();
   }
 
-  function selectBlock(blockId: number) {
+  function removeBlock(blockId: number) {
     deselect_all();
 
     // Delete any blocks connecting to this one
@@ -441,7 +441,7 @@
     delete line_locations[blockId];
   }
 
-  function removeBlock(blockId: number) {
+  function selectBlock(blockId: number) {
     deselect_all();
     selectedBlockId = blockId;
   }
