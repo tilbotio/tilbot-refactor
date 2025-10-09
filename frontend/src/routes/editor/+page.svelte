@@ -714,7 +714,10 @@
   <div class="modal">
     <div class="modal-box relative">
       <h3 class="text-lg font-bold">
-        <RocketLaunch class="w-6 h-6"/>
+        <RocketLaunch
+          class="w-6 h-6"
+          style="display: inline; vertical-align: sub"
+        />
         Project running as server
       </h3>
       <div class="divider"></div>
@@ -797,7 +800,7 @@
   >
     <div class="alert alert-success shadow-lg w-[250px]">
       <div>
-        <CheckCircle />
+        <CheckCircle class="stroke-current flex-shrink-0 h-6 w-6" />
         <span>Project saved!</span>
       </div>
     </div>

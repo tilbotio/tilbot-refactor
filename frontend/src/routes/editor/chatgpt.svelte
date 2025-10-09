@@ -284,6 +284,6 @@
 {:else}
   <button
     class="btn btn-circle bg-[#FFC500] hover:bg-[#ECB600] border-[#FFC500] hover:border-[#ECB600] ml-4"
-    onclick={run_chatgpt}
-  ><Play class="w-6 h-6" /></button>
+    onclick={run_chatgpt}><Play class="w-6 h-6" /></button
+  >
 {/if}
