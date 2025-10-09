@@ -18,8 +18,11 @@ export class ChatOutput implements ProjectControllerOutputInterface {
   typingIndicator(): void {
     this.isTypingIndicatorActive = true;
   }
-  windowMessage(text: string): void {}
-  // chatbot_message
+  windowMessage(text: string): void {
+    if (window.self !== window.top) {
+      window.parent.postMessage(text);
+    }
+  }
   botMessage(block: {
     type: string;
     content: string;
@@ -37,7 +40,6 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     }
 
     setTimeout(() => {
-      console.log(`Timing is ${timeout}`);
       this.isTypingIndicatorActive = false;
       this.messages.push({ from: "bot", content: block.content });
     }, timeout);
