@@ -15,7 +15,6 @@
   let chatgpt_str: string = "";
   let data_str: string = "";
   let loaded_var: string = "";
-  let is_loading_csv: boolean = false;
   let openai: any;
   let msgs: Array<any>;
   let var_msgs: Array<any>;
@@ -25,31 +24,6 @@
     window_api = (window as any)?.api;
 
     window.addEventListener("message", message_received, false);
-
-    // Only works in Electron for now. @TODO: implement for online version of Tilbot.
-    if (
-      typeof navigator === "object" &&
-      typeof navigator.userAgent === "string" &&
-      navigator.userAgent.indexOf("Electron") >= 0
-    ) {
-      window_api.receive("csv-load", (param: any) => {
-        if (is_loading_csv) {
-          is_loading_csv = false;
-          data_str = data_str.replace("[" + loaded_var + "]", param.csv);
-
-          msgs = [
-            {
-              role: "system",
-              content: projectSettings.llm_prompt + "\n" + data_str,
-            },
-          ];
-
-          // Needs most up-to-date setting for API key (have editor manage it?)
-          // Needs settings for prompts from project file -> can be passed from editor
-          runAll();
-        }
-      });
-    }
   });
 
   async function message_received(event: MessageEvent) {
@@ -234,7 +208,7 @@
     is_running = false;
   }
 
-  function run_chatgpt() {
+  async function run_chatgpt() {
     data_str = projectSettings.llm_prompt_data;
 
     const configuration = new Configuration({
@@ -255,8 +229,23 @@
         variables as { [key: string]: any }
       )) {
         if (value.name == loaded_var) {
-          is_loading_csv = true;
-          window_api.send("get-csv", value.csvfile);
+          // Shouldn't this be query-db?!
+          const csv = await window_api.invoke("get-csv", value.csvfile);
+          if (csv != null) {
+            data_str = data_str.replace("[" + loaded_var + "]", csv);
+
+            msgs = [
+              {
+                role: "system",
+                content: projectSettings.llm_prompt + "\n" + data_str,
+              },
+            ];
+
+            // Needs most up-to-date setting for API key (have editor manage it?)
+            // Needs settings for prompts from project file -> can be passed from editor
+            runAll();
+          }
+
           break;
         }
       }
