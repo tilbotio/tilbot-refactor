@@ -145,6 +145,7 @@
     <MessageList
       messages={projectController.output.messages}
       {isTypingIndicatorActive}
+      avatar_file_sm={settingsContext.avatar_file_sm}
     />
   </div>
   <InputArea
