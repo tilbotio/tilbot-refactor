@@ -16,7 +16,7 @@ export const load: PageLoad = ({ url, fetch }) => {
     projectId: url.searchParams.get("project") || null,
   };
 
-  let settings = defaultProjectSettings;
+  let settings = { ...defaultProjectSettings };
 
   if (browser) {
     try {
