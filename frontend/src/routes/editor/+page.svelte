@@ -822,27 +822,27 @@
     >
       <div
         class="relative"
-        style:width={`${project.canvas_width} px`}
-        style:height={`${project.canvas_height} px`}
+        style:width="{project.canvas_width} px"
+        style:height="{project.canvas_height} px"
       >
         <svg
           class="absolute pointer-events-none z-40"
-          style:width={`${project.canvas_width} px`}
-          style:height={`${project.canvas_height} px`}
+          style:width="{project.canvas_width} px"
+          style:height="{project.canvas_height} px"
         >
-          {#snippet line(id: string, cid: number, target: string)}
+          {#snippet line(id: string, cid: number, target: number)}
             {@const source = line_locations[id].connectors[cid]}
             {@const destination = line_locations[target]}
             {@const x_offset = Math.abs(destination.x - source.x)}
             <path
-              d={`
-                M${source.x},${source.y}
-                L${source.x + x_offset * 0.05},${source.y}
-                C${source.x + x_offset * 0.5},${source.y}
-                 ${destination.x - x_offset * 0.5},${destination.y}
-                 ${destination.x - x_offset * 0.05},${destination.y}
-                L${destination.x},${destination.y}
-              `}
+              d="
+                M{source.x},{source.y}
+                L{source.x + x_offset * 0.05},{source.y}
+                C{source.x + x_offset * 0.5},{source.y}
+                 {destination.x - x_offset * 0.5},{destination.y}
+                 {destination.x - x_offset * 0.05},{destination.y}
+                L{destination.x},{destination.y}
+              "
               stroke-width="2"
               fill="none"
               data-from-block={id}
@@ -860,13 +860,13 @@
             {#each Object.entries(project.blocks) as [id, block]}
               {#each block.connectors.entries() as [cid, connector]}
                 {#each connector.targets as target}
-                  {@render line(id, cid, `${target}`)}
+                  {@render line(id, cid, target)}
                 {/each}
               {/each}
             {/each}
 
             {#if project.starting_block_id !== -1}
-              {@render line("-1", 0, `${project.starting_block_id}`)}
+              {@render line("-1", 0, project.starting_block_id)}
             {/if}
           {/if}
 
