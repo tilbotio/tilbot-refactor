@@ -1,13 +1,21 @@
-import type { ProjectControllerOutputInterface } from "../../../../common/projectcontroller/types";
+import type {
+  ProjectControllerOutputInterface,
+  ProjectControllerInterface,
+} from "../../../../common/projectcontroller/types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ProjectSettings } from "../../../../common/project/types";
 import type { Message } from "$lib/types/types";
 
+type MessageSent = ProjectControllerInterface<ChatOutput>["message_sent_event"];
+
 export class ChatOutput implements ProjectControllerOutputInterface {
-  public isTypingIndicatorActive = $state(false);
-  public messages = $state<Message[]>([]);
   private settingsContext: ProjectSettings;
   private runtimeContext: RuntimeContext;
+  private onMessageSent?: MessageSent;
+
+  public isTypingIndicatorActive = $state(false);
+  public messages = $state<Message[]>([]);
+
   constructor(
     settingsContext: ProjectSettings,
     runtimeContext: RuntimeContext
@@ -15,14 +23,21 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     this.settingsContext = settingsContext;
     this.runtimeContext = runtimeContext;
   }
+  // We need to allow ChatOutput to have access to projectController.message_sent_event in bot_message
+  setOnMessageSent(handler: MessageSent): void {
+    this.onMessageSent = handler;
+  }
+
   typingIndicator(): void {
     this.isTypingIndicatorActive = true;
   }
+
   windowMessage(text: string): void {
     if (window.self !== window.top) {
       window.parent.postMessage(text);
     }
   }
+
   botMessage(block: {
     type: string;
     content: string;
@@ -32,16 +47,17 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     this.isTypingIndicatorActive = true;
 
     let timeout = 2000;
-    if (this.settingsContext.typing_style == "variable") {
+    if (this.settingsContext.typing_style === "variable") {
       timeout =
         (block.content.length / this.settingsContext.typing_charpsec) * 1000;
-    } else if (this.settingsContext.typing_style == "fixed") {
+    } else if (this.settingsContext.typing_style === "fixed") {
       timeout = this.settingsContext.typing_time * 1000;
     }
 
     setTimeout(() => {
       this.isTypingIndicatorActive = false;
       this.messages.push({ from: "bot", content: block.content });
+      this.onMessageSent?.();
     }, timeout);
   }
 
