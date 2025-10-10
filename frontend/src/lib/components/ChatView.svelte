@@ -41,29 +41,6 @@
     projectController.output.isTypingIndicatorActive
   );
 
-  // Messages array below is for testing purposes only, replace with line above after development.
-  /* let messages: Array<any> = $state([
-    { from: "bot", content: "Hi there! I am a bot." },
-    { from: "user", content: "Hi there bot, I am a user!" },
-    { from: "bot", content: "Well hello there user!" },
-    {
-      from: "bot",
-      content: "What a pleasure to see you. Did you bring a friend?",
-    },
-    { from: "chatgpt", content: "Wassup bruh?" },
-    { from: "user", content: "Go away, and stop stealing the biccies" },
-    {
-      from: "user",
-      content:
-        "No, I mean it, I can you see munching away on my biscuits. Shoo!",
-    },
-    { from: "chatgpt", content: "Geez, chill already, I am outta here" },
-    {
-      from: "bot",
-      content: "Well, you do not see that every day.. let's get started!",
-    },
-  ]);
- */
   function openBarcodeReader(): void {
     showBarcodeScanner = true;
   }
@@ -81,7 +58,8 @@
     projectController.receive_message(messageText);
   }
 
-  //Temporary sendMessage function to test functionality between components
+  //Temporary testing functions, can be ignored during review.
+  //TODO: Remove all testing functions below
   function sendUserMessage(messageText: string): void {
     projectController.output.messages.push({
       from: "user",
@@ -91,25 +69,24 @@
     currentMessageType = "text";
   }
 
-  // Temporary testing functions
-  // TODO: Remove after testing
-
-  async function botmessage() {
+  function botmessage() {
     const message = {
       type: "Text",
       content: "Hi there, this is the bot speaking",
       params: null,
     };
-    await projectController.output.botMessage(message);
+    projectController.output.botMessage(message);
   }
-  async function botmessage2() {
+
+  function botmessage2() {
     const message = {
       type: "Text",
       content: "Hi there, this is the second message from the chatbot!",
       params: null,
     };
-    await projectController.output.botMessage(message);
+    projectController.output.botMessage(message);
   }
+
   function chatgptmessage() {
     projectController.output.messages.push({
       from: "chatgpt",
@@ -131,7 +108,7 @@
 <button onclick={botmessage2}>Botmessage2</button>
 <button onclick={chatgptmessage}>Chatgptmessage</button>
 <button onclick={usermessage}>Usermessage</button>
-<!-- This section above is for testing purposes only, remove later-->
+<!-- This section above is for testing purposes only, remove later. Ignore during review-->
 {#if showBarcodeScanner}
   <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
 {/if}
