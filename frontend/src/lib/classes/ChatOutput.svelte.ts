@@ -63,6 +63,11 @@ export class ChatOutput implements ProjectControllerOutputInterface {
 
   settings(settings: ProjectSettings, path?: RuntimeContext["path"]): void {
     Object.assign(this.settingsContext, settings);
+    for (const key in this.settingsContext) {
+      if (!(key in settings)) {
+        delete (this.settingsContext as any)[key];
+      }
+    }
     if (path) {
       this.runtimeContext.path = path;
     }
