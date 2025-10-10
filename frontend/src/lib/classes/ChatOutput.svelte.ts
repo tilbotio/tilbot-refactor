@@ -6,12 +6,10 @@ import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ProjectSettings } from "../../../../common/project/types";
 import type { Message } from "$lib/types/types";
 
-type MessageSent = ProjectControllerInterface<ChatOutput>["message_sent_event"];
-
 export class ChatOutput implements ProjectControllerOutputInterface {
   private settingsContext: ProjectSettings;
   private runtimeContext: RuntimeContext;
-  private onMessageSent?: MessageSent;
+  private projectController?: ProjectControllerInterface<ChatOutput>;
 
   public isTypingIndicatorActive = $state(false);
   public messages = $state<Message[]>([]);
@@ -23,9 +21,9 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     this.settingsContext = settingsContext;
     this.runtimeContext = runtimeContext;
   }
-  // We need to allow ChatOutput to have access to projectController.message_sent_event in bot_message
-  setOnMessageSent(handler: MessageSent): void {
-    this.onMessageSent = handler;
+
+  setController(controller: ProjectControllerInterface<ChatOutput>): void {
+    this.projectController = controller;
   }
 
   typingIndicator(): void {
@@ -57,7 +55,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     setTimeout(() => {
       this.isTypingIndicatorActive = false;
       this.messages.push({ from: "bot", content: block.content });
-      this.onMessageSent?.();
+      this.projectController?.message_sent_event();
     }, timeout);
   }
 
