@@ -9,7 +9,7 @@ import type { Message } from "$lib/types/types";
 export class ChatOutput implements ProjectControllerOutputInterface {
   private settingsContext: ProjectSettings;
   private runtimeContext: RuntimeContext;
-  public projectController?: ProjectControllerInterface<ChatOutput>;
+  private projectController?: ProjectControllerInterface<ChatOutput>;
 
   public isTypingIndicatorActive = $state(false);
   public messages = $state<Message[]>([]);
