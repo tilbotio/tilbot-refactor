@@ -20,7 +20,7 @@
   const chatOutput = new ChatOutput(settingsContext, runtimeContext);
   const projectController = new RemoteProjectController(chatOutput);
 
-  chatOutput.controller = projectController;
+  chatOutput.projectController = projectController;
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");

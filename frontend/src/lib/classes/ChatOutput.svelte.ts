@@ -9,7 +9,7 @@ import type { Message } from "$lib/types/types";
 export class ChatOutput implements ProjectControllerOutputInterface {
   private settingsContext: ProjectSettings;
   private runtimeContext: RuntimeContext;
-  private projectController?: ProjectControllerInterface<ChatOutput>;
+  public projectController?: ProjectControllerInterface<ChatOutput>;
 
   public isTypingIndicatorActive = $state(false);
   public messages = $state<Message[]>([]);
@@ -20,14 +20,6 @@ export class ChatOutput implements ProjectControllerOutputInterface {
   ) {
     this.settingsContext = settingsContext;
     this.runtimeContext = runtimeContext;
-  }
-
-  set controller(controller: ProjectControllerInterface<ChatOutput>) {
-    this.projectController = controller;
-  }
-
-  get controller(): ProjectControllerInterface<ChatOutput> | undefined {
-    return this.projectController;
   }
 
   typingIndicator(): void {

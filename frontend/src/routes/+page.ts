@@ -2,7 +2,8 @@ import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import { defaultProjectSettings } from "../../../common/project/types";
-import { cloneDeep } from "lodash";
+import pkg from "lodash";
+const { cloneDeep } = pkg;
 
 export const load: PageLoad = ({ url, fetch }) => {
   const showHeaderParam = url.searchParams.get("show_header") || "1";
