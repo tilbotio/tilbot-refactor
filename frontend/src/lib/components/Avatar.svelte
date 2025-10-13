@@ -1,16 +1,16 @@
 <script lang="ts">
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import { firstLetter } from "$lib/utils/functions";
-  import type { ChatSettings } from "../../../../common/ChatSettings";
+  import type { ProjectSettings } from "../../../../common/project/types";
   import { getContext } from "svelte";
 
-  const settings: ChatSettings = getContext("settingsContext");
+  const settings: ProjectSettings = getContext("settingsContext");
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
 
   type Props = {
     avatarSource:
-      | ChatSettings["avatarFile"]
-      | ChatSettings["chatbotAvatarFile"];
+      | ProjectSettings["avatar_file"]
+      | ProjectSettings["avatar_file_sm"];
   };
 
   let { avatarSource }: Props = $props();
