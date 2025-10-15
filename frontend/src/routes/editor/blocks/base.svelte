@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { Clock } from "svelte-heros-v2";
-  import BasicConnector from "../connectors/basic.svelte";
-  import type { ProjectBlock } from "../../../../../common/project/types.ts";
+  import { Pencil, Trash } from "svelte-heros-v2";
+  import Connector from "../connector.svelte";
 
   const {
-    blockId = $bindable(0),
-    block = $bindable({} as ProjectBlock),
-    selected = $bindable(false),
+    Icon,
+    children = null,
+    blockId,
+    block,
+    selected = false,
     connectorMounted = (blockId: string, connectorId: number) => {},
     select = (blockId: string) => {},
     edit = (blockId: string) => {},
@@ -60,27 +61,24 @@
         {block.name}
       </h2>
       <div>
-        <Clock class="w-6 h-6" />
+        <Icon class="w-6 h-6" />
       </div>
     </div>
-    <div class="text-sm min-h-6 max-h-16 line-clamp-3">
-      {#if block.chatgpt_variation == true}
-        <mark>
-          {@html block.content}
-        </mark>
-      {:else}
-        {@html block.content}
-      {/if}
-    </div>
-    {#if block.connectors !== undefined && block.connectors.length > 0}
+    {#if children}
+      <div class="text-sm min-h-6 max-h-16 line-clamp-3">
+        {@render children()}
+      </div>
+    {/if}
+    {#if block.connectors?.length > 0}
       <div class="divider m-0"></div>
-      {#each block.connectors.entries() as [id, connector]}
-        <BasicConnector
+      {#each block.connectors.entries() as [connectorId, connector]}
+        <Connector
           {blockId}
-          connectorId={id}
+          {connectorId}
+          label={connector.label}
           hasEvents={connector.events?.length! > 0}
-          mounted={() => connectorMounted(blockId, id)}
-        ></BasicConnector>
+          mounted={() => connectorMounted(connectorId)}
+        ></Connector>
       {/each}
     {/if}
   </div>
