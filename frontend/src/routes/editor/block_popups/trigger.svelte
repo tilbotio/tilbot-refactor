@@ -191,7 +191,7 @@
 >
   <br />
   Answer options:<br />
-  {#if blockCopy.connectors !== undefined && blockCopy.connectors.length > 0}
+  {#if blockCopy.connectors?.length! > 0}
     <table class="table table-zebra w-full mt-2">
       <!-- head -->
       <thead>

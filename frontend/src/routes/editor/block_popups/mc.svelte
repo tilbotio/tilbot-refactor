@@ -173,6 +173,7 @@
 
     <button class="btn gap-2" onclick={addEvent}>
       <Plus class="w-6 h-6" />
+
       Add event
     </button>
 
@@ -292,7 +293,7 @@
   <button
     class="btn btn-active"
     onclick={() => {
-      save();
+      save(blockCopy);
     }}>Save</button
   >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button
     class="btn btn-outline"

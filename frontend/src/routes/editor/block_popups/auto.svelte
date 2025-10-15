@@ -167,7 +167,8 @@
     <br /><br />
 
     <button class="btn gap-2" onclick={addEvent}>
-      <Plus class="w-6 h-6"/>
+      <Plus class="w-6 h-6" />
+
       Add event
     </button>
 
@@ -187,9 +188,9 @@
     cancel();
   }}>✕</label
 >
-
 <h3 class="text-lg font-bold">
   <Clock class="w-6 h-6" />
+
   <div
     class="inline"
     contenteditable="true"
@@ -248,8 +249,8 @@
     : ''}"
   onclick={() => {
     editEvents(0);
-  }}
-><Bolt class="w-6 h-6"/></button>
+  }}><Bolt class="w-6 h-6" /></button
+>
 
 <div class="divider"></div>
 <p>

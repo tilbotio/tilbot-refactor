@@ -198,7 +198,7 @@
   for="my-modal-3"
   class="btn btn-sm btn-circle absolute right-2 top-2"
   onclick={() => {
-    cancel;
+    cancel();
   }}>✕</label
 >
 <h3 class="text-lg font-bold">
@@ -271,7 +271,7 @@
   <br /><br />
 
   Answer options:<br />
-  {#if blockCopy.connectors?.length > 0}
+  {#if blockCopy.connectors?.length! > 0}
     <table class="table table-zebra w-full mt-2">
       <!-- head -->
       <thead>
@@ -307,14 +307,17 @@
                 class="btn btn-square btn-sm {connector.events === undefined
                   ? 'btn-outline'
                   : ''}"
-                onclick={() => editEvents(id)}><Bolt class="w-6 h-6" /></button
+                onclick={() => {
+                  editEvents(id);
+                }}><Bolt class="w-6 h-6" /></button
               >
             </td>
             <td>
               <button
                 class="btn btn-square btn-outline btn-sm"
-                onclick={() => removeConnector(id)}
-                ><Trash class="w-6 h-6" /></button
+                onclick={() => {
+                  removeConnector(id);
+                }}><Trash class="w-6 h-6" /></button
               >
             </td>
           </tr>
