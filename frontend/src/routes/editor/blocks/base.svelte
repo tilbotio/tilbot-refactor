@@ -1,10 +1,27 @@
 <script lang="ts">
+  import type { Component } from "svelte";
   import { Pencil, Trash } from "svelte-heros-v2";
   import Connector from "../connector.svelte";
+  import type { ProjectBlock } from "../../../../../common/project/types.ts";
+
+  export type BlockProps = {
+    blockId: number;
+    block: ProjectBlock;
+    selected: boolean;
+    connectorMounted: Function;
+    select: Function;
+    edit: Function;
+    remove: Function;
+  };
+
+  type BaseBlockProps = BlockProps & {
+    Icon: Component;
+    children?: Function;
+  };
 
   const {
     Icon,
-    children = null,
+    children,
     blockId,
     block,
     selected = false,
@@ -12,7 +29,7 @@
     select = (blockId: string) => {},
     edit = (blockId: string) => {},
     remove = (blockId: string) => {},
-  } = $props();
+  }: BaseBlockProps = $props();
 
   function selectBlock(e: MouseEvent) {
     select(blockId);
