@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import Papa from "papaparse";
 
   let toggle: HTMLElement;
@@ -11,11 +10,9 @@
 
   // @TODO: sort variables by name alphabetically
 
-  export const variablewindow = {
-    show() {
-      toggle.click();
-    },
-  };
+  export function show() {
+    toggle.click();
+  }
 
   function new_variable() {
     let exists = true;

@@ -222,7 +222,7 @@
   }
 
   function btn_variables_click() {
-    variables_window!.show();
+    variables_window.show();
   }
 
   function btn_settings_click() {
