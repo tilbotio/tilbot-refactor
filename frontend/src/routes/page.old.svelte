@@ -451,7 +451,7 @@
             {:else}
               <div class="chat-image avatar ml-2">
                 <div class="w-10 rounded-full">
-                  <img src={path + "avatar/" + settings.avatar_file_sm} />
+                  <img src="{path}/avatar/{settings.avatar_file_sm}" />
                 </div>
               </div>
             {/if}
@@ -490,7 +490,7 @@
           {:else}
             <div class="chat-image avatar ml-2">
               <div class="w-10 rounded-full">
-                <img src={path + "avatar/" + settings.avatar_file_sm} />
+                <img src="{path}/avatar/{settings.avatar_file_sm}" />
               </div>
             </div>
           {/if}
