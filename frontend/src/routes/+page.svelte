@@ -8,11 +8,9 @@
   // Set to $state to allow for future functionality
   let settingsContext = $state(loadResult.settings);
   let runtimeContext = $state(loadResult.runtimeContext);
-  let messageContext = $state([]);
 
   setContext("settingsContext", settingsContext);
   setContext("runtimeContext", runtimeContext);
-  setContext("messageContext", messageContext);
 </script>
 
 <ChatView />
