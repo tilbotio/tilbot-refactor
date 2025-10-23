@@ -213,11 +213,13 @@
                           </div>
                           <button
                             class="btn-sm btn-square ml-4 mt-6"
-                            onclick={load_avatar}><ArrowUpOnSquare /></button
+                            onclick={load_avatar}
+                            ><ArrowUpOnSquare class="w-6 h-6" /></button
                           >
                           <button
                             class="btn-sm btn-square mt-6"
-                            onclick={delete_avatar}><Trash /></button
+                            onclick={delete_avatar}
+                            ><Trash class="w-6 h-6" /></button
                           >
                         </td>
                       </tr>
@@ -281,11 +283,13 @@
                           </div>
                           <button
                             class="btn-sm btn-square ml-4 mt-6"
-                            onclick={load_avatar_sm}><ArrowUpOnSquare /></button
+                            onclick={load_avatar_sm}
+                            ><ArrowUpOnSquare class="w-6 h-6" /></button
                           >
                           <button
                             class="btn-sm btn-square mt-6"
-                            onclick={delete_avatar_sm}><Trash /></button
+                            onclick={delete_avatar_sm}
+                            ><Trash class="w-6 h-6" /></button
                           >
                         </td>
                       </tr>
