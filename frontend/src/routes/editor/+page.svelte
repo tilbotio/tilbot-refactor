@@ -6,6 +6,8 @@
     ProjectBlock,
     ProjectBlockType,
     ProjectConnector,
+    ProjectSettings,
+    GeneralSettings,
   } from "../../../../common/project/types";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
@@ -50,7 +52,7 @@
     Trigger: TriggerBlockPopup,
   };
 
-  let editor_main: HTMLElement = null as any;
+  let editor_main: HTMLElement = $state(null) as any;
   let jsonfileinput: HTMLElement = null as any;
   let simulator: HTMLIFrameElement = null as any;
   let start: HTMLElement = $state(null as any);
@@ -72,7 +74,7 @@
   let modal_launch = $state() as HTMLInputElement;
   let modal_edit = $state() as HTMLInputElement;
 
-  let selected_id = $state(0);
+  let selectedBlockId: number | null = $state(null);
   let edit_block: ProjectBlock | null = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
@@ -199,7 +201,7 @@
     deselect_all();
 
     setTimeout(function () {
-      selected_id = current_block_id;
+      selectedBlockId = current_block_id;
     }, 50);
   }
 
@@ -257,7 +259,7 @@
     }
   }
 
-  function registerBlock(id: string, block: ProjectBlock) {
+  function registerBlock(id: number, block: ProjectBlock) {
     const scrollLeft = editor_main.scrollLeft;
     const scrollTop = editor_main.scrollTop;
 
@@ -284,170 +286,164 @@
     line_locations[id] = { ...center(block_rect), connectors };
   }
 
-  function handleDraggableMessage(e: CustomEvent) {
+  function draggableMounted(id: number) {
     const blocks = project.blocks;
-    if (e.detail.event == "draggable_loaded") {
-      if (is_loading) {
-        num_draggable_loaded++;
+    if (is_loading) {
+      num_draggable_loaded++;
 
-        const blockEntries = Object.entries(blocks) as [string, any][];
-        if (num_draggable_loaded == blockEntries.length) {
-          is_loading = false;
+      const blockEntries = Object.entries(blocks) as [string, any][];
+      if (num_draggable_loaded == blockEntries.length) {
+        is_loading = false;
 
-          // Build the look-up table for connecting lines.
-          for (const [id, block] of blockEntries) {
-            registerBlock(id, block);
-          }
+        // Build the look-up table for connecting lines.
+        for (const [id, block] of blockEntries) {
+          registerBlock(parseInt(id), block);
+        }
+      }
+    } else {
+      // Just add the one new entry in the collection
+      registerBlock(id, blocks[id]);
+    }
+  }
+
+  function draggableDragStart() {
+    deselect_all();
+  }
+
+  function draggableDragDrop() {
+    // See if we need to make the canvas smaller
+    let max_x = 0;
+    let max_y = 0;
+
+    for (const value of Object.values(line_locations)) {
+      console.log(JSON.stringify(value));
+      const connectors = value.connectors;
+      if (connectors.length == 0) {
+        if (value.x + 200 > max_x) {
+          max_x = value.x + 200;
+        }
+
+        if (value.y + 200 > max_y) {
+          max_y = value.y + 200;
         }
       } else {
-        // Just add the one new entry in the collection
-        const id = e.detail.id;
-        registerBlock(id, blocks[id]);
-      }
-    } else if (e.detail.event == "start_dragging") {
-      deselect_all();
-    } else if (e.detail.event == "draggable_dropped") {
-      // See if we need to make the canvas smaller
-      let max_x = 0;
-      let max_y = 0;
+        const lastConnector = connectors[connectors.length - 1];
+        if (lastConnector.x > max_x) {
+          max_x = value.x;
+        }
 
-      for (const value of Object.values(line_locations)) {
-        console.log(JSON.stringify(value));
-        const connectors = value.connectors;
-        if (connectors.length == 0) {
-          if (value.x + 200 > max_x) {
-            max_x = value.x + 200;
-          }
-
-          if (value.y + 200 > max_y) {
-            max_y = value.y + 200;
-          }
-        } else {
-          const lastConnector = connectors[connectors.length - 1];
-          if (lastConnector.x > max_x) {
-            max_x = value.x;
-          }
-
-          if (lastConnector.y > max_y) {
-            max_y = value.y;
-          }
+        if (lastConnector.y > max_y) {
+          max_y = value.y;
         }
       }
+    }
 
-      project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
-      project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
-    } else if (e.detail.event == "dragging") {
-      const id = e.detail.id;
-      registerBlock(id, blocks[id]);
+    project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
+    project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
+  }
 
-      // Update look-up table
-      const block_rect = document
-        .getElementById(`block_${id}_in`)!
-        .getBoundingClientRect();
+  function draggableDrag(id: number) {
+    const blocks = project.blocks;
+    registerBlock(id, blocks[id]);
 
-      const obj_left = block_rect.left + block_rect.width / 2;
-      const obj_top = block_rect.top + block_rect.height / 2;
+    // Update look-up table
+    const block_rect = document
+      .getElementById(`block_${id}_in`)!
+      .getBoundingClientRect();
 
-      const scrollLeft = editor_main.scrollLeft;
-      const scrollTop = editor_main.scrollTop;
-      const firstChild = editor_main.firstChild as HTMLElement;
+    const obj_left = block_rect.left + block_rect.width / 2;
+    const obj_top = block_rect.top + block_rect.height / 2;
 
-      if (editor_main.offsetHeight - obj_top < 100) {
-        if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
-          project.canvas_height += 100;
-        }
-        editor_main.scrollTop += 30;
-      } else if (obj_top < 50 && scrollTop > 0) {
-        // @TODO: bind editor_main?
-        editor_main.scrollTop = scrollTop - 30;
+    const scrollLeft = editor_main.scrollLeft;
+    const scrollTop = editor_main.scrollTop;
+    const firstChild = editor_main.firstChild as HTMLElement;
+
+    if (editor_main.offsetHeight - obj_top < 100) {
+      if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
+        project.canvas_height += 100;
       }
+      editor_main.scrollTop += 30;
+    } else if (obj_top < 50 && scrollTop > 0) {
+      // @TODO: bind editor_main?
+      editor_main.scrollTop = scrollTop - 30;
+    }
 
-      if (editor_main.offsetWidth - obj_left < 200) {
-        if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
-          project.canvas_width += 100;
-        }
-        editor_main.scrollLeft = scrollLeft + 30;
-      } else if (obj_left < -50 && scrollLeft > 0) {
-        editor_main.scrollLeft = scrollLeft - 30;
+    if (editor_main.offsetWidth - obj_left < 200) {
+      if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
+        project.canvas_width += 100;
       }
+      editor_main.scrollLeft = scrollLeft + 30;
+    } else if (obj_left < -50 && scrollLeft > 0) {
+      editor_main.scrollLeft = scrollLeft - 30;
     }
   }
 
-  function handleSettingsMessage(e: CustomEvent) {
-    const detail = e.detail;
-    if (detail.event == "save_settings") {
-      project.settings = detail.settings;
-      generalSettings = detail.generalSettings;
-      window_api.send("save-settings", { settings: generalSettings });
-    }
+  function saveSettings(
+    generalSettings: GeneralSettings,
+    projectSettings: ProjectSettings
+  ) {
+    project.settings = projectSettings;
+    generalSettings = generalSettings;
+    window_api.send("save-settings", { settings: generalSettings });
   }
 
-  function handleChatGPTMessage(e: CustomEvent) {
-    if (e.detail.event == "run_all") {
-      run_all();
-      chatgpt_running = true;
-    } else if (e.detail.event == "send_chatgpt_message") {
-      setTimeout(function () {
-        send_chatgpt_message(e.detail.msg);
-      }, 500);
-    } else if (e.detail.event == "send_chatgpt_variation") {
-      send_chatgpt_variation(e.detail.msg);
-    }
+  function chatgptRunAll() {
+    run_all();
+    chatgpt_running = true;
   }
 
-  function handleEditBlockMessage(e: CustomEvent) {
-    const detail = e.detail;
-    const event = detail.event;
-    if (event == "cancel") {
-      edit_block = null;
-      modal_edit.click();
-    } else if (event == "save") {
-      // Remove the line_locations for the connectors in case some were deleted/moved
-      const block = detail.block;
-      const blockConnectors = block.connectors;
-      const lineConnectors = line_locations[selected_id].connectors;
-      for (const key of lineConnectors.keys()) {
-        if (!(key in blockConnectors)) {
-          delete lineConnectors[key];
+  function chatgptSendMessage(message: string) {
+    setTimeout(function () {
+      send_chatgpt_message(message);
+    }, 500);
+  }
+
+  function saveBlock(block: ProjectBlock) {
+    // Remove the line_locations for the connectors in case some were deleted/moved
+    const blockConnectors = block.connectors;
+    const lineConnectors = line_locations[selectedBlockId!].connectors;
+    for (const key of lineConnectors.keys()) {
+      if (!(key in blockConnectors)) {
+        delete lineConnectors[key];
+      }
+    }
+
+    project.blocks[selectedBlockId!] = block;
+    edit_block = null;
+    modal_edit.click();
+  }
+
+  function cancelBlock() {
+    edit_block = null;
+    modal_edit.click();
+  }
+
+  function editBlock(blockId: number) {
+    edit_block = project.blocks[blockId];
+    modal_edit.click();
+  }
+
+  function removeBlock(blockId: number) {
+    deselect_all();
+
+    // Delete any blocks connecting to this one
+    for (const block of Object.values(project.blocks)) {
+      for (const connector of block.connectors) {
+        const targets = connector.targets;
+        const index = targets.indexOf(blockId);
+        if (index != -1) {
+          targets.splice(index, 1);
         }
       }
-
-      project.blocks[selected_id] = block;
-      edit_block = null;
-      modal_edit.click();
     }
+
+    delete project.blocks[blockId];
+    delete line_locations[blockId];
   }
 
-  function handleBlockMessage(e: CustomEvent) {
-    const detail = e.detail;
-    const event = detail.event;
-    const blockId = detail.block_id;
-    if (event == "block_selected") {
-      deselect_all();
-      selected_id = blockId;
-    } else if (event == "edit_block") {
-      edit_block = project.blocks[blockId];
-      modal_edit.click();
-    } else if (event == "delete_block") {
-      deselect_all();
-
-      const intBlockId = parseInt(blockId);
-      // Delete any blocks connecting to this one
-      for (const block of Object.values(project.blocks) as any[]) {
-        for (const connector of block.connectors) {
-          const targets = connector.targets;
-          const index = targets.indexOf(intBlockId);
-          if (index != -1) {
-            targets.splice(index, 1);
-          }
-        }
-      }
-
-      delete project.blocks[blockId];
-      delete line_locations[blockId];
-    } else if (event == "connector_loaded") {
-      registerBlock(blockId, project.blocks[blockId]);
-    }
+  function selectBlock(blockId: number) {
+    deselect_all();
+    selectedBlockId = blockId;
   }
 
   function line_clicked(e: MouseEvent) {
@@ -456,7 +452,7 @@
   }
 
   function deselect_all() {
-    selected_id = 0;
+    selectedBlockId = 0;
     const lines = document.getElementsByTagName("path");
 
     for (const line of lines) {
@@ -671,8 +667,8 @@
     if (contentWindow != null) {
       const project_copy = JSON.parse(JSON.stringify(project));
 
-      if (selected_id !== 0) {
-        project_copy.starting_block_id = selected_id;
+      if (selectedBlockId !== 0) {
+        project_copy.starting_block_id = selectedBlockId;
       }
 
       window_api.send("load-project-db", project_copy);
@@ -694,17 +690,18 @@
     projectSettings={project.settings}
     settings={generalSettings}
     path="{path}/avatar"
-    save={handleSettingsMessage}
+    save={saveSettings}
   />
 
   <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
   <div class="modal">
     <div class="modal-box relative max-w-4xl">
       {#if edit_block !== null}
-        {@const SvelteComponent_1 = block_popup_components[edit_block.type]}
-        <SvelteComponent_1
-          objAttributes={edit_block}
-          on:message={handleEditBlockMessage}
+        {@const BlockPopupComponent = block_popup_components[edit_block.type]}
+        <BlockPopupComponent
+          block={edit_block}
+          save={saveBlock}
+          cancel={cancelBlock}
         />
       {/if}
     </div>
@@ -913,18 +910,31 @@
         <Start bind:el={start}></Start>
 
         {#if project.blocks !== undefined}
-          {#each Object.entries(project.blocks) as [id, block]}
+          {#each Object.entries(project.blocks) as [key, block]}
+            {@const blockId = parseInt(key)}
             <Draggable
-              objAttributes={block}
-              on:message={handleDraggableMessage}
-              id={parseInt(id)}
+              {block}
+              {editor_main}
+              mounted={() => {
+                draggableMounted(blockId);
+              }}
+              dragStart={draggableDragStart}
+              dragDrop={draggableDragDrop}
+              drag={() => {
+                draggableDrag(blockId);
+              }}
             >
-              {@const SvelteComponent_2 = block_components[block.type]}
-              <SvelteComponent_2
-                blockId={parseInt(id)}
-                selectedId={selected_id}
-                objAttributes={block}
-                on:message={handleBlockMessage}
+              {@const BlockComponent = block_components[block.type]}
+              <BlockComponent
+                {blockId}
+                {block}
+                selected={selectedBlockId === blockId}
+                edit={editBlock}
+                select={selectBlock}
+                remove={removeBlock}
+                connectorMounted={() => {
+                  registerBlock(blockId, block);
+                }}
               />
             </Draggable>
           {/each}
@@ -944,7 +954,9 @@
           projectSettings={project.settings}
           {generalSettings}
           variables={project.variables}
-          on:message={handleChatGPTMessage}
+          runAll={chatgptRunAll}
+          sendMessage={chatgptSendMessage}
+          sendVariation={send_chatgpt_variation}
         ></ChatGPT>
       </div>
 
