@@ -224,7 +224,7 @@
   }
 
   function btn_variables_click() {
-    variables_window!.show();
+    variables_window.show();
   }
 
   function btn_settings_click() {
@@ -689,7 +689,7 @@
     bind:this={settings_window}
     projectSettings={project.settings}
     settings={generalSettings}
-    path={path + "avatar/"}
+    path="{path}/avatar"
     save={saveSettings}
   />
 

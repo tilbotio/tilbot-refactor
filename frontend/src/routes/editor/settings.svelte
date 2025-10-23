@@ -205,7 +205,7 @@
                             {:else}
                               <div class="rounded-full w-12">
                                 <img
-                                  src={path + projectSettingsCopy.avatar_file}
+                                  src="{path}/{projectSettingsCopy.avatar_file}"
                                   alt="Avatar"
                                 />
                               </div>
@@ -266,8 +266,7 @@
                                 <div class="chat-image avatar">
                                   <div class="w-10 rounded-full">
                                     <img
-                                      src={path +
-                                        projectSettingsCopy.avatar_file_sm}
+                                      src="{path}/{projectSettingsCopy.avatar_file_sm}"
                                       alt="Avatar"
                                     />
                                   </div>

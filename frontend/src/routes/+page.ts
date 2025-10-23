@@ -1,7 +1,9 @@
 import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
-import type { ChatSettings } from "../../../common/ChatSettings";
+import { defaultProjectSettings } from "../../../common/project/types";
+import pkg from "lodash";
+const { cloneDeep } = pkg;
 
 export const load: PageLoad = ({ url, fetch }) => {
   const showHeaderParam = url.searchParams.get("show_header") || "1";
@@ -16,16 +18,7 @@ export const load: PageLoad = ({ url, fetch }) => {
     projectId: url.searchParams.get("project") || null,
   };
 
-  let settings: ChatSettings = {
-    typingStyle: "fixed",
-    typingTime: 2,
-    typingCharPSec: 40,
-    showAvatar: true,
-    avatarFile: "",
-    name: "Tilbot",
-    chatbotAvatarFile: "",
-    showChatbotAvatar: true,
-  };
+  let settings = cloneDeep(defaultProjectSettings);
 
   if (browser) {
     try {
