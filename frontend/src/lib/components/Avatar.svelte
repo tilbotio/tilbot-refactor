@@ -21,7 +21,7 @@
 >
   {#if avatarSource}
     <img
-      src="{runtimeContext.path}avatar/{avatarSource}"
+      src="{runtimeContext.path}/avatar/{avatarSource}"
       alt={`Avatar for ${settings.name}`}
       class="w-full h-full object-cover"
     />

@@ -17,9 +17,6 @@
     toggle.click();
   }
 
-  let is_loading_avatar: boolean = false;
-  let is_loading_avatar_sm: boolean = false;
-
   function copyGeneralSettings(): GeneralSettings {
     return JSON.parse(
       JSON.stringify(Object.assign({}, defaultGeneralSettings, settings ?? {}))
@@ -51,28 +48,16 @@
 
   onMount(() => {
     window_api = (window as any)?.api;
-
-    // Only works in Electron for now. @TODO: implement for online version of Tilbot.
-    if (
-      typeof navigator === "object" &&
-      typeof navigator.userAgent === "string" &&
-      navigator.userAgent.indexOf("Electron") >= 0
-    ) {
-      window_api.receive("avatar-load", (param: any) => {
-        if (is_loading_avatar) {
-          projectSettingsCopy.avatar_file = param.filename;
-          is_loading_avatar = false;
-        } else if (is_loading_avatar_sm) {
-          projectSettingsCopy.avatar_file_sm = param.filename;
-          is_loading_avatar_sm = false;
-        }
-      });
-    }
   });
 
-  function load_avatar() {
-    is_loading_avatar = true;
-    window_api.send("do-load-avatar", projectSettingsCopy.avatar_file);
+  async function load_avatar() {
+    const newAvatar = await window_api.invoke(
+      "load-avatar",
+      projectSettingsCopy.avatar_file
+    );
+    if (newAvatar) {
+      projectSettingsCopy.avatar_file = newAvatar;
+    }
   }
 
   function delete_avatar() {
@@ -82,9 +67,14 @@
     }
   }
 
-  function load_avatar_sm() {
-    is_loading_avatar_sm = true;
-    window_api.send("do-load-avatar", projectSettingsCopy.avatar_file_sm);
+  async function load_avatar_sm() {
+    const newAvatar = await window_api.invoke(
+      "load-avatar",
+      projectSettingsCopy.avatar_file_sm
+    );
+    if (newAvatar) {
+      projectSettingsCopy.avatar_file_sm = newAvatar;
+    }
   }
 
   function delete_avatar_sm() {
@@ -215,7 +205,7 @@
                             {:else}
                               <div class="rounded-full w-12">
                                 <img
-                                  src={path + projectSettingsCopy.avatar_file}
+                                  src="{path}/{projectSettingsCopy.avatar_file}"
                                   alt="Avatar"
                                 />
                               </div>
@@ -276,8 +266,7 @@
                                 <div class="chat-image avatar">
                                   <div class="w-10 rounded-full">
                                     <img
-                                      src={path +
-                                        projectSettingsCopy.avatar_file_sm}
+                                      src="{path}/{projectSettingsCopy.avatar_file_sm}"
                                       alt="Avatar"
                                     />
                                   </div>
