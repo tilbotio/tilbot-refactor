@@ -15,7 +15,7 @@
     eventAddLabel,
   }: {
     connector: ProjectConnector;
-    remove: Function;
+    remove?: Function;
     eventHeader: string;
     contentHeader?: string;
     eventSnippet: Function;
@@ -24,8 +24,7 @@
   } = $props();
 
   let eventsModal: HTMLInputElement;
-
-  let eventsCopy = $state([]) as ProjectEvent[];
+  let eventsCopy: ProjectEvent[] = $state([]);
 
   function editEvents() {
     eventsCopy = JSON.parse(JSON.stringify(connector.events ?? []));
@@ -138,17 +137,22 @@
       bind:value={connector.label}
     /></td
   >
-  <td>
-    <button
+  <td
+    ><button
       class="btn btn-square btn-sm {connector.events === undefined
         ? 'btn-outline'
         : ''}"
       onclick={editEvents}><Bolt class="w-6 h-6" /></button
+    ></td
+  >
+  {#if remove}
+    <td
+      ><button
+        class="btn btn-square btn-outline btn-sm"
+        onclick={() => {
+          remove();
+        }}><Trash class="w-6 h-6" /></button
+      ></td
     >
-  </td>
-  <td>
-    <button class="btn btn-square btn-outline btn-sm" onclick={remove}
-      ><Trash class="w-6 h-6" /></button
-    >
-  </td>
+  {/if}
 </tr>

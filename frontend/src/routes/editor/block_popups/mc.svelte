@@ -1,90 +1,25 @@
 <script lang="ts">
-  import { Bolt, Clock, Photo, Plus, Trash } from "svelte-heros-v2";
   import type {
     ProjectBlock,
     ProjectEvent,
   } from "../../../../../common/project/types.ts";
+  import BaseBlockPopup from "./base.svelte";
+  import Connector from "./components/connector.svelte";
+  import { Photo, ListBullet } from "svelte-heros-v2";
+
 
   const {
     block,
     save = (block: ProjectBlock) => {},
     cancel = () => {},
   } = $props();
-
-  let blockCopy = $state({}) as ProjectBlock;
-
-  let eventsModal: HTMLInputElement;
-  let eventsCopy = $state([]) as ProjectEvent[];
-  let selectedConnectorId = $state(-1);
-
-  let showImageSelector = $state(false);
-  let imageCopy = $state("");
-
-  $effect(() => {
-    blockCopy = JSON.parse(JSON.stringify(block));
-  });
-
-  function ignoreEnterKey(e: KeyboardEvent) {
-    if (e.key == "Enter") {
-      e.preventDefault();
-    }
-  }
-
-  function addConnector() {
-    blockCopy.connectors.push({
-      type: "Labeled",
-      label: "",
-      targets: [],
-    });
-  }
-
-  function removeConnector(id: number) {
-    blockCopy.connectors.splice(id, 1);
-  }
-
-  function addEvent() {
-    eventsCopy.push({
-      type: "message",
-      content: "",
-    });
-  }
-
-  function removeEvent(id: number) {
-    eventsCopy.splice(id, 1);
-  }
-
-  function editEvents(id: number) {
-    selectedConnectorId = id;
-    eventsCopy = JSON.parse(
-      JSON.stringify(blockCopy.connectors[id].events ?? [])
-    );
-    eventsModal.click();
-  }
-
-  function saveEvents() {
-    blockCopy.connectors[selectedConnectorId].events = eventsCopy;
-    eventsModal.click();
-  }
-
-  function closeEvents() {
-    eventsModal.click();
-  }
-
-  function toggleImageSelector() {
-    showImageSelector = !showImageSelector;
-  }
-
-  function saveImage() {
-    blockCopy.content += '<img src="' + imageCopy + '" />';
-    showImageSelector = true;
-    imageCopy = "";
-  }
-
-  function closeImage() {
-    showImageSelector = false;
-    imageCopy = "";
-  }
 </script>
+
+<BaseBlockPopup Icon={ListBullet} {block} {save} {cancel}>
+  {#snippet children(blockCopy: ProjectBlock)}
+  {/snippet}
+</BaseBlockPopup>
+
 
 <input
   type="checkbox"

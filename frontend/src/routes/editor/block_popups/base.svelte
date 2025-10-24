@@ -1,10 +1,6 @@
 <script lang="ts">
   import type { Component } from "svelte";
-  import type {
-    ProjectBlock,
-    ProjectEvent,
-  } from "../../../../../common/project/types.ts";
-  import { Trash, Photo, Clock, Plus, Bolt } from "svelte-heros-v2";
+  import type { ProjectBlock } from "../../../../../common/project/types.ts";
 
   export type BlockPopupProps = {
     block: ProjectBlock;
@@ -16,11 +12,6 @@
     save: Function;
     cancel: Function;
     defaultProjectBlock?: ProjectBlock;
-    eventHeader: string;
-    contentHeader?: string;
-    eventSnippet: Function;
-    contentSnippet?: Function;
-    eventAddLabel: string;
   };
 
   const {
@@ -30,21 +21,9 @@
     save,
     cancel,
     defaultProjectBlock,
-    eventHeader = "Event type",
-    eventSnippet,
-    contentHeader,
-    contentSnippet,
-    eventAddLabel = "Add event",
   }: BaseBlockPopupProps = $props();
 
   let blockCopy = $state({}) as ProjectBlock;
-
-  let eventsModal: HTMLInputElement;
-  let eventsCopy = $state([]) as ProjectEvent[];
-  let selectedConnectorId = $state(-1);
-
-  let showImageSelector = $state(false);
-  let imageCopy = $state("");
 
   $effect(() => {
     blockCopy = JSON.parse(
@@ -57,51 +36,7 @@
       e.preventDefault();
     }
   }
-  
-  function addEvent() {
-    eventsCopy.push({
-      type: "message",
-      content: "",
-    });
-  }
-
-  function removeEvent(id: number) {
-    eventsCopy.splice(id, 1);
-  }
-
-  function editEvents(id: number) {
-    selectedConnectorId = id;
-    eventsCopy = JSON.parse(
-      JSON.stringify(blockCopy.connectors[id].events ?? [])
-    );
-    eventsModal.click();
-  }
-
-  function saveEvents() {
-    blockCopy.connectors[selectedConnectorId].events = eventsCopy;
-    eventsModal.click();
-  }
-
-  function closeEvents() {
-    eventsModal.click();
-  }
-
-  function toggleImageSelector() {
-    showImageSelector = !showImageSelector;
-  }
-
-  function saveImage() {
-    blockCopy.content += '<img src="' + imageCopy + '" />';
-    showImageSelector = true;
-    imageCopy = "";
-  }
-
-  function closeImage() {
-    showImageSelector = false;
-    imageCopy = "";
-  }
 </script>
-
 
 <span
   class="btn btn-sm btn-circle absolute right-2 top-2"
@@ -132,7 +67,7 @@
   class="overflow-x-hidden overflow-y-auto"
   style="max-height: calc(100vh - 16em)"
 >
-  {@render children()}
+  {@render children(blockCopy)}
 </div>
 <div class="divider"></div>
 <p>

@@ -12,10 +12,6 @@
     contentSnippet?: Function;
     eventAddLabel: string;
   } = $props();
-
-  function removeConnector(id: number) {
-    connectors.splice(id, 1);
-  }
 </script>
 
 {#if connectors?.length! > 0}
@@ -33,7 +29,7 @@
         <Connector
           {connector}
           remove={() => {
-            removeConnector(id);
+            connectors.splice(id, 1);
           }}
           {...props}
         />
