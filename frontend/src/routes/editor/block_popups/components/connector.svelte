@@ -8,19 +8,9 @@
   const {
     connector,
     remove,
-    eventHeader,
-    contentHeader,
-    eventSnippet,
-    contentSnippet,
-    eventAddLabel,
   }: {
     connector: ProjectConnector;
     remove?: Function;
-    eventHeader: string;
-    contentHeader?: string;
-    eventSnippet: Function;
-    contentSnippet?: Function;
-    eventAddLabel: string;
   } = $props();
 
   let eventsModal: HTMLInputElement;
@@ -67,19 +57,50 @@
         <!-- head -->
         <thead>
           <tr>
-            <th>{eventHeader}</th>
-            {#if contentHeader}
-              <th>{contentHeader}</th>
-            {/if}
+            <th>Event type</th>
+            <th>Content</th>
             <th>&nbsp;</th>
           </tr>
         </thead>
         <tbody>
           {#each eventsCopy.entries() as [id, event] (id)}
             <tr>
-              <td>{@render eventSnippet(id, event)}</td>
-              {#if contentSnippet}
-                <td>{@render contentSnippet(id, event)}</td>
+              <td>
+                <select
+                  bind:value={event.type}
+                  class="select select-bordered w-full max-w-xs"
+                >
+                  <option selected value="message"
+                    >Message to parent window</option
+                  >
+                  <option value="variable">Set variable</option>
+                </select>
+              </td>
+              {#if event.type == "message"}
+                <td
+                  ><input
+                    type="text"
+                    placeholder="Message to send to parent window"
+                    class="input input-bordered w-full max-w-xs"
+                    bind:value={event.content}
+                  /></td
+                >
+              {:else}
+                <td>
+                  <input
+                    type="text"
+                    placeholder="Variable"
+                    class="input input-bordered max-w-xs"
+                    bind:value={event.var_name}
+                  />
+                  =
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    class="input input-bordered max-w-xs"
+                    bind:value={event.var_value}
+                  />
+                </td>
               {/if}
               <td
                 ><button
@@ -100,7 +121,7 @@
     <button class="btn gap-2" onclick={addEvent}>
       <Plus class="w-6 h-6" />
 
-      {eventAddLabel}
+      Add event
     </button>
 
     <div class="divider"></div>
