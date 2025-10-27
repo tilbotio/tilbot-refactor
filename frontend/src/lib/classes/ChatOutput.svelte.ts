@@ -68,20 +68,12 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     }
   }
 
-  addMessageToMessagesArray(
-    from: Message["from"],
-    content: Message["content"],
-    params?: Message["params"]
-  ) {
-    this.messages.push({ from: from, content: content, params: params });
-  }
-
   processMessage(
     from: Message["from"],
     content: Message["content"],
     params?: Message["params"]
   ) {
-    this.addMessageToMessagesArray(from, content, params);
+    this.messages.push({ from, content, params });
     if (from == "bot") {
       this.projectController?.message_sent_event();
     } else {
