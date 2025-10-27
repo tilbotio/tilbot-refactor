@@ -54,6 +54,7 @@
     projectController.output.messages.push({
       from: "user",
       content: messageText,
+      params: null,
     });
     projectController.receive_message(messageText);
   }
@@ -98,6 +99,7 @@
     projectController.output.messages.push({
       from: "user",
       content: "My first usermessage!",
+      params: null,
     });
   }
 

@@ -3,6 +3,7 @@ export type CurrentMessageType = "text" | "mc";
 export type Message = {
   from: "bot" | "user" | "chatgpt";
   content: string;
+  params?: any;
 };
 
 export type NewBotMessageBlock = boolean;
