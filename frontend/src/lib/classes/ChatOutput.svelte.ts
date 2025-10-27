@@ -52,8 +52,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
 
     setTimeout(() => {
       this.isTypingIndicatorActive = false;
-      this.addMessage("bot", block.content, null);
-      this.projectController?.message_sent_event();
+      this.sendMessage("bot", block.content, null);
     }, timeout);
   }
 
@@ -69,7 +68,24 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     }
   }
 
-  addMessage(from: Message["from"], content: Message["content"], params?: Message['params']) {
+  addMessageToMessagesArray(
+    from: Message["from"],
+    content: Message["content"],
+    params?: Message["params"]
+  ) {
     this.messages.push({ from: from, content: content, params: params });
+  }
+
+  sendMessage(
+    from: Message["from"],
+    content: Message["content"],
+    params?: Message["params"]
+  ) {
+    this.addMessageToMessagesArray(from, content, params);
+    if (from == "bot") {
+      this.projectController?.message_sent_event();
+    } else {
+      this.projectController?.receive_message(content);
+    }
   }
 }

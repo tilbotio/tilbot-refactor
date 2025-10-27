@@ -8,6 +8,7 @@
     CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
+    Message
   } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
   import { ChatOutput } from "../classes/ChatOutput.svelte";
@@ -49,26 +50,27 @@
     showBarcodeScanner = false;
   }
 
-  function handleScannedCode(decoded: string): void {
-    const messageText = `barcode: {$decoded}`;
-    projectController.output.messages.push({
-      from: "user",
-      content: messageText,
-      params: null,
-    });
-    projectController.receive_message(messageText);
+  function sendMessage(from: Message['from'], content: Message['content'], params?: Message['params']) {
+    projectController.output.sendMessage(from, content, params);
   }
 
-  //Temporary testing functions, can be ignored during review.
-  //TODO: Remove all testing functions below
   function sendUserMessage(messageText: string): void {
-    projectController.output.messages.push({
-      from: "user",
-      content: messageText,
-    });
+    sendMessage('user', messageText)
     // Reset currentMessageType to text by default
     currentMessageType = "text";
   }
+
+  function sendChatGPTMessage(messageText: string) : void {
+    sendMessage('chatgpt', messageText)
+  }
+
+  function handleScannedCode(decoded: string): void {
+    const messageText = `barcode: ${decoded}`;
+    sendUserMessage(messageText)
+  }
+
+  //Temporary testing functions, can be ignored during review.
+  //TODO: Remove all testing functions below 
 
   function botmessage() {
     const message = {
