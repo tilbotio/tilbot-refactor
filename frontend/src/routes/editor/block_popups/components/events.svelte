@@ -1,23 +1,21 @@
 <script lang="ts">
   import { Bolt, Plus, Trash } from "svelte-heros-v2";
-  import type {
-    ProjectConnector,
-    ProjectEvent,
-  } from "../../../../../../common/project/types.ts";
+  import type { ProjectEvent } from "../../../../../../common/project/types.js";
 
-  const {
-    connector,
-    remove,
+  let {
+    events = $bindable([]),
   }: {
-    connector: ProjectConnector;
-    remove?: Function;
+    events?: ProjectEvent[];
   } = $props();
 
   let eventsModal: HTMLInputElement;
   let eventsCopy: ProjectEvent[] = $state([]);
 
+  $effect(() => {
+    eventsCopy = JSON.parse(JSON.stringify(events));
+  });
+
   function editEvents() {
-    eventsCopy = JSON.parse(JSON.stringify(connector.events ?? []));
     eventsModal.click();
   }
 
@@ -33,7 +31,7 @@
   }
 
   function saveEvents() {
-    connector.events = eventsCopy;
+    events = eventsCopy;
     eventsModal.click();
   }
 
@@ -149,31 +147,7 @@
   </div>
 </div>
 
-<tr>
-  <td
-    ><input
-      type="text"
-      placeholder="Type here"
-      class="input input-bordered w-full max-w-xs"
-      bind:value={connector.label}
-    /></td
-  >
-  <td
-    ><button
-      class="btn btn-square btn-sm {connector.events === undefined
-        ? 'btn-outline'
-        : ''}"
-      onclick={editEvents}><Bolt class="w-6 h-6" /></button
-    ></td
-  >
-  {#if remove}
-    <td
-      ><button
-        class="btn btn-square btn-outline btn-sm"
-        onclick={() => {
-          remove();
-        }}><Trash class="w-6 h-6" /></button
-      ></td
-    >
-  {/if}
-</tr>
+<button
+  class="btn btn-square btn-sm {eventsCopy.length ? '' : 'btn-outline'}"
+  onclick={editEvents}><Bolt class="w-6 h-6" /></button
+>

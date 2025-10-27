@@ -1,21 +1,14 @@
 <script lang="ts">
-  import { Plus } from "svelte-heros-v2";
-  import Connector from "./connector.svelte";
+  import { Plus, Trash } from "svelte-heros-v2";
+  import Events from "./events.svelte";
   import type { ProjectConnector } from "../../../../../../common/project/types.ts";
 
   const {
     connectors,
-    connectorHeader,
-    contentHeader,
-    allowAddRemove = true,
-    ...props
+    methodSelector,
   }: {
     connectors: ProjectConnector[];
-    allowAddRemove?: boolean;
-    connectorHeader: string;
-    contentHeader?: string;
-    children: Function;
-    eventAddLabel: string;
+    methodSelector?: boolean;
   } = $props();
 
   function addConnector() {
@@ -32,35 +25,55 @@
     <!-- head -->
     <thead>
       <tr>
-        <th>Answer option</th>
-        <th></th>
-        <th></th>
+        {#if methodSelector}
+          <th>Selection method</th>
+          <th>User response to match with</th>
+        {:else}
+          <th>Answer option</th>
+        {/if}
+        <th>&nbsp;</th>
+        <th>&nbsp;</th>
       </tr>
     </thead>
     <tbody>
       {#each connectors.entries() as [id, connector] (id)}
-        <Connector
-          {connector}
-          {...allowAddRemove // conditional properties are awkward in svelte.
-            ? {
-                remove: () => {
-                  connectors.splice(id, 1);
-                },
-              }
-            : {}}
-          {...props}
-        />
+        <tr>
+          {#if methodSelector}
+            <td>
+              <select
+                bind:value={connector.method}
+                class="select select-bordered w-full max-w-xs"
+              >
+                <option selected value="contains">Contains text</option>
+                <option value="barcode">Barcode/QR scan</option>
+              </select>
+            </td>
+          {/if}
+          <td
+            ><input
+              type="text"
+              placeholder="Type here"
+              class="input input-bordered w-full max-w-xs"
+              bind:value={connector.label}
+            /></td
+          >
+          <td><Events events={connector.events} /></td>
+          <td
+            ><button
+              class="btn btn-square btn-outline btn-sm"
+              onclick={() => {
+                connectors.splice(id, 1);
+              }}><Trash class="w-6 h-6" /></button
+            ></td
+          >
+        </tr>
       {/each}
     </tbody>
   </table>
 
-  {#if allowAddRemove}
-    <br />
-  {/if}
+  <br />
 {/if}
 
-{#if allowAddRemove}
-  <button class="btn gap-2" onclick={addConnector}>
-    <Plus class="w-6 h-6" />
-  </button>
-{/if}
+<button class="btn gap-2" onclick={addConnector}>
+  <Plus class="w-6 h-6" />
+</button>
