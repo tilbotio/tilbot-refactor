@@ -55,19 +55,15 @@
     showBarcodeScanner = false;
   }
 
-  function sendMessage(from: Message["from"], content: Message["content"]) {
-    projectController.output.processMessage(from, content);
-  }
-
   function sendUserMessage(messageText: string): void {
-    sendMessage("user", messageText);
+    projectController.output.processMessage("user", messageText);
     // Reset currentMessageType to text by default
     currentMessageType = "text";
   }
 
   // Keep level of abstraction consistent
   function sendChatGPTMessage(messageText: string): void {
-    sendMessage("chatgpt", messageText);
+    projectController.output.processMessage("chatgpt", messageText);
   }
 
   function handleScannedCode(decoded: string): void {
