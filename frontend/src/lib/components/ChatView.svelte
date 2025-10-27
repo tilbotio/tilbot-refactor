@@ -51,7 +51,7 @@
   }
 
   function sendMessage(from: Message["from"], content: Message["content"]) {
-    projectController.output.sendMessage(from, content);
+    projectController.output.processMessage(from, content);
   }
 
   function sendUserMessage(messageText: string): void {

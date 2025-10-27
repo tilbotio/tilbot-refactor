@@ -52,7 +52,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
 
     setTimeout(() => {
       this.isTypingIndicatorActive = false;
-      this.sendMessage("bot", block.content, null);
+      this.processMessage("bot", block.content, null);
     }, timeout);
   }
 
@@ -76,7 +76,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     this.messages.push({ from: from, content: content, params: params });
   }
 
-  sendMessage(
+  processMessage(
     from: Message["from"],
     content: Message["content"],
     params?: Message["params"]
