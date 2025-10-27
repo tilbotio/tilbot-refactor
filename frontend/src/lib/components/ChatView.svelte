@@ -42,6 +42,11 @@
     projectController.output.isTypingIndicatorActive
   );
 
+  // Placeholder for upcoming functions to handle incoming messages and route them correctly
+  function message_received() {
+    return;
+  }
+
   function openBarcodeReader(): void {
     showBarcodeScanner = true;
   }
