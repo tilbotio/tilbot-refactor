@@ -8,7 +8,7 @@
     CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
-    Message
+    Message,
   } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
   import { ChatOutput } from "../classes/ChatOutput.svelte";
@@ -50,27 +50,26 @@
     showBarcodeScanner = false;
   }
 
-  function sendMessage(from: Message['from'], content: Message['content'], params?: Message['params']) {
-    projectController.output.sendMessage(from, content, params);
+  function sendMessage(from: Message["from"], content: Message["content"]) {
+    projectController.output.sendMessage(from, content);
   }
 
   function sendUserMessage(messageText: string): void {
-    sendMessage('user', messageText)
+    sendMessage("user", messageText);
     // Reset currentMessageType to text by default
     currentMessageType = "text";
   }
 
-  function sendChatGPTMessage(messageText: string) : void {
-    sendMessage('chatgpt', messageText)
+  function sendChatGPTMessage(messageText: string): void {
+    sendMessage("chatgpt", messageText);
   }
 
   function handleScannedCode(decoded: string): void {
-    const messageText = `barcode: ${decoded}`;
-    sendUserMessage(messageText)
+    sendUserMessage(`barcode: ${decoded}`);
   }
 
   //Temporary testing functions, can be ignored during review.
-  //TODO: Remove all testing functions below 
+  //TODO: Remove all testing functions below
 
   function botmessage() {
     const message = {
@@ -91,18 +90,16 @@
   }
 
   function chatgptmessage() {
-    projectController.output.messages.push({
-      from: "chatgpt",
-      content: "My first chatgptmessage!",
-    });
+    sendChatGPTMessage("Hi! This is a message from ChatGPT");
   }
 
   function usermessage() {
-    projectController.output.messages.push({
-      from: "user",
-      content: "My first usermessage!",
-      params: null,
-    });
+    sendUserMessage("My first user message, hurrah!");
+  }
+
+  function testMC() {
+    currentMessageType = "mc";
+    mcOptions = [{ content: "A" }, { content: "B" }, { content: "C" }];
   }
 
   // Remove all functions between here and TODO
@@ -112,6 +109,7 @@
 <button onclick={botmessage2}>Botmessage2</button>
 <button onclick={chatgptmessage}>Chatgptmessage</button>
 <button onclick={usermessage}>Usermessage</button>
+<button onclick={testMC}>MC Question</button>
 <!-- This section above is for testing purposes only, remove later. Ignore during review-->
 {#if showBarcodeScanner}
   <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
