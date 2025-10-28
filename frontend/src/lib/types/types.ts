@@ -12,5 +12,3 @@ export type ShowBarcodeScanner = boolean;
 export type InputText = string;
 
 export type McOption = { content: string };
-
-export type AvatarContext = "header" | "chatmessage";

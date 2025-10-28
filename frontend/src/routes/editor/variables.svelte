@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import Papa from "papaparse";
 
   let toggle: HTMLElement;
@@ -7,34 +6,13 @@
   let selected_variable: number = $state(-1);
   let current_csv: any = $state();
 
-  let is_loading_csv: boolean = false;
-
   const window_api: any = (window as any).api;
 
   // @TODO: sort variables by name alphabetically
 
-  export const variablewindow = {
-    show() {
-      toggle.click();
-    },
-  };
-
-  onMount(() => {
-    // Only works in Electron for now. @TODO: implement for online version of Tilbot.
-    if (
-      typeof navigator === "object" &&
-      typeof navigator.userAgent === "string" &&
-      navigator.userAgent.indexOf("Electron") >= 0
-    ) {
-      window_api.receive("csv-load", (param: any) => {
-        if (is_loading_csv) {
-          variables[selected_variable].csvfile = param.filename;
-          current_csv = Papa.parse(param.csv, { delimiter: ";" }).data;
-          is_loading_csv = false;
-        }
-      });
-    }
-  });
+  export function show() {
+    toggle.click();
+  }
 
   function new_variable() {
     let exists = true;
@@ -73,7 +51,7 @@
     selected_variable = variables.length - 1;
   }
 
-  function variable_row_clicked(this: HTMLElement) {
+  async function variable_row_clicked(this: HTMLElement) {
     current_csv = undefined;
     selected_variable = parseInt(this.dataset.variableId!);
 
@@ -81,14 +59,15 @@
       variables[selected_variable].type == "csv" &&
       variables[selected_variable].csvfile !== undefined
     ) {
-      is_loading_csv = true;
-      window_api.send("get-csv", variables[selected_variable].csvfile);
+      const csv = await window_api.invoke("get-csv", variables[selected_variable].csvfile);
+      current_csv = Papa.parse(csv, { delimiter: ";" }).data;
     }
   }
 
-  function import_csv() {
-    is_loading_csv = true;
-    window_api.send("do-load-csv-data");
+  async function import_csv() {
+    const { filename, csv } = await window_api.invoke("load-csv");
+    variables[selected_variable].csvfile = filename;
+    current_csv = Papa.parse(csv, { delimiter: ";" }).data;
   }
 
   function reset() {

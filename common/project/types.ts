@@ -10,14 +10,15 @@ export type GeneralSettings = {
 export const defaultGeneralSettings: GeneralSettings = {
   llm_setting: "chatgpt",
   llm_api_address: "",
+  chatgpt_sim_version: "gpt-3.5-turbo",
 };
 
 export type ProjectSettings = {
   name: string; // bot name
   project_name: string;
-  typing_style?: "fixed" | "variable";
-  typing_time?: number;
-  typing_charpsec?: number;
+  typing_style: "fixed" | "variable";
+  typing_time: number;
+  typing_charpsec: number;
   llm_prompt?: string;
   llm_prompt_data?: string;
   temperature?: number;

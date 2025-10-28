@@ -89,7 +89,11 @@
   let num_draggable_loaded = 0;
   let is_loading = false;
 
-  let is_electron: boolean = $state(false);
+  // Initialization will happen in onMount(), we don't know the value yet and
+  // there's no sane default we can give, so leave it undefined for now.
+  // Setting "boolean | undefined" as the type is also not quite a good fit,
+  // as this value should never be undefined during the normal lifetime.
+  let is_electron = $state() as boolean;
   let local_ip = $state("");
   let public_ip = $state("");
 
@@ -121,48 +125,32 @@
 
     add_start_location();
 
-    // Hack to fix the simulator in Electron (specifically on OS X)
-    if (
+    is_electron =
       typeof navigator === "object" &&
       typeof navigator.userAgent === "string" &&
-      navigator.userAgent.indexOf("Electron") >= 0
-    ) {
-      is_electron = true;
+      navigator.userAgent.indexOf("Electron") >= 0;
+
+    if (is_electron) {
+      // Hack to fix the simulator in Electron (specifically on OS X)
       simulator!.src = "index.html";
 
-      window_api.receive("server-ip", (data: any) => {
-        public_ip = data.public_ip;
-        local_ip = data.local_ip;
-      });
-
-      window_api.receive("project-load", (project_str: string) => {
-        load_project(project_str);
-      });
-
-      window_api.receive("project-saved", () => {
-        alert_visible = true;
-
-        setTimeout(function () {
-          alert_visible = false;
-        }, 3000);
-      });
-
-      window_api.receive("settings-load", (param: any) => {
-        generalSettings = param.settings;
-        path = param.path;
-
-        if (generalSettings.chatgpt_sim_version === undefined) {
-          generalSettings.chatgpt_sim_version = "gpt-3.5-turbo";
+      (async () => {
+        try {
+          ({ public_ip, local_ip } = await window_api.invoke("server-ip"));
+        } catch (e) {
+          console.log(`Error fetching server IP: ${e}`);
         }
-      });
+      })();
 
-      window_api.send("get-settings");
-    }
-
-    if (!is_electron) {
-      const url = $page.url;
-      console.log(url.searchParams.get("project"));
-
+      (async () => {
+        try {
+          ({ generalSettings, path } =
+            await window_api.invoke("load-settings"));
+        } catch (e) {
+          console.log(`Error loading settings: ${e}`);
+        }
+      })();
+    } else {
       // For now, since editor online is not yet working, we send the user back to the dashboard.
       window.location.href = "/dashboard/";
     }
@@ -217,17 +205,26 @@
     }, 50);
   }
 
-  function btn_load_click() {
-    window_api.send("do-load");
+  async function btn_load_click() {
+    const projectJson = await window_api.invoke("load-project");
+    if (projectJson != null) {
+      load_project(projectJson);
+    }
     //jsonfileinput.click(); // For web version
   }
 
-  function btn_save_click() {
-    window_api.send("do-save", JSON.stringify(project));
+  async function btn_save_click() {
+    if (await window_api.invoke("save-project", JSON.stringify(project))) {
+      alert_visible = true;
+
+      setTimeout(function () {
+        alert_visible = false;
+      }, 3000);
+    }
   }
 
   function btn_variables_click() {
-    variables_window!.show();
+    variables_window.show();
   }
 
   function btn_settings_click() {
@@ -426,7 +423,7 @@
     modal_edit.click();
   }
 
-  function selectBlock(blockId: number) {
+  function removeBlock(blockId: number) {
     deselect_all();
 
     // Delete any blocks connecting to this one
@@ -444,7 +441,7 @@
     delete line_locations[blockId];
   }
 
-  function removeBlock(blockId: number) {
+  function selectBlock(blockId: number) {
     deselect_all();
     selectedBlockId = blockId;
   }
@@ -692,7 +689,7 @@
     bind:this={settings_window}
     projectSettings={project.settings}
     settings={generalSettings}
-    path={path + "avatar/"}
+    path="{path}/avatar"
     save={saveSettings}
   />
 

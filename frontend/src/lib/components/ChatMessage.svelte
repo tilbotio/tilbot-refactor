@@ -1,13 +1,9 @@
 <script lang="ts">
   import Avatar from "./Avatar.svelte";
   import { getContext } from "svelte";
-  import type {
-    AvatarContext,
-    Message,
-    NewBotMessageBlock,
-  } from "$lib/types/types";
-  import type { ChatSettings } from "../../../../common/ChatSettings";
-  const settings: ChatSettings = getContext("settingsContext");
+  import type { Message, NewBotMessageBlock } from "$lib/types/types";
+  import type { ProjectSettings } from "../../../../common/project/types";
+  const settings: ProjectSettings = getContext("settingsContext");
 
   type Props = {
     message: Message;
@@ -34,7 +30,7 @@
   {#if newBotMessageBlock}
     <div class="chat-image avatar">
       <div class="w-10">
-        <Avatar avatarSource={settings.chatbotAvatarFile} />
+        <Avatar avatarSource={settings.avatar_file_sm} />
       </div>
     </div>
   {/if}
