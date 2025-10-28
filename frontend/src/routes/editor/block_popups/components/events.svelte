@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { cloneDeep } from "lodash";
+
   import { Bolt, Plus, Trash } from "svelte-heros-v2";
   import type { ProjectEvent } from "../../../../../../common/project/types.js";
 
   let {
-    events = $bindable([]),
+    events = $bindable(),
   }: {
     events?: ProjectEvent[];
   } = $props();
@@ -11,8 +13,8 @@
   let eventsModal: HTMLInputElement;
   let eventsCopy: ProjectEvent[] = $state([]);
 
-  $effect(() => {
-    eventsCopy = JSON.parse(JSON.stringify(events));
+  $effect.pre(() => {
+    eventsCopy = cloneDeep(events ?? []);
   });
 
   function editEvents() {

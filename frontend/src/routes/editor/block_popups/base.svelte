@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { cloneDeep } from "lodash";
+
   import type { Component } from "svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
 
@@ -23,12 +25,10 @@
     defaultProjectBlock,
   }: BaseBlockPopupProps = $props();
 
-  let blockCopy = $state({}) as ProjectBlock;
+  let blockCopy = $state() as ProjectBlock;
 
-  $effect(() => {
-    blockCopy = JSON.parse(
-      JSON.stringify(Object.assign({}, defaultProjectBlock, block))
-    );
+  $effect.pre(() => {
+    blockCopy = cloneDeep(Object.assign({}, defaultProjectBlock, block));
   });
 
   function ignoreEnterKey(e: KeyboardEvent) {

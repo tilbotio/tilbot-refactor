@@ -1,7 +1,7 @@
 <script>
   import { Photo } from "svelte-heros-v2";
 
-  let { value = $bindable("") } = $props();
+  let { value = $bindable() } = $props();
 
   let showImageSelector = $state(false);
   let imageCopy = $state("");

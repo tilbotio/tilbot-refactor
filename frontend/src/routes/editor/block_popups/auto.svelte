@@ -78,6 +78,6 @@
       {/if}
     </div>
 
-    <Events events={blockCopy.connectors[0].events} />
+    <Events bind:events={blockCopy.connectors[0].events} />
   {/snippet}
 </BaseBlockPopup>

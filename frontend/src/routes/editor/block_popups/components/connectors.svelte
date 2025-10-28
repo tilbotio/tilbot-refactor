@@ -57,7 +57,7 @@
               bind:value={connector.label}
             /></td
           >
-          <td><Events events={connector.events} /></td>
+          <td><Events bind:events={connector.events} /></td>
           <td
             ><button
               class="btn btn-square btn-outline btn-sm"
