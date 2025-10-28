@@ -2,8 +2,7 @@ import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import { defaultProjectSettings } from "../../../common/project/types";
-import pkg from "lodash";
-const { cloneDeep } = pkg;
+import _ from "lodash";
 
 export const load: PageLoad = ({ url, fetch }) => {
   const showHeaderParam = url.searchParams.get("show_header") || "1";
@@ -18,7 +17,7 @@ export const load: PageLoad = ({ url, fetch }) => {
     projectId: url.searchParams.get("project") || null,
   };
 
-  let settings = cloneDeep(defaultProjectSettings);
+  let settings = _.cloneDeep(defaultProjectSettings);
 
   if (browser) {
     try {

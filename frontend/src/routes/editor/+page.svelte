@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { cloneDeep } from "lodash";
+  import _ from "lodash";
+  import { page } from "$app/stores";
   import { onMount, type Component } from "svelte";
   import type {
     Project,
@@ -60,7 +61,7 @@
   let variables_window: any = $state();
   let settings_window: any = $state();
 
-  let project: Project = $state(cloneDeep(defaultProject));
+  let project: Project = $state(_.cloneDeep(defaultProject));
 
   let modal_launch = $state() as HTMLInputElement;
   let modal_edit = $state() as HTMLInputElement;
@@ -601,7 +602,7 @@
 
   function load_project(json_str: string) {
     // First clear everything
-    project = cloneDeep(defaultProject);
+    project = _.cloneDeep(defaultProject);
     line_locations = {};
     add_start_location();
 

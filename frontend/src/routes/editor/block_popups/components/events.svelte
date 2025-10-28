@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { cloneDeep } from "lodash";
+  import _ from "lodash";
 
   import { Bolt, Plus, Trash } from "svelte-heros-v2";
   import type { ProjectEvent } from "../../../../../../common/project/types.js";
@@ -14,7 +14,7 @@
   let eventsCopy: ProjectEvent[] = $state([]);
 
   $effect.pre(() => {
-    eventsCopy = cloneDeep(events ?? []);
+    eventsCopy = _.cloneDeep(events ?? []);
   });
 
   function editEvents() {
