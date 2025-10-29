@@ -61,7 +61,6 @@
     currentMessageType = "text";
   }
 
-  // Keep level of abstraction consistent
   function sendChatGPTMessage(messageText: string): void {
     projectController.output.processMessage("chatgpt", messageText);
   }
