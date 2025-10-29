@@ -8,6 +8,7 @@
     CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
+    Message,
   } from "$lib/types/types";
   import InputArea from "./InputArea.svelte";
   import { ChatOutput } from "../classes/ChatOutput.svelte";
@@ -41,6 +42,11 @@
     projectController.output.isTypingIndicatorActive
   );
 
+  // Placeholder for upcoming functions to handle incoming messages and route them correctly
+  function message_received() {
+    return;
+  }
+
   function openBarcodeReader(): void {
     showBarcodeScanner = true;
   }
@@ -49,25 +55,22 @@
     showBarcodeScanner = false;
   }
 
+  function sendUserMessage(messageText: string): void {
+    projectController.output.processMessage("user", messageText);
+    // Reset currentMessageType to text by default
+    currentMessageType = "text";
+  }
+
+  function sendChatGPTMessage(messageText: string): void {
+    projectController.output.processMessage("chatgpt", messageText);
+  }
+
   function handleScannedCode(decoded: string): void {
-    const messageText = `barcode: {$decoded}`;
-    projectController.output.messages.push({
-      from: "user",
-      content: messageText,
-    });
-    projectController.receive_message(messageText);
+    sendUserMessage(`barcode: ${decoded}`);
   }
 
   //Temporary testing functions, can be ignored during review.
   //TODO: Remove all testing functions below
-  function sendUserMessage(messageText: string): void {
-    projectController.output.messages.push({
-      from: "user",
-      content: messageText,
-    });
-    // Reset currentMessageType to text by default
-    currentMessageType = "text";
-  }
 
   function botmessage() {
     const message = {
@@ -88,17 +91,16 @@
   }
 
   function chatgptmessage() {
-    projectController.output.messages.push({
-      from: "chatgpt",
-      content: "My first chatgptmessage!",
-    });
+    sendChatGPTMessage("Hi! This is a message from ChatGPT");
   }
 
   function usermessage() {
-    projectController.output.messages.push({
-      from: "user",
-      content: "My first usermessage!",
-    });
+    sendUserMessage("My first user message, hurrah!");
+  }
+
+  function testMC() {
+    currentMessageType = "mc";
+    mcOptions = [{ content: "A" }, { content: "B" }, { content: "C" }];
   }
 
   // Remove all functions between here and TODO
@@ -108,6 +110,7 @@
 <button onclick={botmessage2}>Botmessage2</button>
 <button onclick={chatgptmessage}>Chatgptmessage</button>
 <button onclick={usermessage}>Usermessage</button>
+<button onclick={testMC}>MC Question</button>
 <!-- This section above is for testing purposes only, remove later. Ignore during review-->
 {#if showBarcodeScanner}
   <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
