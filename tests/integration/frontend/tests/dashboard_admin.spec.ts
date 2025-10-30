@@ -3,21 +3,15 @@ import { UserModel } from "../../../../backend/db/user";
 import mongoose, { ConnectOptions } from "mongoose";
 
 test("login admin", async ({ page }) => {
-  // Empty all accounts from DB
-  await mongoose.connect("mongodb://127.0.0.1:27017/tilbot", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  } as ConnectOptions);
-  await UserModel.deleteMany();
+  const addr: string = process.env.FRONTEND_ADDRESS || "localhost";
 
   // Go to dashboard login
-  await page.goto("http://localhost:5173/login/");
+  await page.goto("http://" + addr + ":5173/login/");
 
-  await expect(
-    page.getByText(
-      'No admin account was found, so I created it. Log in with username "admin", password "admin"'
-    )
-  ).toBeVisible();
+  // If the line below is uncommented, all tests succeed.
+  // If not (currently), the first run (chromium) fails if the server has just started up.
+  // This might be related to the way the login page was built (i.e., form submission)?
+  //await page.waitForTimeout(3000);
 
   // Fill in default username and password
   await page.locator("#txt_username").fill("admin");

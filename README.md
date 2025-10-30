@@ -33,3 +33,15 @@ To clear the Docker environment and DB volume after testing has completed, you c
 ```sh
 docker-compose -p tilbot-test down -v
 ```
+
+You can also run the test suite as part of an entire Docker environment by running:
+
+```sh
+docker-compose -p tilbot-test --profile testing up --build
+```
+
+And when tests are finished:
+
+```sh
+docker-compose -p tilbot-test --profile testing down -v
+```
