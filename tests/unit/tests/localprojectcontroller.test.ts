@@ -11,7 +11,11 @@ const projectcontroller: LocalProjectController = new LocalProjectController(
   () => {}
 );
 
-test("Check start block", () => {
-  //expect(projectcontroller.get_current_block_id()).toBe(2);
-  expect(projectcontroller.project.starting_block_id).toBe(2);
+test("Check input replacement", () => {
+  expect(
+    projectcontroller.check_variables(
+      "Nice to talk to you, [input]!",
+      "username"
+    )
+  ).toBe("Nice to talk to you, username!");
 });
