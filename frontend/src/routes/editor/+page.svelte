@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { onMount, type Component } from "svelte";
+  import _ from "lodash";
   import { page } from "$app/stores";
+  import { onMount, type Component } from "svelte";
   import type {
     Project,
     ProjectBlock,
@@ -9,6 +10,7 @@
     ProjectSettings,
     GeneralSettings,
   } from "../../../../common/project/types";
+  import { defaultProject } from "../../../../common/project/types";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import ChatGPT from "./chatgpt.svelte";
@@ -24,7 +26,7 @@
   import TriggerBlockPopup from "./block_popups/trigger.svelte";
   import {
     SquaresPlus,
-    PlusCircle,
+    Clock,
     ListBullet,
     Language,
     BellAlert,
@@ -59,17 +61,7 @@
   let variables_window: any = $state();
   let settings_window: any = $state();
 
-  let project: Project = $state({
-    name: "New project",
-    current_block_id: 1,
-    blocks: {},
-    starting_block_id: -1,
-    canvas_width: 2240,
-    canvas_height: 1480,
-    bot_name: "Tilbot",
-    variables: [],
-    settings: { project_name: "New project", name: "Tilbot" },
-  });
+  let project: Project = $state(_.cloneDeep(defaultProject));
 
   let modal_launch = $state() as HTMLInputElement;
   let modal_edit = $state() as HTMLInputElement;
@@ -610,19 +602,7 @@
 
   function load_project(json_str: string) {
     // First clear everything
-    project = {
-      current_block_id: 1,
-      blocks: {},
-      starting_block_id: 1,
-      canvas_width: 2240,
-      canvas_height: 1480,
-      bot_name: "Tilbot",
-      variables: [],
-      settings: {
-        name: "Tilbot",
-        project_name: "New project",
-      },
-    };
+    project = _.cloneDeep(defaultProject);
     line_locations = {};
     add_start_location();
 
@@ -766,7 +746,7 @@
           ><SquaresPlus class="w-6 h-6" /></a
         >
         <ul class="bg-slate-100">
-          {@render blockMenuItem("Automatically proceed", PlusCircle, "Auto")}
+          {@render blockMenuItem("Automatically proceed", Clock, "Auto")}
           {@render blockMenuItem("Multiple choice", ListBullet, "MC")}
           {@render blockMenuItem("Text", Language, "Text")}
         </ul>

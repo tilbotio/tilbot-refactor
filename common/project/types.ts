@@ -101,3 +101,15 @@ export type Project = {
   variables: ProjectVariable[];
   settings: ProjectSettings;
 };
+
+export const defaultProject: Project = {
+  name: "New project",
+  current_block_id: 1,
+  blocks: {},
+  starting_block_id: -1,
+  canvas_width: 2240,
+  canvas_height: 1480,
+  bot_name: "Tilbot",
+  variables: [],
+  settings: defaultProjectSettings,
+};
