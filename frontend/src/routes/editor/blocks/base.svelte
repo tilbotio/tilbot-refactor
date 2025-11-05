@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Component } from "svelte";
-  import { Pencil, Trash } from "svelte-heros-v2";
+  import { Bolt, Pencil, Trash } from "svelte-heros-v2";
   import Connector from "../connector.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
 
@@ -31,30 +31,74 @@
     remove = (blockId: string) => {},
   }: BaseBlockProps = $props();
 
-  function selectBlock(e: MouseEvent) {
+  let root = $state() as HTMLElement;
+
+  let inConnectorPad = $state() as any;
+  const outConnectorPads = $state([]) as any[];
+
+  // Position of input connector pad relative to the block component
+  export const inConnectorPadOffset: { x?: number; y?: number } = $state({});
+
+  // Position of each output connector pad relative to the block component
+  export const outConnectorPadOffsets: { x: number; y: number }[] = $state([]);
+
+  // $derived() expressions cannot be exported so use $effect()
+  $effect(() => {
+    const rect = root.getBoundingClientRect();
+    if (inConnectorPad) {
+      const padCoords = inConnectorPad.getCoords();
+      inConnectorPadOffset.x = padCoords.x - rect.left;
+      inConnectorPadOffset.y = padCoords.y - rect.top;
+    } else {
+      delete inConnectorPadOffset.x;
+      delete inConnectorPadOffset.y;
+    }
+  });
+
+  // $derived() expressions cannot be exported so use $effect()
+  $effect(() => {
+    const rect = root.getBoundingClientRect();
+    outConnectorPadOffsets.length = 0;
+    for (const [i, pad] of outConnectorPads.entries()) {
+      if (pad) {
+        const padCoords = pad.getCoords();
+        outConnectorPadOffsets[i] = {
+          x: padCoords.x - rect.left,
+          y: padCoords.y - rect.top,
+        };
+      }
+    }
+  });
+
+  function selectBlock(e: UIEvent) {
     select(blockId);
     e.stopPropagation();
   }
 
-  function editBlock(e: MouseEvent) {
+  function editBlock(e: UIEvent) {
     edit(blockId);
     e.stopPropagation();
   }
 
-  function removeBlock(e: MouseEvent) {
+  function removeBlock(e: UIEvent) {
     remove(blockId);
     e.stopPropagation();
   }
 </script>
 
 <div
+  bind:this={root}
   class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selected
     ? 'scale-110 z-50'
     : ''}"
   id="block_{blockId}"
   onclick={selectBlock}
+  onkeydown={selectBlock}
+  role="button"
+  tabindex="0"
 >
   <span
+    bind:this={inConnectorPad}
     class="indicator-item indicator-middle indicator-start badge z-0"
     id="block_{blockId}_in"
     data-block-id={blockId}
@@ -89,13 +133,23 @@
     {#if block.connectors?.length > 0}
       <div class="divider m-0"></div>
       {#each block.connectors.entries() as [connectorId, connector]}
-        <Connector
-          {blockId}
-          {connectorId}
-          label={connector.label}
-          hasEvents={connector.events?.length! > 0}
-          mounted={() => connectorMounted(connectorId)}
-        ></Connector>
+        <div class="relative text-sm font-medium flex">
+          <div class="line-clamp-1 flex-1">
+            {#if connector.label}
+              {connector.label}
+            {/if}
+          </div>
+          <div>
+            {#if connector.events?.length! > 0}
+              <Bolt class="inline w-3 h-3" />
+            {/if}
+          </div>
+          <Connector
+            bind:this={outConnectorPads[connectorId]}
+            {blockId}
+            {connectorId}
+          />
+        </div>
       {/each}
     {/if}
   </div>

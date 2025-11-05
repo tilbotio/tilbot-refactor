@@ -5,16 +5,11 @@
   let isDragging: boolean = false;
   let hasMoved: boolean = false;
 
-  let {
+  const {
+    children,
     block,
-    editor_main,
-    mounted = () => {},
-    dragStart = () => {},
-    drag = () => {},
-    dragDrop = () => {},
+    editor_main, // -> offsetParent?
   } = $props();
-
-  onMount(mounted as () => unknown);
 
   function mouseDown(e: MouseEvent) {
     const btn_del = draggable.getElementsByClassName("btn_del");
@@ -79,12 +74,15 @@
 https://svelte.dev/e/js_parse_error -->
 <div
   bind:this={draggable}
-  style="left: {block.x}px; top: {block.y}px"
+  style:left="{block.x}px"
+  style:top="{block.y}px"
   onmousedown={mouseDown}
   onmouseup={mouseUp}
   onmousemove={mouseMove}
   onmouseleave={mouseMove}
   class="select-none absolute"
+  role="button"
+  tabindex="-1"
 >
-  <slot></slot>
+  {@render children()}
 </div>
