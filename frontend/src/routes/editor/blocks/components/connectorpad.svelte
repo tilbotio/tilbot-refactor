@@ -18,5 +18,5 @@
   id="block_{blockId}_c_{connectorId}"
   data-block-id={blockId}
   data-connector-id={connectorId}
-  class="indicator-item indicator-middle indicator-end badge z-0 -mr-3"
+  class="indicator-item indicator-middle indicator-end badge z-0 -mr-3 no-drag-handle"
 ></span>

@@ -1,77 +1,46 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-
-  let draggable: HTMLDivElement;
+  let draggable = $state() as HTMLDivElement;
   let isDragging: boolean = false;
-  let hasMoved: boolean = false;
 
-  const {
-    children,
-    block,
-    editor_main, // -> offsetParent?
-  } = $props();
+  const { children, block } = $props();
+
+  const noDragHandle = $derived(
+    draggable ? draggable.getElementsByClassName("no-drag-handle") : []
+  );
 
   function mouseDown(e: MouseEvent) {
-    const btn_del = draggable.getElementsByClassName("btn_del");
-    const btn_edit = draggable.getElementsByClassName("btn_edit");
     const target = e.target! as HTMLElement;
-    const connectorId = target.getAttribute("data-connector-id");
 
     if (
-      e.button == 0 &&
-      connectorId === null &&
-      (btn_del.length == 0 || !btn_del[0].contains(target)) &&
-      (btn_edit.length == 0 || !btn_edit[0].contains(target))
+      e.button === 0 &&
+      Array.from(noDragHandle).every((el) => !el.contains(target))
     ) {
       isDragging = true;
-      hasMoved = false;
-
-      dragStart();
     }
   }
 
   function mouseUp(e: MouseEvent) {
-    if (e.button == 0 && isDragging) {
+    if (e.button === 0 && isDragging) {
       isDragging = false;
-
-      if (hasMoved) {
-        block.x =
-          Math.round(
-            (e.x - draggable.offsetWidth / 2 + editor_main.scrollLeft) / 20
-          ) * 20;
-        block.y =
-          Math.round(
-            (e.y - draggable.offsetHeight / 2 + editor_main.scrollTop) / 20
-          ) * 20;
-
-        dragDrop();
-      }
     }
   }
 
   function mouseMove(e: MouseEvent) {
     if (isDragging) {
-      hasMoved = true;
+      const offsetParent = draggable.offsetParent!;
 
-      draggable.style.left =
+      block.x =
         Math.round(
-          (e.x - draggable.offsetWidth / 2 + editor_main.scrollLeft) / 20
-        ) *
-          20 +
-        "px";
-      draggable.style.top =
+          (e.x - draggable.offsetWidth / 2 + offsetParent.scrollLeft) / 20
+        ) * 20;
+      block.y =
         Math.round(
-          (e.y - draggable.offsetHeight / 2 + editor_main.scrollTop) / 20
-        ) *
-          20 +
-        "px";
-      drag();
+          (e.y - draggable.offsetHeight / 2 + offsetParent.scrollTop) / 20
+        ) * 20;
     }
   }
 </script>
 
-<!-- @migration-task Error while migrating Svelte code: Unexpected token
-https://svelte.dev/e/js_parse_error -->
 <div
   bind:this={draggable}
   style:left="{block.x}px"

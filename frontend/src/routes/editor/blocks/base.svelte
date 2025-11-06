@@ -1,14 +1,13 @@
 <script lang="ts">
   import type { Component } from "svelte";
   import { Bolt, Pencil, Trash } from "svelte-heros-v2";
-  import Connector from "../connector.svelte";
+  import ConnectorPad from "./components/connectorpad.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
 
   export type BlockProps = {
     blockId: number;
     block: ProjectBlock;
     selected: boolean;
-    connectorMounted: Function;
     select: Function;
     edit: Function;
     remove: Function;
@@ -25,7 +24,6 @@
     blockId,
     block,
     selected = false,
-    connectorMounted = (blockId: string, connectorId: number) => {},
     select = (blockId: string) => {},
     edit = (blockId: string) => {},
     remove = (blockId: string) => {},
@@ -106,12 +104,12 @@
 
   {#if selected}
     <button
-      class="btn btn-sm btn-circle btn-outline absolute -right-4 -top-4 btn_del"
+      class="btn btn-sm btn-circle btn-outline absolute -right-4 -top-4 no-drag-handle"
       onclick={removeBlock}><Trash class="w-4 h-4" /></button
     >
 
     <button
-      class="btn btn-sm btn-circle btn-outline absolute -right-4 top-12 btn_edit"
+      class="btn btn-sm btn-circle btn-outline absolute -right-4 top-12 no-drag-handle"
       onclick={editBlock}><Pencil class="w-4 h-4" /></button
     >
   {/if}
@@ -144,7 +142,7 @@
               <Bolt class="inline w-3 h-3" />
             {/if}
           </div>
-          <Connector
+          <ConnectorPad
             bind:this={outConnectorPads[connectorId]}
             {blockId}
             {connectorId}

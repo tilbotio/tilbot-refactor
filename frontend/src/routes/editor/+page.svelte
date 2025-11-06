@@ -1,7 +1,7 @@
 <script lang="ts">
   import _ from "lodash";
   import { page } from "$app/stores";
-  import { onMount, type Component } from "svelte";
+  import { onMount, type Component, type SvelteComponent } from "svelte";
   import type {
     Project,
     ProjectBlock,
@@ -40,14 +40,14 @@
     CheckCircle,
   } from "svelte-heros-v2";
 
-  const block_components = {
+  const blockComponentTypes = {
     Auto: AutoBlock,
     MC: MCBlock,
     Text: TextBlock,
     Trigger: TriggerBlock,
   };
 
-  const block_popup_components = {
+  const blockPopupComponentTypes = {
     Auto: AutoBlockPopup,
     MC: MCBlockPopup,
     Text: TextBlockPopup,
@@ -57,7 +57,7 @@
   let editor_main: HTMLElement = $state(null) as any;
   let jsonfileinput: HTMLElement = null as any;
   let simulator: HTMLIFrameElement = null as any;
-  let start: HTMLElement = $state(null as any);
+  let start: SvelteComponent = $state(null as any);
   let variables_window: any = $state();
   let settings_window: any = $state();
 
@@ -68,18 +68,6 @@
 
   let selectedBlockId: number | null = $state(null);
   let edit_block: ProjectBlock | null = $state(null);
-
-  // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
-  let line_locations: {
-    [key: string]: {
-      x: number;
-      y: number;
-      connectors: { x: number; y: number }[];
-    };
-  } = $state({});
-
-  let num_draggable_loaded = 0;
-  let is_loading = false;
 
   // Initialization will happen in onMount(), we don't know the value yet and
   // there's no sane default we can give, so leave it undefined for now.
@@ -99,6 +87,8 @@
     }
   );
 
+  const blockComponents: { [key: string]: SvelteComponent } = $state({});
+
   let generalSettings: { [key: string]: any } = $state({});
   let path = $state("");
   let chatgpt_running = $state(false);
@@ -114,8 +104,6 @@
 
     // Set a property on the window so that the simulator knows it's part of the editor.
     window.isTilbotEditor = true;
-
-    add_start_location();
 
     is_electron =
       typeof navigator === "object" &&
@@ -150,15 +138,6 @@
     project.canvas_width = screen.width * 1.5;
     project.canvas_height = screen.height * 1.5;
   });
-
-  function add_start_location() {
-    const rect = start.getBoundingClientRect();
-    const xy = {
-      x: rect.left + rect.width / 2 + editor_main.scrollLeft,
-      y: rect.bottom + editor_main.scrollTop,
-    };
-    line_locations["-1"] = { ...xy, connectors: [xy] };
-  }
 
   function new_block(type: ProjectBlockType) {
     // @TODO: take into account current level / groupblock
@@ -251,59 +230,8 @@
     }
   }
 
-  function registerBlock(id: number, block: ProjectBlock) {
-    const scrollLeft = editor_main.scrollLeft;
-    const scrollTop = editor_main.scrollTop;
-
-    const block_rect = document
-      .getElementById(`block_${id}_in`)!
-      .getBoundingClientRect();
-
-    function center(rect: DOMRect) {
-      return {
-        x: rect.left + rect.width / 2 + scrollLeft,
-        y: rect.top + rect.height / 2 + scrollTop,
-      };
-    }
-
-    const connectors: any[] = [];
-
-    for (const cid in block.connectors) {
-      const connector_rect = document
-        .getElementById(`block_${id}_c_${cid}`)!
-        .getBoundingClientRect();
-      connectors[cid] = center(connector_rect);
-    }
-
-    line_locations[id] = { ...center(block_rect), connectors };
-  }
-
-  function draggableMounted(id: number) {
-    const blocks = project.blocks;
-    if (is_loading) {
-      num_draggable_loaded++;
-
-      const blockEntries = Object.entries(blocks) as [string, any][];
-      if (num_draggable_loaded == blockEntries.length) {
-        is_loading = false;
-
-        // Build the look-up table for connecting lines.
-        for (const [id, block] of blockEntries) {
-          registerBlock(parseInt(id), block);
-        }
-      }
-    } else {
-      // Just add the one new entry in the collection
-      registerBlock(id, blocks[id]);
-    }
-  }
-
-  function draggableDragStart() {
-    deselect_all();
-  }
-
-  function draggableDragDrop() {
-    // See if we need to make the canvas smaller
+  $effect(() => {
+    // See if we need to make the canvas smaller or larger
     let max_x = 0;
     let max_y = 0;
 
@@ -332,43 +260,7 @@
 
     project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
     project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
-  }
-
-  function draggableDrag(id: number) {
-    const blocks = project.blocks;
-    registerBlock(id, blocks[id]);
-
-    // Update look-up table
-    const block_rect = document
-      .getElementById(`block_${id}_in`)!
-      .getBoundingClientRect();
-
-    const obj_left = block_rect.left + block_rect.width / 2;
-    const obj_top = block_rect.top + block_rect.height / 2;
-
-    const scrollLeft = editor_main.scrollLeft;
-    const scrollTop = editor_main.scrollTop;
-    const firstChild = editor_main.firstChild as HTMLElement;
-
-    if (editor_main.offsetHeight - obj_top < 100) {
-      if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
-        project.canvas_height += 100;
-      }
-      editor_main.scrollTop += 30;
-    } else if (obj_top < 50 && scrollTop > 0) {
-      // @TODO: bind editor_main?
-      editor_main.scrollTop = scrollTop - 30;
-    }
-
-    if (editor_main.offsetWidth - obj_left < 200) {
-      if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
-        project.canvas_width += 100;
-      }
-      editor_main.scrollLeft = scrollLeft + 30;
-    } else if (obj_left < -50 && scrollLeft > 0) {
-      editor_main.scrollLeft = scrollLeft - 30;
-    }
-  }
+  });
 
   function saveSettings(
     generalSettings: GeneralSettings,
@@ -603,11 +495,6 @@
   function load_project(json_str: string) {
     // First clear everything
     project = _.cloneDeep(defaultProject);
-    line_locations = {};
-    add_start_location();
-
-    is_loading = true;
-    num_draggable_loaded = 0;
 
     // Introduce a small delay so that everything will load properly (incl. lines)
     setTimeout(function () {
@@ -677,7 +564,7 @@
   <div class="modal">
     <div class="modal-box relative max-w-4xl">
       {#if edit_block !== null}
-        {@const BlockPopupComponent = block_popup_components[edit_block.type]}
+        {@const BlockPopupComponent = blockPopupComponentTypes[edit_block.type]}
         <BlockPopupComponent
           block={edit_block}
           save={saveBlock}
@@ -808,9 +695,28 @@
           style:height="{project.canvas_height} px"
         >
           {#snippet line(id: string, cid: number, target: number)}
-            {@const source = line_locations[id].connectors[cid]}
-            {@const destination = line_locations[target]}
+            <!-- FIXME: move this to a function -->
+
+            {@const sourceBlockComponent = blockComponents[id]}
+            {@const sourceConnectorPadOffset =
+              sourceBlockComponent.outConnectorPadOffsets[cid]}
+            {@const sourceBlock = project.blocks[id]}
+            {@const source = {
+              x: sourceBlock.x + sourceConnectorPadOffset.x,
+              y: sourceBlock.y + sourceConnectorPadOffset.y,
+            }}
+
+            {@const destinationBlockComponent = blockComponents[id]}
+            {@const destinationConnectorPadOffset =
+              destinationBlockComponent.inConnectorPadOffset}
+            {@const destinationBlock = project.blocks[id]}
+            {@const destination = {
+              x: destinationBlock.x + destinationConnectorPadOffset.x,
+              y: destinationBlock.y + destinationConnectorPadOffset.y,
+            }}
+
             {@const x_offset = Math.abs(destination.x - source.x)}
+
             <path
               d="
                 M{source.x},{source.y}
@@ -833,18 +739,16 @@
             />
           {/snippet}
 
-          {#if Object.entries(line_locations).length > 1}
-            {#each Object.entries(project.blocks) as [id, block]}
-              {#each block.connectors.entries() as [cid, connector]}
-                {#each connector.targets as target}
-                  {@render line(id, cid, target)}
-                {/each}
+          {#each Object.entries(project.blocks ?? {}) as [id, block]}
+            {#each block.connectors.entries() as [cid, connector]}
+              {#each connector.targets as target}
+                {@render line(id, cid, target)}
               {/each}
             {/each}
+          {/each}
 
-            {#if project.starting_block_id !== -1}
-              {@render line("-1", 0, project.starting_block_id)}
-            {/if}
+          {#if project.starting_block_id !== -1}
+            {@render line("-1", 0, project.starting_block_id)}
           {/if}
 
           <!-- For creating new lines -->
@@ -875,38 +779,23 @@
           >
         </div>
 
-        <Start bind:el={start}></Start>
+        <Start bind:this={start} />
 
-        {#if project.blocks !== undefined}
-          {#each Object.entries(project.blocks) as [key, block]}
-            {@const blockId = parseInt(key)}
-            <Draggable
+        {#each Object.entries(project.blocks ?? {}) as [key, block]}
+          {@const blockId = parseInt(key)}
+          <Draggable {block}>
+            {@const BlockComponent = blockComponentTypes[block.type]}
+            <BlockComponent
+              bind:this={blockComponents[blockId]}
+              {blockId}
               {block}
-              {editor_main}
-              mounted={() => {
-                draggableMounted(blockId);
-              }}
-              dragStart={draggableDragStart}
-              dragDrop={draggableDragDrop}
-              drag={() => {
-                draggableDrag(blockId);
-              }}
-            >
-              {@const BlockComponent = block_components[block.type]}
-              <BlockComponent
-                {blockId}
-                {block}
-                selected={selectedBlockId === blockId}
-                edit={editBlock}
-                select={selectBlock}
-                remove={removeBlock}
-                connectorMounted={() => {
-                  registerBlock(blockId, block);
-                }}
-              />
-            </Draggable>
-          {/each}
-        {/if}
+              selected={selectedBlockId === blockId}
+              edit={editBlock}
+              select={selectBlock}
+              remove={removeBlock}
+            />
+          </Draggable>
+        {/each}
       </div>
     </div>
 
