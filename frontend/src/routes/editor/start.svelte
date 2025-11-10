@@ -1,17 +1,27 @@
 <script lang="ts">
-  let span: HTMLElement;
+  const left = 32;
+  const top = 24;
 
-  export function getCoords() {
-    const rect = span.getBoundingClientRect();
+  let root = $state() as HTMLElement;
+  let span = $state() as HTMLElement;
 
-    return {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
+  export const outConnectorPadCoords: { x: number; y: number }[] = $state([]);
+
+  $effect(() => {
+    const rootRect = root.getBoundingClientRect();
+    const spanRect = span.getBoundingClientRect();
+
+    outConnectorPadCoords[0] = {
+      x: spanRect.left + spanRect.width / 2 - rootRect.left + left,
+      y: spanRect.top + spanRect.height / 2 - rootRect.top + top,
     };
-  }
+  });
 </script>
 
-<div class="absolute top-24 left-32 indicator select-none">
+<div
+  bind:this={root}
+  class="absolute left-{left} top-{top} indicator select-none"
+>
   <span
     bind:this={span}
     class="indicator-item indicator-bottom indicator-center badge"

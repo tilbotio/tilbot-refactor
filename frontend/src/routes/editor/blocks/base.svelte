@@ -5,7 +5,7 @@
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
 
   export type BlockProps = {
-    blockId: number;
+    blockId: string;
     block: ProjectBlock;
     selected: boolean;
     select: Function;
@@ -35,10 +35,10 @@
   const outConnectorPads = $state([]) as any[];
 
   // Position of input connector pad relative to the block component
-  export const inConnectorPadOffset: { x?: number; y?: number } = $state({});
+  const inConnectorPadOffset: { x?: number; y?: number } = $state({});
 
   // Position of each output connector pad relative to the block component
-  export const outConnectorPadOffsets: { x: number; y: number }[] = $state([]);
+  const outConnectorPadOffsets: { x: number; y: number }[] = $state([]);
 
   // $derived() expressions cannot be exported so use $effect()
   $effect(() => {
@@ -64,6 +64,43 @@
           x: padCoords.x - rect.left,
           y: padCoords.y - rect.top,
         };
+      }
+    }
+  });
+
+  // Position of input connector pad
+  export const inConnectorPadCoords: { x?: number; y?: number } = $state({});
+
+  // Position of each output connector pad
+  export const outConnectorPadCoords: { x: number; y: number }[] = $state([]);
+
+  // $derived() expressions cannot be exported so use $effect()
+  $effect(() => {
+    if (
+      inConnectorPadOffset.x == undefined ||
+      inConnectorPadOffset.y == undefined ||
+      block.x == undefined ||
+      block.y == undefined
+    ) {
+      delete inConnectorPadCoords.x;
+      delete inConnectorPadCoords.y;
+    } else {
+      inConnectorPadCoords.x = inConnectorPadOffset.x + block.x;
+      inConnectorPadCoords.y = inConnectorPadOffset.y + block.y;
+    }
+  });
+
+  // $derived() expressions cannot be exported so use $effect()
+  $effect(() => {
+    outConnectorPadCoords.length = 0;
+    if (block.x != undefined && block.y != undefined) {
+      for (const [i, padOffset] of outConnectorPadOffsets.entries()) {
+        if (padOffset) {
+          outConnectorPadCoords[i] = {
+            x: padOffset.x + block.x,
+            y: padOffset.y + block.y,
+          };
+        }
       }
     }
   });
@@ -95,12 +132,7 @@
   role="button"
   tabindex="0"
 >
-  <span
-    bind:this={inConnectorPad}
-    class="indicator-item indicator-middle indicator-start badge z-0"
-    id="block_{blockId}_in"
-    data-block-id={blockId}
-  ></span>
+  <ConnectorPad bind:this={inConnectorPad} {blockId} />
 
   {#if selected}
     <button

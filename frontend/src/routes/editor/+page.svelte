@@ -57,7 +57,6 @@
   let editor_main: HTMLElement = $state(null) as any;
   let jsonfileinput: HTMLElement = null as any;
   let simulator: HTMLIFrameElement = null as any;
-  let start: SvelteComponent = $state(null as any);
   let variables_window: any = $state();
   let settings_window: any = $state();
 
@@ -80,7 +79,7 @@
   // For creating lines
   let dragging_connector = $state(
     {} as {
-      block_id: number | null;
+      block_id: string | null;
       connector_id: number | null;
       mouseX: number;
       mouseY: number;
@@ -232,34 +231,28 @@
 
   $effect(() => {
     // See if we need to make the canvas smaller or larger
-    let max_x = 0;
-    let max_y = 0;
+    const max = { x: 0, y: 0 };
+    const blocks = project.blocks ?? {};
 
-    for (const value of Object.values(line_locations)) {
-      console.log(JSON.stringify(value));
-      const connectors = value.connectors;
-      if (connectors.length == 0) {
-        if (value.x + 200 > max_x) {
-          max_x = value.x + 200;
-        }
+    for (const [id, blockComponent] of Object.entries(blockComponents)) {
+      const padCoords = blockComponent.outConnectorPadCoords;
+      const block = blocks[id];
+      const lastPadCoords =
+        padCoords.length > 0
+          ? padCoords[padCoords.length - 1]
+          : { x: block.x! + 200, y: block.y! + 200 };
 
-        if (value.y + 200 > max_y) {
-          max_y = value.y + 200;
-        }
-      } else {
-        const lastConnector = connectors[connectors.length - 1];
-        if (lastConnector.x > max_x) {
-          max_x = value.x;
-        }
+      if (max.x < lastPadCoords.x) {
+        max.x = lastPadCoords.x;
+      }
 
-        if (lastConnector.y > max_y) {
-          max_y = value.y;
-        }
+      if (max.y < lastPadCoords.y) {
+        max.y = lastPadCoords.y;
       }
     }
 
-    project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
-    project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
+    project.canvas_width = Math.max(screen.width * 1.5, max.x + 350);
+    project.canvas_height = Math.max(screen.height * 1.5, max.y + 200);
   });
 
   function saveSettings(
@@ -283,15 +276,6 @@
   }
 
   function saveBlock(block: ProjectBlock) {
-    // Remove the line_locations for the connectors in case some were deleted/moved
-    const blockConnectors = block.connectors;
-    const lineConnectors = line_locations[selectedBlockId!].connectors;
-    for (const key of lineConnectors.keys()) {
-      if (!(key in blockConnectors)) {
-        delete lineConnectors[key];
-      }
-    }
-
     project.blocks[selectedBlockId!] = block;
     edit_block = null;
     modal_edit.click();
@@ -310,8 +294,10 @@
   function removeBlock(blockId: number) {
     deselect_all();
 
+    const blocks = project.blocks;
+
     // Delete any blocks connecting to this one
-    for (const block of Object.values(project.blocks)) {
+    for (const block of Object.values(blocks)) {
       for (const connector of block.connectors) {
         const targets = connector.targets;
         const index = targets.indexOf(blockId);
@@ -321,8 +307,7 @@
       }
     }
 
-    delete project.blocks[blockId];
-    delete line_locations[blockId];
+    delete blocks[blockId];
   }
 
   function selectBlock(blockId: number) {
@@ -420,36 +405,36 @@
   }
 
   function editor_mousedown(e: MouseEvent) {
-    const target = e.target! as HTMLElement;
+    const target = e.target as HTMLElement;
+    if (!target) {
+      return;
+    }
+
     const { blockId, connectorId } = target.dataset;
 
     if (blockId == undefined) {
       return;
     }
-    const connectors = line_locations[blockId].connectors;
 
-    const blockIdInt = parseInt(blockId);
-    if (blockIdInt === -1) {
+    if (blockId === "-1") {
       // Only allow to connect something to the starting point if it is not already connected to something
       if (project.starting_block_id === -1) {
         deselect_all();
-        const connector = connectors[0];
         dragging_connector = {
-          block_id: -1,
+          block_id: blockId,
           connector_id: 0,
-          mouseX: connector.x,
-          mouseY: connector.y,
+          mouseX: e.clientX + editor_main.scrollLeft,
+          mouseY: e.clientY + editor_main.scrollTop,
         };
       }
     } else if (connectorId != undefined) {
       const connectorIdInt = parseInt(connectorId);
-      const connector = connectors[connectorIdInt];
       deselect_all();
       dragging_connector = {
-        block_id: blockIdInt,
+        block_id: blockId,
         connector_id: connectorIdInt,
-        mouseX: connector.x,
-        mouseY: connector.y,
+        mouseX: e.clientX + editor_main.scrollLeft,
+        mouseY: e.clientY + editor_main.scrollTop,
       };
     }
   }
@@ -475,7 +460,7 @@
 
     if (element.getAttribute("id") == `block_${blockId}_in`) {
       // Starting point
-      if (dragging_connector.block_id == -1) {
+      if (dragging_connector.block_id === "-1") {
         project.starting_block_id = parseInt(blockId);
       } else {
         const targets =
@@ -695,48 +680,33 @@
           style:height="{project.canvas_height} px"
         >
           {#snippet line(id: string, cid: number, target: number)}
-            <!-- FIXME: move this to a function -->
+            {@const source = blockComponents[id]?.outConnectorPadCoords?.[cid]}
+            {@const destination = blockComponents[target]?.inConnectorPadCoords}
 
-            {@const sourceBlockComponent = blockComponents[id]}
-            {@const sourceConnectorPadOffset =
-              sourceBlockComponent.outConnectorPadOffsets[cid]}
-            {@const sourceBlock = project.blocks[id]}
-            {@const source = {
-              x: sourceBlock.x + sourceConnectorPadOffset.x,
-              y: sourceBlock.y + sourceConnectorPadOffset.y,
-            }}
+            {#if source && destination}
+              {@const x_offset = Math.abs(destination.x - source.x)}
 
-            {@const destinationBlockComponent = blockComponents[id]}
-            {@const destinationConnectorPadOffset =
-              destinationBlockComponent.inConnectorPadOffset}
-            {@const destinationBlock = project.blocks[id]}
-            {@const destination = {
-              x: destinationBlock.x + destinationConnectorPadOffset.x,
-              y: destinationBlock.y + destinationConnectorPadOffset.y,
-            }}
-
-            {@const x_offset = Math.abs(destination.x - source.x)}
-
-            <path
-              d="
-                M{source.x},{source.y}
-                L{source.x + x_offset * 0.05},{source.y}
-                C{source.x + x_offset * 0.5},{source.y}
-                 {destination.x - x_offset * 0.5},{destination.y}
-                 {destination.x - x_offset * 0.05},{destination.y}
-                L{destination.x},{destination.y}
-              "
-              stroke-width="2"
-              fill="none"
-              data-from-block={id}
-              data-from-connector={cid}
-              data-to-block={target}
-              onclick={line_clicked}
-              onkeyup={() => {}}
-              role="button"
-              tabindex="0"
-              class="pointer-events-auto stroke-tilbot-primary-300"
-            />
+              <path
+                d="
+                  M{source.x},{source.y}
+                  L{source.x + x_offset * 0.05},{source.y}
+                  C{source.x + x_offset * 0.5},{source.y}
+                   {destination.x - x_offset * 0.5},{destination.y}
+                   {destination.x - x_offset * 0.05},{destination.y}
+                  L{destination.x},{destination.y}
+                "
+                stroke-width="2"
+                fill="none"
+                data-from-block={id}
+                data-from-connector={cid}
+                data-to-block={target}
+                onclick={line_clicked}
+                onkeyup={() => {}}
+                role="button"
+                tabindex="0"
+                class="pointer-events-auto stroke-tilbot-primary-300"
+              />
+            {/if}
           {/snippet}
 
           {#each Object.entries(project.blocks ?? {}) as [id, block]}
@@ -753,14 +723,13 @@
 
           <!-- For creating new lines -->
           {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined}
-            {@const line_connector =
-              line_locations[dragging_connector.block_id].connectors[
-                dragging_connector.connector_id
-              ]}
+            {@const connector =
+              blockComponents[dragging_connector.block_id]
+                .outConnectorPadCoords[dragging_connector.connector_id]}
             <line
               class="z-50"
-              x1={line_connector.x}
-              y1={line_connector.y}
+              x1={connector.x}
+              y1={connector.y}
               x2={dragging_connector.mouseX}
               y2={dragging_connector.mouseY}
               stroke="black"
@@ -779,17 +748,16 @@
           >
         </div>
 
-        <Start bind:this={start} />
+        <Start bind:this={blockComponents["-1"]} />
 
-        {#each Object.entries(project.blocks ?? {}) as [key, block]}
-          {@const blockId = parseInt(key)}
+        {#each Object.entries(project.blocks ?? {}) as [blockId, block]}
           <Draggable {block}>
             {@const BlockComponent = blockComponentTypes[block.type]}
             <BlockComponent
               bind:this={blockComponents[blockId]}
               {blockId}
               {block}
-              selected={selectedBlockId === blockId}
+              selected={selectedBlockId === parseInt(blockId)}
               edit={editBlock}
               select={selectBlock}
               remove={removeBlock}

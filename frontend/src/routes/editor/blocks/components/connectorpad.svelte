@@ -1,5 +1,6 @@
 <script lang="ts">
-  const { blockId, connectorId } = $props();
+  const { blockId, connectorId }: { blockId: string; connectorId?: number } =
+    $props();
 
   let span: HTMLElement;
 
@@ -15,8 +16,10 @@
 
 <span
   bind:this={span}
-  id="block_{blockId}_c_{connectorId}"
+  id={connectorId == null
+    ? "block_{blockId}_in"
+    : "block_{blockId}_c_{connectorId}"}
   data-block-id={blockId}
-  data-connector-id={connectorId}
+  data-connector-id={connectorId == null ? null : connectorId}
   class="indicator-item indicator-middle indicator-end badge z-0 -mr-3 no-drag-handle"
 ></span>
