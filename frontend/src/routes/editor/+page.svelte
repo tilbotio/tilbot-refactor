@@ -68,6 +68,14 @@
   let selectedBlockId: number | null = $state(null);
   let edit_block: ProjectBlock | null = $state(null);
 
+  // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
+  const lineLocations: {
+    [key: string]: {
+      in?: { x: number; y: number };
+      out: { x: number; y: number }[];
+    };
+  } = $state({});
+
   // Initialization will happen in onMount(), we don't know the value yet and
   // there's no sane default we can give, so leave it undefined for now.
   // Setting "boolean | undefined" as the type is also not quite a good fit,
@@ -85,8 +93,6 @@
       mouseY: number;
     }
   );
-
-  const blockComponents: { [key: string]: SvelteComponent } = $state({});
 
   let generalSettings: { [key: string]: any } = $state({});
   let path = $state("");
@@ -234,11 +240,11 @@
     const max = { x: 0, y: 0 };
     const blocks = project.blocks ?? {};
 
-    for (const [id, blockComponent] of Object.entries(blockComponents)) {
-      const padCoords = blockComponent.outConnectorPadCoords;
+    for (const [id, lineLocation] of Object.entries(lineLocations)) {
+      const padCoords = lineLocation.out;
       const block = blocks[id];
       const lastPadCoords =
-        padCoords.length > 0
+        padCoords?.length > 0
           ? padCoords[padCoords.length - 1]
           : { x: block.x! + 200, y: block.y! + 200 };
 
@@ -680,8 +686,8 @@
           style:height="{project.canvas_height} px"
         >
           {#snippet line(id: string, cid: number, target: number)}
-            {@const source = blockComponents[id]?.outConnectorPadCoords?.[cid]}
-            {@const destination = blockComponents[target]?.inConnectorPadCoords}
+            {@const source = lineLocations[id]?.out?.[cid]}
+            {@const destination = lineLocations[target]?.in}
 
             {#if source && destination}
               {@const x_offset = Math.abs(destination.x - source.x)}
@@ -709,9 +715,9 @@
             {/if}
           {/snippet}
 
-          {#each Object.entries(project.blocks ?? {}) as [id, block]}
-            {#each block.connectors.entries() as [cid, connector]}
-              {#each connector.targets as target}
+          {#each Object.entries(project.blocks ?? {}) as [id, block] (id)}
+            {#each block.connectors.entries() as [cid, connector] (cid)}
+              {#each connector.targets as target (target)}
                 {@render line(id, cid, target)}
               {/each}
             {/each}
@@ -724,8 +730,9 @@
           <!-- For creating new lines -->
           {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined}
             {@const connector =
-              blockComponents[dragging_connector.block_id]
-                .outConnectorPadCoords[dragging_connector.connector_id]}
+              lineLocations[dragging_connector.block_id].out[
+                dragging_connector.connector_id
+              ]}
             <line
               class="z-50"
               x1={connector.x}
@@ -748,13 +755,13 @@
           >
         </div>
 
-        <Start bind:this={blockComponents["-1"]} />
+        <Start {lineLocations} />
 
-        {#each Object.entries(project.blocks ?? {}) as [blockId, block]}
+        {#each Object.entries(project.blocks ?? {}) as [blockId, block] (blockId)}
           <Draggable {block}>
             {@const BlockComponent = blockComponentTypes[block.type]}
             <BlockComponent
-              bind:this={blockComponents[blockId]}
+              {lineLocations}
               {blockId}
               {block}
               selected={selectedBlockId === parseInt(blockId)}

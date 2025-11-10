@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
+
+  const { lineLocations } = $props();
+
   const left = 32;
   const top = 24;
 
@@ -7,14 +11,29 @@
 
   export const outConnectorPadCoords: { x: number; y: number }[] = $state([]);
 
+  let oldLineLocations: any;
+
   $effect(() => {
+    // Clean up previous array entry in case the lineLocations prop changed
+    if (oldLineLocations != undefined && oldLineLocations !== lineLocations) {
+      delete oldLineLocations["-1"];
+    }
+    oldLineLocations = lineLocations;
+    const lineLocation = (lineLocations["-1"] ??= { out: [] });
+
     const rootRect = root.getBoundingClientRect();
     const spanRect = span.getBoundingClientRect();
 
-    outConnectorPadCoords[0] = {
+    lineLocation.out[0] = {
       x: spanRect.left + spanRect.width / 2 - rootRect.left + left,
       y: spanRect.top + spanRect.height / 2 - rootRect.top + top,
     };
+  });
+
+  onDestroy(() => {
+    if (oldLineLocations != undefined) {
+      delete oldLineLocations["-1"];
+    }
   });
 </script>
 

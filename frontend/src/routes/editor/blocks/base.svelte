@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Component } from "svelte";
+  import { type Component, type SvelteComponent, onDestroy } from "svelte";
   import { Bolt, Pencil, Trash } from "svelte-heros-v2";
   import ConnectorPad from "./components/connectorpad.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
@@ -7,6 +7,12 @@
   export type BlockProps = {
     blockId: string;
     block: ProjectBlock;
+    lineLocations: {
+      [key: string]: {
+        in?: { x: number; y: number };
+        out: { x: number; y: number }[];
+      };
+    };
     selected: boolean;
     select: Function;
     edit: Function;
@@ -23,6 +29,7 @@
     children,
     blockId,
     block,
+    lineLocations,
     selected = false,
     select = (blockId: string) => {},
     edit = (blockId: string) => {},
@@ -30,78 +37,57 @@
   }: BaseBlockProps = $props();
 
   let root = $state() as HTMLElement;
+  let inConnectorPad = $state() as SvelteComponent;
+  const outConnectorPads = $state([]) as SvelteComponent[];
 
-  let inConnectorPad = $state() as any;
-  const outConnectorPads = $state([]) as any[];
+  let oldLineLocations: any;
+  let oldBlockId: string | undefined;
 
-  // Position of input connector pad relative to the block component
-  const inConnectorPadOffset: { x?: number; y?: number } = $state({});
-
-  // Position of each output connector pad relative to the block component
-  const outConnectorPadOffsets: { x: number; y: number }[] = $state([]);
-
-  // $derived() expressions cannot be exported so use $effect()
   $effect(() => {
-    const rect = root.getBoundingClientRect();
-    if (inConnectorPad) {
-      const padCoords = inConnectorPad.getCoords();
-      inConnectorPadOffset.x = padCoords.x - rect.left;
-      inConnectorPadOffset.y = padCoords.y - rect.top;
-    } else {
-      delete inConnectorPadOffset.x;
-      delete inConnectorPadOffset.y;
-    }
-  });
-
-  // $derived() expressions cannot be exported so use $effect()
-  $effect(() => {
-    const rect = root.getBoundingClientRect();
-    outConnectorPadOffsets.length = 0;
-    for (const [i, pad] of outConnectorPads.entries()) {
-      if (pad) {
-        const padCoords = pad.getCoords();
-        outConnectorPadOffsets[i] = {
-          x: padCoords.x - rect.left,
-          y: padCoords.y - rect.top,
-        };
-      }
-    }
-  });
-
-  // Position of input connector pad
-  export const inConnectorPadCoords: { x?: number; y?: number } = $state({});
-
-  // Position of each output connector pad
-  export const outConnectorPadCoords: { x: number; y: number }[] = $state([]);
-
-  // $derived() expressions cannot be exported so use $effect()
-  $effect(() => {
+    // Clean up previous array entry in case either prop changed
     if (
-      inConnectorPadOffset.x == undefined ||
-      inConnectorPadOffset.y == undefined ||
-      block.x == undefined ||
-      block.y == undefined
+      oldLineLocations != undefined &&
+      oldBlockId != undefined &&
+      blockId !== oldBlockId
     ) {
-      delete inConnectorPadCoords.x;
-      delete inConnectorPadCoords.y;
-    } else {
-      inConnectorPadCoords.x = inConnectorPadOffset.x + block.x;
-      inConnectorPadCoords.y = inConnectorPadOffset.y + block.y;
+      delete oldLineLocations[oldBlockId];
     }
-  });
+    oldLineLocations = lineLocations;
+    oldBlockId = blockId;
 
-  // $derived() expressions cannot be exported so use $effect()
-  $effect(() => {
-    outConnectorPadCoords.length = 0;
+    const lineLocation = (lineLocations[blockId] ??= { out: [] });
+
+    const rect = root.getBoundingClientRect();
+
+    if (inConnectorPad && block.x != undefined && block.y != undefined) {
+      const padCoords = inConnectorPad.getCoords();
+      lineLocation.in = {
+        x: padCoords.x - rect.left + block.x,
+        y: padCoords.y - rect.top + block.y,
+      };
+    } else {
+      delete lineLocation.in;
+    }
+
+    const out = lineLocation.out;
+    out.length = 0;
     if (block.x != undefined && block.y != undefined) {
-      for (const [i, padOffset] of outConnectorPadOffsets.entries()) {
-        if (padOffset) {
-          outConnectorPadCoords[i] = {
-            x: padOffset.x + block.x,
-            y: padOffset.y + block.y,
+      for (const [i, pad] of outConnectorPads.entries()) {
+        if (pad) {
+          const padCoords = pad.getCoords();
+          out[i] = {
+            x: padCoords.x - rect.left + block.x,
+            y: padCoords.y - rect.top + block.y,
           };
         }
       }
+    }
+  });
+
+  onDestroy(() => {
+    if (oldBlockId != undefined) {
+      delete lineLocations[oldBlockId];
+      oldBlockId = undefined;
     }
   });
 
