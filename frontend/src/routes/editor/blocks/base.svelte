@@ -3,15 +3,14 @@
   import { Bolt, Pencil, Trash } from "svelte-heros-v2";
   import ConnectorPad from "./components/connectorpad.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
+  import { setOrDelete } from "../../../../../common/svelte-utils";
 
   export type BlockProps = {
     blockId: string;
     block: ProjectBlock;
-    lineLocations: {
-      [key: string]: {
-        in?: { x: number; y: number };
-        out: { x: number; y: number }[];
-      };
+    lineLocation: {
+      in?: { x: number; y: number };
+      out: { x: number; y: number }[];
     };
     selected: boolean;
     select: Function;
@@ -24,12 +23,12 @@
     children?: Function;
   };
 
-  const {
+  let {
     Icon,
     children,
     blockId,
     block,
-    lineLocations,
+    lineLocation = $bindable(),
     selected = false,
     select = (blockId: string) => {},
     edit = (blockId: string) => {},
@@ -40,23 +39,7 @@
   let inConnectorPad = $state() as SvelteComponent;
   const outConnectorPads = $state([]) as SvelteComponent[];
 
-  let oldLineLocations: any;
-  let oldBlockId: string | undefined;
-
   $effect(() => {
-    // Clean up previous array entry in case either prop changed
-    if (
-      oldLineLocations != undefined &&
-      oldBlockId != undefined &&
-      blockId !== oldBlockId
-    ) {
-      delete oldLineLocations[oldBlockId];
-    }
-    oldLineLocations = lineLocations;
-    oldBlockId = blockId;
-
-    const lineLocation = (lineLocations[blockId] ??= { out: [] });
-
     const rect = root.getBoundingClientRect();
 
     if (inConnectorPad && block.x != undefined && block.y != undefined) {
@@ -85,10 +68,8 @@
   });
 
   onDestroy(() => {
-    if (oldBlockId != undefined) {
-      delete lineLocations[oldBlockId];
-      oldBlockId = undefined;
-    }
+    console.log("Boom!");
+    lineLocation = undefined as any;
   });
 
   function selectBlock(e: UIEvent) {
@@ -148,7 +129,7 @@
     {/if}
     {#if block.connectors?.length > 0}
       <div class="divider m-0"></div>
-      {#each block.connectors.entries() as [connectorId, connector]}
+      {#each block.connectors.entries() as [connectorId, connector] (connectorId)}
         <div class="relative text-sm font-medium flex">
           <div class="line-clamp-1 flex-1">
             {#if connector.label}
@@ -161,7 +142,10 @@
             {/if}
           </div>
           <ConnectorPad
-            bind:this={outConnectorPads[connectorId]}
+            bind:this={
+              () => outConnectorPads[connectorId],
+              (value) => setOrDelete(outConnectorPads, connectorId, value)
+            }
             {blockId}
             {connectorId}
           />

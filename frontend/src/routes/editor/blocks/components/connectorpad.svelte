@@ -17,9 +17,12 @@
 <span
   bind:this={span}
   id={connectorId == null
-    ? "block_{blockId}_in"
-    : "block_{blockId}_c_{connectorId}"}
+    ? `block_${blockId}_in`
+    : `block_${blockId}_c_${connectorId}`}
   data-block-id={blockId}
   data-connector-id={connectorId == null ? null : connectorId}
-  class="indicator-item indicator-middle indicator-end badge z-0 -mr-3 no-drag-handle"
+  class={[
+    "indicator-item indicator-middle badge z-0 no-drag-handle",
+    connectorId == null ? "indicator-start" : "indicator-end -mr-3",
+  ]}
 ></span>

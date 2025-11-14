@@ -1,7 +1,6 @@
 <script lang="ts">
   import _ from "lodash";
-  import { page } from "$app/stores";
-  import { onMount, type Component, type SvelteComponent } from "svelte";
+  import { onMount, type Component } from "svelte";
   import type {
     Project,
     ProjectBlock,
@@ -11,6 +10,7 @@
     GeneralSettings,
   } from "../../../../common/project/types";
   import { defaultProject } from "../../../../common/project/types";
+  import { setOrDelete } from "../../../../common/svelte-utils";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import ChatGPT from "./chatgpt.svelte";
@@ -65,7 +65,7 @@
   let modal_launch = $state() as HTMLInputElement;
   let modal_edit = $state() as HTMLInputElement;
 
-  let selectedBlockId: number | null = $state(null);
+  let selectedBlockId: string | null = $state(null);
   let edit_block: ProjectBlock | null = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
@@ -177,7 +177,7 @@
     deselect_all();
 
     setTimeout(function () {
-      selectedBlockId = current_block_id;
+      selectedBlockId = `${current_block_id}`;
     }, 50);
   }
 
@@ -316,7 +316,7 @@
     delete blocks[blockId];
   }
 
-  function selectBlock(blockId: number) {
+  function selectBlock(blockId: string) {
     deselect_all();
     selectedBlockId = blockId;
   }
@@ -327,7 +327,7 @@
   }
 
   function deselect_all() {
-    selectedBlockId = 0;
+    selectedBlockId = null;
     const lines = document.getElementsByTagName("path");
 
     for (const line of lines) {
@@ -451,6 +451,8 @@
       return;
     }
 
+    dragging_connector.block_id = null;
+
     const element = document.elementFromPoint(
       e.clientX,
       e.clientY
@@ -479,8 +481,6 @@
         }
       }
     }
-
-    dragging_connector.block_id = null;
   }
 
   function load_project(json_str: string) {
@@ -525,8 +525,8 @@
     if (contentWindow != null) {
       const project_copy = JSON.parse(JSON.stringify(project));
 
-      if (selectedBlockId !== 0) {
-        project_copy.starting_block_id = selectedBlockId;
+      if (selectedBlockId != null) {
+        project_copy.starting_block_id = parseInt(selectedBlockId);
       }
 
       window_api.send("load-project-db", project_copy);
@@ -677,13 +677,13 @@
     >
       <div
         class="relative"
-        style:width="{project.canvas_width} px"
-        style:height="{project.canvas_height} px"
+        style:width="{project.canvas_width}px"
+        style:height="{project.canvas_height}px"
       >
         <svg
           class="absolute pointer-events-none z-40"
-          style:width="{project.canvas_width} px"
-          style:height="{project.canvas_height} px"
+          style:width="{project.canvas_width}px"
+          style:height="{project.canvas_height}px"
         >
           {#snippet line(id: string, cid: number, target: number)}
             {@const source = lineLocations[id]?.out?.[cid]}
@@ -730,18 +730,20 @@
           <!-- For creating new lines -->
           {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined}
             {@const connector =
-              lineLocations[dragging_connector.block_id].out[
+              lineLocations[dragging_connector.block_id]?.out?.[
                 dragging_connector.connector_id
               ]}
-            <line
-              class="z-50"
-              x1={connector.x}
-              y1={connector.y}
-              x2={dragging_connector.mouseX}
-              y2={dragging_connector.mouseY}
-              stroke="black"
-              stroke-width="2"
-            />
+            {#if connector}
+              <line
+                class="z-50"
+                x1={connector.x}
+                y1={connector.y}
+                x2={dragging_connector.mouseX}
+                y2={dragging_connector.mouseY}
+                stroke="black"
+                stroke-width="2"
+              />
+            {/if}
           {/if}
         </svg>
 
@@ -761,12 +763,15 @@
           <Draggable {block}>
             {@const BlockComponent = blockComponentTypes[block.type]}
             <BlockComponent
-              {lineLocations}
+              bind:lineLocation={
+                () => (lineLocations[blockId] ??= { out: [] }),
+                (value) => setOrDelete(lineLocations, blockId, value)
+              }
               {blockId}
               {block}
-              selected={selectedBlockId === parseInt(blockId)}
+              selected={selectedBlockId === blockId}
               edit={editBlock}
-              select={selectBlock}
+              select={() => selectBlock(blockId)}
               remove={removeBlock}
             />
           </Draggable>
