@@ -127,7 +127,6 @@
     class="w-full h-full flex-1 overflow-y-scroll py-2"
   >
     <MessageList
-      {messages}
       {isTypingIndicatorActive}
       avatar_file_sm={settingsContext.avatar_file_sm}
     />
