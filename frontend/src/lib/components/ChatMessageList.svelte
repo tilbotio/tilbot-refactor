@@ -3,21 +3,23 @@
   import Avatar from "./Avatar.svelte";
   import type { Message } from "$lib/types/types";
   import type { ProjectSettings } from "../../../../common/project/types";
+  import { getContext } from "svelte";
 
   type Props = {
-    messages: Message[];
     isTypingIndicatorActive: boolean;
     avatar_file_sm: ProjectSettings["avatar_file_sm"];
   };
 
-  let { messages, isTypingIndicatorActive, avatar_file_sm }: Props = $props();
+  let { isTypingIndicatorActive, avatar_file_sm }: Props = $props();
+
+  const messages: Message[] = getContext("messagesContext")
 
   function isNewBotMessageBlock(index: number): boolean {
     return index === 0 || messages[index - 1]?.from != "bot";
   }
 
   const showAvatarForTypingIndicator: boolean = $derived(
-    isNewBotMessageBlock(messages.length)
+    isNewBotMessageBlock(messages?.length ?? 0)
   );
 </script>
 

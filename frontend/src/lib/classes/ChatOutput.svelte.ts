@@ -5,14 +5,17 @@ import type {
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ProjectSettings } from "../../../../common/project/types";
 import type { Message } from "$lib/types/types";
+import { getContext } from "svelte";
+
+
 
 export class ChatOutput implements ProjectControllerOutputInterface {
   private settingsContext: ProjectSettings;
   private runtimeContext: RuntimeContext;
+  private messages: Message[] = getContext("messagesContext")
   public projectController?: ProjectControllerInterface<ChatOutput>;
 
   public isTypingIndicatorActive = $state(false);
-  public messages = $state<Message[]>([]);
 
   constructor(
     settingsContext: ProjectSettings,
