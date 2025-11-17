@@ -292,21 +292,22 @@
     modal_edit.click();
   }
 
-  function editBlock(blockId: number) {
+  function editBlock(blockId: string) {
     edit_block = project.blocks[blockId];
     modal_edit.click();
   }
 
-  function removeBlock(blockId: number) {
+  function removeBlock(blockId: string) {
     deselect_all();
 
     const blocks = project.blocks;
+    const blockIdInt = parseInt(blockId);
 
     // Delete any blocks connecting to this one
     for (const block of Object.values(blocks)) {
       for (const connector of block.connectors) {
         const targets = connector.targets;
-        const index = targets.indexOf(blockId);
+        const index = targets.indexOf(blockIdInt);
         if (index != -1) {
           targets.splice(index, 1);
         }
