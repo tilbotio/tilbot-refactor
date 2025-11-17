@@ -3,7 +3,7 @@
 
   const { lineLocations } = $props();
 
-  const left = 32;
+  const left = 72;
   const top = 24;
 
   let root = $state() as HTMLElement;
@@ -39,7 +39,7 @@
 
 <div
   bind:this={root}
-  class="absolute left-{left} top-{top} indicator select-none"
+  class="absolute left-72 top-24 indicator select-none"
 >
   <span
     bind:this={span}
