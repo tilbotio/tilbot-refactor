@@ -1,26 +1,17 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
 
-  const { lineLocations } = $props();
+  let { lineLocation = $bindable() } = $props();
 
-  const left = 72;
-  const top = 24;
+  const left = 288;
+  const top = 96;
 
   let root = $state() as HTMLElement;
   let span = $state() as HTMLElement;
 
   export const outConnectorPadCoords: { x: number; y: number }[] = $state([]);
 
-  let oldLineLocations: any;
-
   $effect(() => {
-    // Clean up previous array entry in case the lineLocations prop changed
-    if (oldLineLocations != undefined && oldLineLocations !== lineLocations) {
-      delete oldLineLocations["-1"];
-    }
-    oldLineLocations = lineLocations;
-    const lineLocation = (lineLocations["-1"] ??= { out: [] });
-
     const rootRect = root.getBoundingClientRect();
     const spanRect = span.getBoundingClientRect();
 
@@ -31,15 +22,13 @@
   });
 
   onDestroy(() => {
-    if (oldLineLocations != undefined) {
-      delete oldLineLocations["-1"];
-    }
+    lineLocation = undefined;
   });
 </script>
 
 <div
   bind:this={root}
-  class="absolute left-72 top-24 indicator select-none"
+  class="absolute left-[288px] top-[96px] indicator select-none"
 >
   <span
     bind:this={span}

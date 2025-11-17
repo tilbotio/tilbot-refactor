@@ -468,7 +468,7 @@
 
     if (element.getAttribute("id") == `block_${blockId}_in`) {
       // Starting point
-      if (dragging_connector.block_id === "-1") {
+      if (dragging_connector_block_id === "-1") {
         project.starting_block_id = parseInt(blockId);
       } else {
         const targets =
@@ -757,7 +757,12 @@
           >
         </div>
 
-        <Start {lineLocations} />
+        <Start
+          bind:lineLocation={
+            () => (lineLocations["-1"] ??= { out: [] }),
+            (value) => setOrDelete(lineLocations, "-1", value)
+          }
+        />
 
         {#each Object.entries(project.blocks ?? {}) as [blockId, block] (blockId)}
           <Draggable {block} parent={editor_main}>
