@@ -90,9 +90,10 @@
 
 <div
   bind:this={root}
-  class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selected
-    ? 'scale-110 z-50'
-    : ''}"
+  class={[
+    "card w-64 bg-slate-100 transition-transform indicator",
+    selected ? "shadow-xl z-50" : "shadow-md",
+  ]}
   id="block_{blockId}"
   onclick={selectBlock}
   onkeydown={selectBlock}

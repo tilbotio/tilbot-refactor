@@ -20,7 +20,7 @@
     ? `block_${blockId}_in`
     : `block_${blockId}_c_${connectorId}`}
   data-block-id={blockId}
-  data-connector-id={connectorId == null ? null : connectorId}
+  data-connector-id={connectorId}
   class={[
     "indicator-item indicator-middle badge z-0 no-drag-handle",
     connectorId == null ? "indicator-start" : "indicator-end -mr-3",

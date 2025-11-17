@@ -2,7 +2,7 @@
   let draggable = $state() as HTMLDivElement;
   let isDragging: boolean = false;
 
-  const { children, block } = $props();
+  const { children, parent, block } = $props();
 
   const noDragHandle = $derived(
     draggable ? draggable.getElementsByClassName("no-drag-handle") : []
@@ -27,15 +27,13 @@
 
   function mouseMove(e: MouseEvent) {
     if (isDragging) {
-      const offsetParent = draggable.offsetParent!;
-
       block.x =
         Math.round(
-          (e.x - draggable.offsetWidth / 2 + offsetParent.scrollLeft) / 20
+          (e.x - draggable.offsetWidth / 2 + parent.scrollLeft) / 20
         ) * 20;
       block.y =
         Math.round(
-          (e.y - draggable.offsetHeight / 2 + offsetParent.scrollTop) / 20
+          (e.y - draggable.offsetHeight / 2 + parent.scrollTop) / 20
         ) * 20;
     }
   }

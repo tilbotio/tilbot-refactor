@@ -602,7 +602,7 @@
           <a
             class="active:bg-tilbot-secondary-hardpink"
             onclick={action}
-            onkeyup={action}
+            onkeyup={() => {}}
             role="button"
             tabindex="0"
             aria-label={tip}><Icon class="w-6 h-6" /></a
@@ -760,15 +760,15 @@
         <Start {lineLocations} />
 
         {#each Object.entries(project.blocks ?? {}) as [blockId, block] (blockId)}
-          <Draggable {block}>
+          <Draggable {block} parent={editor_main}>
             {@const BlockComponent = blockComponentTypes[block.type]}
             <BlockComponent
+              {blockId}
+              {block}
               bind:lineLocation={
                 () => (lineLocations[blockId] ??= { out: [] }),
                 (value) => setOrDelete(lineLocations, blockId, value)
               }
-              {blockId}
-              {block}
               selected={selectedBlockId === blockId}
               edit={editBlock}
               select={() => selectBlock(blockId)}
