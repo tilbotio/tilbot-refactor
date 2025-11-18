@@ -14,11 +14,6 @@
 
 <BaseBlockPopup Icon={BellAlert} {block} {save} {cancel}>
   {#snippet children(blockCopy: ProjectBlock)}
-    <p class="py-4">Text for the bot to say:</p>
-    <RichTextEdit bind:value={blockCopy.content} />
-
-    <br /><br />
-
     Answer options:<br />
     <Connectors connectors={blockCopy.connectors} />
   {/snippet}

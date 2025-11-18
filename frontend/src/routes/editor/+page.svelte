@@ -182,15 +182,15 @@
   }
 
   async function btn_load_click() {
-    const projectJson = await window_api.invoke("load-project");
-    if (projectJson != null) {
-      load_project(projectJson);
+    const loadedProject = await window_api.invoke("load-project");
+    if (loadedProject != null) {
+      load_project(loadedProject);
     }
     //jsonfileinput.click(); // For web version
   }
 
   async function btn_save_click() {
-    if (await window_api.invoke("save-project", JSON.stringify(project))) {
+    if (await window_api.invoke("save-project", $state.snapshot(project))) {
       alert_visible = true;
 
       setTimeout(function () {
@@ -226,7 +226,7 @@
         reader.onload = function (load_event) {
           if (load_event.target !== null) {
             const res = load_event.target.result as string;
-            load_project(res);
+            load_project(JSON.parse(res));
           }
         };
 
@@ -266,8 +266,7 @@
     projectSettings: ProjectSettings
   ) {
     project.settings = projectSettings;
-    generalSettings = generalSettings;
-    window_api.send("save-settings", { settings: generalSettings });
+    window_api.send("save-settings", $state.snapshot(generalSettings));
   }
 
   function chatgptRunAll() {
@@ -484,15 +483,9 @@
     }
   }
 
-  function load_project(json_str: string) {
-    // First clear everything
-    project = _.cloneDeep(defaultProject);
-
-    // Introduce a small delay so that everything will load properly (incl. lines)
-    setTimeout(function () {
-      project = JSON.parse(json_str);
-      project.blocks = project.blocks;
-    }, 500);
+  function load_project(loadedProject: Project) {
+    project = _.cloneDeep({ ...defaultProject, ...loadedProject });
+    add_start_location();
   }
 
   function run_all() {

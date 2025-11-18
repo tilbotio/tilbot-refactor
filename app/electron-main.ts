@@ -8,7 +8,11 @@ import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { CsvData } from "../common/csvdata.ts";
 import { networkInterfaces } from "os";
-import { defaultGeneralSettings } from "../common/project/types.ts";
+import {
+  defaultGeneralSettings,
+  type GeneralSettings,
+  type Project,
+} from "../common/project/types.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -136,7 +140,7 @@ function createWindow() {
     }
   );
 
-  ipcMain.handle("load-project", async (event): Promise<string | null> => {
+  ipcMain.handle("load-project", async (event): Promise<Project | null> => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ["openFile"],
       filters: [
@@ -178,7 +182,7 @@ function createWindow() {
       // @TODO: something with additional files like avatar, data files, etc.
     }
 
-    return projectJson;
+    return projectJson == null ? null : JSON.parse(projectJson);
   });
 
   ipcMain.handle(
@@ -232,30 +236,36 @@ function createWindow() {
     }
   });
 
-  ipcMain.handle("load-settings", async (event, params) => {
-    const p = app.getPath("userData");
+  ipcMain.handle(
+    "load-settings",
+    async (
+      event,
+      params
+    ): Promise<{ generalSettings: GeneralSettings; path: string }> => {
+      const p = app.getPath("userData");
 
-    let generalSettings = "";
+      let generalSettings = defaultGeneralSettings;
 
-    try {
-      generalSettings = await readFile(`${p}/settings.json`, "utf8");
-      generalSettings = JSON.stringify(
-        Object.assign(JSON.parse(generalSettings), defaultGeneralSettings)
-      );
-    } catch (e: any) {
-      if (e.code !== "ENOENT") {
-        throw e;
+      try {
+        const fileData = await readFile(`${p}/settings.json`, "utf8");
+        generalSettings = {
+          ...JSON.parse(fileData),
+          ...defaultGeneralSettings,
+        };
+      } catch (e: any) {
+        if (e.code !== "ENOENT") {
+          throw e;
+        }
       }
-      generalSettings = JSON.stringify(defaultGeneralSettings);
+
+      return { generalSettings, path: `${p}/currentproject` };
     }
+  );
 
-    return { generalSettings, path: `${p}/currentproject` };
-  });
-
-  ipcMain.on("save-settings", (event, params) => {
+  ipcMain.on("save-settings", (event, settings: GeneralSettings) => {
     const p = app.getPath("userData");
 
-    fs.writeFileSync(p + "/settings.json", JSON.stringify(params.settings));
+    fs.writeFileSync(`${p}/settings.json`, JSON.stringify(settings));
   });
 
   ipcMain.on("do-delete-avatar", (event, fname) => {
@@ -269,7 +279,7 @@ function createWindow() {
     // @TODO: Should we send confirmation that it has been deleted?
   });
 
-  ipcMain.handle("save-project", async (event, projectJson) => {
+  ipcMain.handle("save-project", async (event, project: Project) => {
     const { canceled, filePath } = await dialog.showSaveDialog({
       filters: [
         {
@@ -283,9 +293,8 @@ function createWindow() {
       const p = app.getPath("userData");
 
       const zip = new AdmZip();
-      zip.addFile("project.json", Buffer.from(projectJson));
+      zip.addFile("project.json", Buffer.from(JSON.stringify(project)));
 
-      const project = JSON.parse(projectJson);
       for (const variable of project.variables) {
         if (variable.type == "csv") {
           zip.addLocalFile(

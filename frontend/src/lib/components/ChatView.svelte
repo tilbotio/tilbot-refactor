@@ -1,27 +1,27 @@
 <script lang="ts">
   import ChatHeader from "./ChatHeader.svelte";
   import BarcodeScanner from "./BarcodeScanner.svelte";
+  import type { ProjectControllerInterface } from "../../../../common/projectcontroller/types";
+  import type { ChatOutput } from "$lib/classes/ChatOutput.svelte";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
-  import { getContext, tick } from "svelte";
-  import MessageList from "./ChatMessageList.svelte";
+  import type { ProjectSettings } from "../../../../common/project/types";
   import type {
     CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
-    Message,
   } from "$lib/types/types";
+  import { getContext, tick } from "svelte";
+  import MessageList from "./ChatMessageList.svelte";
   import InputArea from "./InputArea.svelte";
-  import { ChatOutput } from "../classes/ChatOutput.svelte";
-  import { RemoteProjectController } from "../../../../common/projectcontroller/remote";
-  import type { ProjectSettings } from "../../../../common/project/types";
+
+  type Props = {
+    projectController: ProjectControllerInterface<ChatOutput>;
+  };
+
+  const { projectController }: Props = $props();
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
-
-  const chatOutput = new ChatOutput(settingsContext, runtimeContext);
-  const projectController = new RemoteProjectController(chatOutput);
-
-  chatOutput.projectController = projectController;
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");
