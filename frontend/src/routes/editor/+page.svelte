@@ -792,13 +792,13 @@
     >
       <div
         class="relative"
-        style:width="{project.canvas_width} px"
-        style:height="{project.canvas_height} px"
+        style:width="{project.canvas_width}px"
+        style:height="{project.canvas_height}px"
       >
         <svg
           class="absolute pointer-events-none z-40"
-          style:width="{project.canvas_width} px"
-          style:height="{project.canvas_height} px"
+          style:width="{project.canvas_width}px"
+          style:height="{project.canvas_height}px"
         >
           {#snippet line(id: string, cid: number, target: number)}
             {@const source = line_locations[id].connectors[cid]}
