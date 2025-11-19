@@ -22,7 +22,7 @@ services:
       test: curl -f localhost:5173 || exit 1
       interval: 10s
       timeout: 2s
-      retries: 20      
+      retries: 20
     command: ["npm", "run", "dev-vite"]
 
   backend:
@@ -32,7 +32,7 @@ services:
       npm-ci:
         condition: service_completed_successfully
       mongo:
-        condition: service_healthy        
+        condition: service_healthy
     ports:
     - 8000:8000
     restart: unless-stopped
@@ -45,7 +45,10 @@ services:
       test: curl -f localhost:8000/api/admin_account_exists || exit 1
       interval: 10s
       timeout: 2s
-      retries: 20      
+      retries: 20
+    depends_on:
+      mongo:
+        condition: service_healthy
     command: ["npm", "run", "start"]
 
   mongo:
@@ -59,7 +62,7 @@ services:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
       timeout: 2s
-      retries: 20      
+      retries: 20
     volumes:
     - mongodb:/data/db
 
@@ -67,18 +70,20 @@ services:
     profiles:
       - testing
     build:
-      dockerfile: ./Dockerfile-tests
-    working_dir: /home/node
+      context: .
+      dockerfile: Dockerfile-tests
     depends_on:
       frontend:
         condition: service_healthy
       backend:
         condition: service_healthy
+      npm-ci:
+        condition: service_completed_successfully
+    environment:
+    - FRONTEND_ADDRESS=frontend
     volumes:
     - .:/home/node
-    environment:
-      - FRONTEND_ADDRESS=frontend
-    command: "npm run test-integration"
+    command: ["sh", "-exc", "npx playwright install; npm run test-integration"]
 
 volumes:
   mongodb:

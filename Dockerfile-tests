@@ -1,8 +1,8 @@
 FROM node:latest
 
 USER root
-WORKDIR /home/node
 RUN npx playwright install-deps
+WORKDIR /home/node
 
 CMD ["bash"]
 
