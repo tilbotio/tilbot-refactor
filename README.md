@@ -23,7 +23,10 @@ Note that the integration tests expect a clean environment (e.g., empty MongoDB)
 To set this up, either ensure a clean DB (bare metal), or (recommended) temporarily launch a Docker environment with a separate project name:
 
 ```sh
-docker-compose -p tilbot-test up --build
+docker-compose down -t 0 --remove-orphans
+docker-compose -p tilbot-test down -t 0 -v --remove-orphans
+docker-compose -p tilbot-test build
+docker-compose -p tilbot-test run tests
 ```
 
 Integration tests can be executed using `npm run test-integration` or `npm run test-integration-ui`.
@@ -31,7 +34,7 @@ Integration tests can be executed using `npm run test-integration` or `npm run t
 To clear the Docker environment and DB volume after testing has completed, you can use:
 
 ```sh
-docker-compose -p tilbot-test down -v
+docker-compose -p tilbot-test down -t 0 -v --remove-orphans
 ```
 
 You can also run the test suite as part of an entire Docker environment by running:
@@ -43,5 +46,5 @@ docker-compose -p tilbot-test --profile testing up --build
 And when tests are finished:
 
 ```sh
-docker-compose -p tilbot-test --profile testing down -v
+docker-compose -p tilbot-test --profile testing down -t 0 -v --remove-orphans
 ```
