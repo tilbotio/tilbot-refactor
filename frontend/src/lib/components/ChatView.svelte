@@ -9,6 +9,7 @@
     CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
+    Message
   } from "$lib/types/types";
   import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
@@ -22,6 +23,7 @@
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
+  const messages: Message[] = getContext("messagesContext")
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");
@@ -30,7 +32,7 @@
   let scrollContainer: HTMLDivElement;
 
   $effect(() => {
-    if (isTypingIndicatorActive || projectController.output.messages.length) {
+    if (isTypingIndicatorActive || messages.length) {
       (async () => {
         await tick();
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
@@ -125,7 +127,6 @@
     class="w-full h-full flex-1 overflow-y-scroll py-2"
   >
     <MessageList
-      messages={projectController.output.messages}
       {isTypingIndicatorActive}
       avatar_file_sm={settingsContext.avatar_file_sm}
     />
