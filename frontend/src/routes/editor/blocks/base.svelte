@@ -68,7 +68,6 @@
   });
 
   onDestroy(() => {
-    console.log("Boom!");
     lineLocation = undefined as any;
   });
 
