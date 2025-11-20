@@ -485,7 +485,6 @@
 
   function load_project(loadedProject: Project) {
     project = _.cloneDeep({ ...defaultProject, ...loadedProject });
-    add_start_location();
   }
 
   function run_all() {
