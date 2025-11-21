@@ -1,8 +1,16 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+  import type { ProjectBlock } from "../../../../common/project/types";
+
   let draggable = $state() as HTMLDivElement;
   let isDragging: boolean = false;
 
-  const { children, parent, block } = $props();
+  const {
+    children,
+    parent,
+    block,
+  }: { children: Snippet<[]>; parent: HTMLElement; block: ProjectBlock } =
+    $props();
 
   const noDragHandle = $derived(
     draggable ? draggable.getElementsByClassName("no-drag-handle") : []
@@ -28,13 +36,11 @@
   function mouseMove(e: MouseEvent) {
     if (isDragging) {
       block.x =
-        Math.round(
-          (e.x - draggable.offsetWidth / 2 + parent.scrollLeft) / 20
-        ) * 20;
+        Math.round((e.x - draggable.offsetWidth / 2 + parent.scrollLeft) / 20) *
+        20;
       block.y =
-        Math.round(
-          (e.y - draggable.offsetHeight / 2 + parent.scrollTop) / 20
-        ) * 20;
+        Math.round((e.y - draggable.offsetHeight / 2 + parent.scrollTop) / 20) *
+        20;
     }
   }
 </script>
