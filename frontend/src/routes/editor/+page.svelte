@@ -10,7 +10,7 @@
     GeneralSettings,
   } from "../../../../common/project/types";
   import { defaultProject } from "../../../../common/project/types";
-  import { setOrDelete } from "../../../../common/svelte-utils";
+  import { setOrDelete } from "$lib/utils/functions";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import ChatGPT from "./chatgpt.svelte";

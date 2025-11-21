@@ -3,7 +3,7 @@
   import { Bolt, Pencil, Trash } from "svelte-heros-v2";
   import ConnectorPad from "./components/connectorpad.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
-  import { setOrDelete } from "../../../../../common/svelte-utils";
+  import { setOrDelete } from "$lib/utils/functions";
 
   export type BlockProps = {
     blockId: string;
