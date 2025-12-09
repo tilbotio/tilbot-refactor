@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SvelteComponent, onMount } from "svelte";
+  import { onMount } from "svelte";
   import {
     ArrowDownTray,
     ArrowLeftEndOnRectangle,
@@ -15,23 +15,23 @@
   } from "svelte-heros-v2";
   import NewUser from "./newuser.svelte";
 
-  let data: any = {};
-  let loaded = false;
-  let pass_error = false;
-  let pass_error_txt = "";
-  let pass_success = false;
+  let data: any = $state({});
+  let loaded = $state(false);
+  let pass_error = $state(false);
+  let pass_error_txt = $state("");
+  let pass_success = $state(false);
 
-  let settings_error = false;
-  let settings_error_txt = "";
-  let settings_success = false;
+  let settings_error = $state(false);
+  let settings_error_txt = $state("");
+  let settings_success = $state(false);
 
-  let newuser_window: SvelteComponent;
-  let toggle_users: HTMLInputElement;
-  let toggle_projects: HTMLInputElement;
-  let toggle_settings: HTMLInputElement;
-  let import_file_upload: HTMLInputElement;
-  let import_file: any;
-  let selected_project_id: string;
+  let newuser_window = $state() as NewUser;
+  let toggle_users = $state() as HTMLInputElement;
+  let toggle_projects = $state() as HTMLInputElement;
+  let toggle_settings = $state() as HTMLInputElement;
+  let import_file_upload = $state() as HTMLInputElement;
+  let import_file = $state() as FileList;
+  let selected_project_id = $state() as string;
 
   $effect(() => {
     if (import_file && import_file[0]) {
@@ -99,8 +99,7 @@
       if (txt == "NOT_LOGGED_IN") {
         location.replace("/login");
       } else {
-        let json = JSON.parse(txt);
-        data = json;
+        data = JSON.parse(txt);
         // console.log(json);
         loaded = true;
 
@@ -132,6 +131,8 @@
   }
 
   async function update_pass(e: any) {
+    e.preventDefault();
+
     pass_error = false;
     // FIXME: maybe initialize pass_success too?
 
@@ -191,12 +192,6 @@
       console.log(txt);
     } catch (err) {
       console.log(err);
-    }
-  }
-
-  function handleNewUserMessage(e: any) {
-    if (e.detail.event == "load_data") {
-      load_data();
     }
   }
 
@@ -300,10 +295,7 @@
   }
 </script>
 
-<!-- @migration-task Error while migrating Svelte code: `<th>` cannot be a child of `<thead>`. `<thead>` only allows these children: `<tr>`, `<style>`, `<script>`, `<template>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
-https://svelte.dev/e/node_invalid_placement -->
-<NewUser bind:newuserwindow={newuser_window} on:message={handleNewUserMessage}
-></NewUser>
+<NewUser bind:this={newuser_window} onUserCreated={load_data} />
 {#if loaded}
   <div>
     <div class="w-1/4 h-24 float-left">
@@ -319,7 +311,7 @@ https://svelte.dev/e/node_invalid_placement -->
     </div>
 
     <div class="h-24 mt-6 mr-12 float-right">
-      <button class="btn gap-2" on:click={logout}>
+      <button class="btn gap-2" onclick={logout}>
         <ArrowLeftEndOnRectangle class="w-5 h-5 float-left" />
         Log out
       </button>
@@ -354,44 +346,44 @@ https://svelte.dev/e/node_invalid_placement -->
           </div>
         {/if}
 
-        <form class="w-1/4" on:submit|preventDefault={update_pass}>
+        <form class="w-1/4" onsubmit={update_pass}>
           <div class="form-control mb-6">
             <label class="label">
               <span class="label-text">Old password</span>
+              <input
+                name="oldpass"
+                id="txt_old_pass"
+                type="password"
+                placeholder="Old password"
+                class="input input-bordered"
+              />
             </label>
-            <input
-              name="oldpass"
-              id="txt_old_pass"
-              type="password"
-              placeholder="Old password"
-              class="input input-bordered"
-            />
           </div>
           <div class="form-control">
             <label class="label">
               <span class="label-text">New password</span>
+              <input
+                name="newpass"
+                id="txt_new_pass"
+                type="password"
+                placeholder="New password"
+                class="input input-bordered"
+              />
             </label>
-            <input
-              name="newpass"
-              id="txt_new_pass"
-              type="password"
-              placeholder="New password"
-              class="input input-bordered"
-            />
           </div>
           <div class="form-control">
             <label class="label">
               <span class="label-text"
                 >New password (again, just to be sure)</span
               >
+              <input
+                name="newpass2"
+                id="txt_new_pass2"
+                type="password"
+                placeholder="New password (again)"
+                class="input input-bordered"
+              />
             </label>
-            <input
-              name="newpass2"
-              id="txt_new_pass2"
-              type="password"
-              placeholder="New password (again)"
-              class="input input-bordered"
-            />
           </div>
           <div class="form-control mt-6">
             <button
@@ -435,7 +427,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         class="toggle"
                         data-username={u.username}
                         bind:checked={u.active}
-                        on:change={set_user_active}
+                        onchange={set_user_active}
                       /></td
                     >
                   </tr>
@@ -447,7 +439,7 @@ https://svelte.dev/e/node_invalid_placement -->
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                on:click={newuser_window.show()}>+ Add new user</button
+                onclick={() => { newuser_window.show() }}>+ Add new user</button
               >
             </div>
           </div>
@@ -491,7 +483,9 @@ https://svelte.dev/e/node_invalid_placement -->
                     <th>{p.name}</th>
                     <td class="text-center">
                       <GlobeAlt
-                        on:click={p.status ? view_bot(p.id) : undefined}
+                        onclick={() => {
+                          if (p.status) view_bot(p.id);
+                        }}
                         color={p.status ? "currentColor" : "#e8e8e8"}
                         class="w-6 h-6 inline-block {p.status
                           ? 'cursor-pointer'
@@ -505,19 +499,21 @@ https://svelte.dev/e/node_invalid_placement -->
                         data-id={p.id}
                         data-status={p.status}
                         bind:checked={p.status}
-                        on:change={toggle_project_running}
+                        onchange={toggle_project_running}
                       />
                     </td>
                     <td class="text-center">
                       <ArrowDownTray
-                        on:click={import_project}
+                        onclick={import_project}
                         data-id={p.id}
                         class="w-6 h-6 inline-block cursor-pointer"
                       />
                     </td>
                     <td class="text-center">
                       <DocumentArrowDown
-                        on:click={get_logs(p.id)}
+                        onclick={() => {
+                          get_logs(p.id);
+                        }}
                         class="w-6 h-6 inline-block cursor-pointer"
                       />
                     </td>
@@ -530,7 +526,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         </td> -->
                     <td class="text-center">
                       <Trash
-                        on:click={set_project_inactive}
+                        onclick={set_project_inactive}
                         data-id={p.id}
                         data-name={p.name}
                         class="w-6 h-6 inline-block cursor-pointer"
@@ -545,7 +541,7 @@ https://svelte.dev/e/node_invalid_placement -->
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                on:click={new_project}>+ New project</button
+                onclick={new_project}>+ New project</button
               >
             </div>
           </div>
@@ -699,7 +695,7 @@ https://svelte.dev/e/node_invalid_placement -->
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                on:click={save_settings}>Save settings</button
+                onclick={save_settings}>Save settings</button
               >
             </div>
           </div>

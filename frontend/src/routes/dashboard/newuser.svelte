@@ -1,20 +1,17 @@
 <script lang="ts">
   import { XCircle } from "svelte-heros-v2";
-  import { createEventDispatcher } from "svelte";
 
-  const dispatch = createEventDispatcher();
+  const { onUserCreated } = $props();
 
-  let toggle: HTMLElement = $state();
+  let toggle = $state() as HTMLElement;
   let error: string = $state("");
 
   let user: any = $state({});
 
-  export const newuserwindow = {
-    show() {
-      user = {};
-      toggle.click();
-    },
-  };
+  export function show() {
+    user = {};
+    toggle.click();
+  }
 
   function cancel() {
     toggle.click();
@@ -32,9 +29,7 @@
       });
       const txt = await response.text();
       if (txt == "OK") {
-        dispatch("message", {
-          event: "load_data",
-        });
+        onUserCreated();
         toggle.click();
       } else if (txt == "NOT_LOGGED_IN") {
         location.replace("/login");
