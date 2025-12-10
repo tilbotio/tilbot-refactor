@@ -48,11 +48,13 @@
 </script>
 
 <div
-  class="card w-64 bg-slate-100 shadow-lg transition-transform indicator {selected
-    ? 'scale-110 z-50'
-    : ''}"
+  class={[
+    "card w-64 bg-slate-100 shadow-lg transition-transform indicator",
+    { "scale-110 z-50": selected },
+  ]}
   id="block_{blockId}"
   onclick={selectBlock}
+  role="none"
 >
   <span
     class="indicator-item indicator-middle indicator-start badge z-0"
