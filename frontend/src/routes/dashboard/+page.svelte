@@ -96,11 +96,13 @@
         credentials: "include",
       });
       const txt = await response.text();
+      if (!response.ok) {
+        throw new Error(txt);
+      }
       if (txt == "NOT_LOGGED_IN") {
         location.replace("/login");
       } else {
         data = JSON.parse(txt);
-        // console.log(json);
         loaded = true;
 
         setTimeout(function () {
@@ -439,7 +441,9 @@
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                onclick={() => { newuser_window.show() }}>+ Add new user</button
+                onclick={() => {
+                  newuser_window.show();
+                }}>+ Add new user</button
               >
             </div>
           </div>
