@@ -2,11 +2,13 @@ import type { ProjectControllerLookupInterface } from "../../../../common/projec
 
 export class ChatLookup implements ProjectControllerLookupInterface {
     async cell(db: string, col: string, val: string): Promise<Object[] | null> {
-        return await null;        
+        // Not used in the chatinterface
+        return null     
     }
 
     async random(db: string): Promise<Object | null> {
-        return await null;
+        // Not used in the chatinterface
+        return null;
     }
 
     async variation(content: string, prompt: string, memory: any): Promise<string> {
