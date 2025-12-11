@@ -7,6 +7,7 @@
 
   let {
     block,
+    children,
     editor_main,
     mounted = () => {},
     dragStart = () => {},
@@ -75,8 +76,6 @@
   }
 </script>
 
-<!-- @migration-task Error while migrating Svelte code: Unexpected token
-https://svelte.dev/e/js_parse_error -->
 <div
   bind:this={draggable}
   style="left: {block.x}px; top: {block.y}px"
@@ -85,6 +84,7 @@ https://svelte.dev/e/js_parse_error -->
   onmousemove={mouseMove}
   onmouseleave={mouseMove}
   class="select-none absolute"
+  role="none"
 >
-  <slot></slot>
+  {@render children()}
 </div>
