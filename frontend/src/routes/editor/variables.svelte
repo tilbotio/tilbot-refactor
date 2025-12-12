@@ -46,9 +46,10 @@
     currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
   }
 
-  function reset() {
+  function close() {
     selectedVariable = null;
     currentCSV = null;
+    toggle.click();
   }
 </script>
 
@@ -65,8 +66,8 @@
       class="btn btn-sm btn-circle absolute right-2 top-2"
       role="button"
       tabindex="0"
-      onclick={reset}
-      onkeyup={reset}>✕</a
+      onclick={close}
+      onkeyup={close}>✕</a
     >
     <div class="flex w-full h-full">
       <div class="w-64">
