@@ -1,6 +1,5 @@
 <script lang="ts">
   import _ from "lodash";
-  import { page } from "$app/stores";
   import { onMount, type Component } from "svelte";
   import type {
     Project,
@@ -11,6 +10,7 @@
     GeneralSettings,
   } from "../../../../common/project/types";
   import { defaultProject } from "../../../../common/project/types";
+  import { setOrDelete } from "$lib/utils/functions";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import ChatGPT from "./chatgpt.svelte";
@@ -40,14 +40,14 @@
     CheckCircle,
   } from "svelte-heros-v2";
 
-  const block_components = {
+  const blockComponentTypes = {
     Auto: AutoBlock,
     MC: MCBlock,
     Text: TextBlock,
     Trigger: TriggerBlock,
   };
 
-  const block_popup_components = {
+  const blockPopupComponentTypes = {
     Auto: AutoBlockPopup,
     MC: MCBlockPopup,
     Text: TextBlockPopup,
@@ -57,7 +57,6 @@
   let editor_main: HTMLElement = $state(null) as any;
   let jsonfileinput: HTMLElement = null as any;
   let simulator: HTMLIFrameElement = null as any;
-  let start: HTMLElement = $state(null as any);
   let variables_window: any = $state();
   let settings_window: any = $state();
 
@@ -66,20 +65,16 @@
   let modal_launch = $state() as HTMLInputElement;
   let modal_edit = $state() as HTMLInputElement;
 
-  let selectedBlockId: number | null = $state(null);
+  let selectedBlockId: string | null = $state(null);
   let edit_block: ProjectBlock | null = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
-  let line_locations: {
+  const lineLocations: {
     [key: string]: {
-      x: number;
-      y: number;
-      connectors: { x: number; y: number }[];
+      in?: { x: number; y: number };
+      out: { x: number; y: number }[];
     };
   } = $state({});
-
-  let num_draggable_loaded = 0;
-  let is_loading = false;
 
   // Initialization will happen in onMount(), we don't know the value yet and
   // there's no sane default we can give, so leave it undefined for now.
@@ -92,7 +87,7 @@
   // For creating lines
   let dragging_connector = $state(
     {} as {
-      block_id: number | null;
+      block_id: string | null;
       connector_id: number | null;
       mouseX: number;
       mouseY: number;
@@ -114,8 +109,6 @@
 
     // Set a property on the window so that the simulator knows it's part of the editor.
     window.isTilbotEditor = true;
-
-    add_start_location();
 
     is_electron =
       typeof navigator === "object" &&
@@ -151,15 +144,6 @@
     project.canvas_height = screen.height * 1.5;
   });
 
-  function add_start_location() {
-    const rect = start.getBoundingClientRect();
-    const xy = {
-      x: rect.left + rect.width / 2 + editor_main.scrollLeft,
-      y: rect.bottom + editor_main.scrollTop,
-    };
-    line_locations["-1"] = { ...xy, connectors: [xy] };
-  }
-
   function new_block(type: ProjectBlockType) {
     // @TODO: take into account current level / groupblock
     const connectors: ProjectConnector[] = [];
@@ -193,7 +177,7 @@
     deselect_all();
 
     setTimeout(function () {
-      selectedBlockId = current_block_id;
+      selectedBlockId = `${current_block_id}`;
     }, 50);
   }
 
@@ -251,124 +235,31 @@
     }
   }
 
-  function registerBlock(id: number, block: ProjectBlock) {
-    const scrollLeft = editor_main.scrollLeft;
-    const scrollTop = editor_main.scrollTop;
+  $effect(() => {
+    // See if we need to make the canvas smaller or larger
+    const max = { x: 0, y: 0 };
+    const blocks = project.blocks ?? {};
 
-    const block_rect = document
-      .getElementById(`block_${id}_in`)!
-      .getBoundingClientRect();
+    for (const [id, lineLocation] of Object.entries(lineLocations)) {
+      const padCoords = lineLocation.out;
+      const block = blocks[id];
+      const lastPadCoords =
+        padCoords?.length > 0
+          ? padCoords[padCoords.length - 1]
+          : { x: block.x! + 200, y: block.y! + 200 };
 
-    function center(rect: DOMRect) {
-      return {
-        x: rect.left + rect.width / 2 + scrollLeft,
-        y: rect.top + rect.height / 2 + scrollTop,
-      };
-    }
-
-    const connectors: any[] = [];
-
-    for (const cid in block.connectors) {
-      const connector_rect = document
-        .getElementById(`block_${id}_c_${cid}`)!
-        .getBoundingClientRect();
-      connectors[cid] = center(connector_rect);
-    }
-
-    line_locations[id] = { ...center(block_rect), connectors };
-  }
-
-  function draggableMounted(id: number) {
-    const blocks = project.blocks;
-    if (is_loading) {
-      num_draggable_loaded++;
-
-      const blockEntries = Object.entries(blocks) as [string, any][];
-      if (num_draggable_loaded == blockEntries.length) {
-        is_loading = false;
-
-        // Build the look-up table for connecting lines.
-        for (const [id, block] of blockEntries) {
-          registerBlock(parseInt(id), block);
-        }
+      if (max.x < lastPadCoords.x) {
+        max.x = lastPadCoords.x;
       }
-    } else {
-      // Just add the one new entry in the collection
-      registerBlock(id, blocks[id]);
-    }
-  }
 
-  function draggableDragStart() {
-    deselect_all();
-  }
-
-  function draggableDragDrop() {
-    // See if we need to make the canvas smaller
-    let max_x = 0;
-    let max_y = 0;
-
-    for (const value of Object.values(line_locations)) {
-      console.log(JSON.stringify(value));
-      const connectors = value.connectors;
-      if (connectors.length == 0) {
-        if (value.x + 200 > max_x) {
-          max_x = value.x + 200;
-        }
-
-        if (value.y + 200 > max_y) {
-          max_y = value.y + 200;
-        }
-      } else {
-        const lastConnector = connectors[connectors.length - 1];
-        if (lastConnector.x > max_x) {
-          max_x = value.x;
-        }
-
-        if (lastConnector.y > max_y) {
-          max_y = value.y;
-        }
+      if (max.y < lastPadCoords.y) {
+        max.y = lastPadCoords.y;
       }
     }
 
-    project.canvas_width = Math.max(screen.width * 1.5, max_x + 350);
-    project.canvas_height = Math.max(screen.height * 1.5, max_y + 200);
-  }
-
-  function draggableDrag(id: number) {
-    const blocks = project.blocks;
-    registerBlock(id, blocks[id]);
-
-    // Update look-up table
-    const block_rect = document
-      .getElementById(`block_${id}_in`)!
-      .getBoundingClientRect();
-
-    const obj_left = block_rect.left + block_rect.width / 2;
-    const obj_top = block_rect.top + block_rect.height / 2;
-
-    const scrollLeft = editor_main.scrollLeft;
-    const scrollTop = editor_main.scrollTop;
-    const firstChild = editor_main.firstChild as HTMLElement;
-
-    if (editor_main.offsetHeight - obj_top < 100) {
-      if (firstChild.offsetHeight - (obj_top + scrollTop) < 100) {
-        project.canvas_height += 100;
-      }
-      editor_main.scrollTop += 30;
-    } else if (obj_top < 50 && scrollTop > 0) {
-      // @TODO: bind editor_main?
-      editor_main.scrollTop = scrollTop - 30;
-    }
-
-    if (editor_main.offsetWidth - obj_left < 200) {
-      if (firstChild.offsetWidth - (obj_left + scrollLeft) < 200) {
-        project.canvas_width += 100;
-      }
-      editor_main.scrollLeft = scrollLeft + 30;
-    } else if (obj_left < -50 && scrollLeft > 0) {
-      editor_main.scrollLeft = scrollLeft - 30;
-    }
-  }
+    project.canvas_width = Math.max(screen.width * 1.5, max.x + 350);
+    project.canvas_height = Math.max(screen.height * 1.5, max.y + 200);
+  });
 
   function saveSettings(
     generalSettings: GeneralSettings,
@@ -390,15 +281,6 @@
   }
 
   function saveBlock(block: ProjectBlock) {
-    // Remove the line_locations for the connectors in case some were deleted/moved
-    const blockConnectors = block.connectors;
-    const lineConnectors = line_locations[selectedBlockId!].connectors;
-    for (const key of lineConnectors.keys()) {
-      if (!(key in blockConnectors)) {
-        delete lineConnectors[key];
-      }
-    }
-
     project.blocks[selectedBlockId!] = block;
     edit_block = null;
     modal_edit.click();
@@ -409,30 +291,32 @@
     modal_edit.click();
   }
 
-  function editBlock(blockId: number) {
+  function editBlock(blockId: string) {
     edit_block = project.blocks[blockId];
     modal_edit.click();
   }
 
-  function removeBlock(blockId: number) {
+  function removeBlock(blockId: string) {
     deselect_all();
 
+    const blocks = project.blocks;
+    const blockIdInt = parseInt(blockId);
+
     // Delete any blocks connecting to this one
-    for (const block of Object.values(project.blocks)) {
+    for (const block of Object.values(blocks)) {
       for (const connector of block.connectors) {
         const targets = connector.targets;
-        const index = targets.indexOf(blockId);
+        const index = targets.indexOf(blockIdInt);
         if (index != -1) {
           targets.splice(index, 1);
         }
       }
     }
 
-    delete project.blocks[blockId];
-    delete line_locations[blockId];
+    delete blocks[blockId];
   }
 
-  function selectBlock(blockId: number) {
+  function selectBlock(blockId: string) {
     deselect_all();
     selectedBlockId = blockId;
   }
@@ -443,7 +327,7 @@
   }
 
   function deselect_all() {
-    selectedBlockId = 0;
+    selectedBlockId = null;
     const lines = document.getElementsByTagName("path");
 
     for (const line of lines) {
@@ -527,36 +411,36 @@
   }
 
   function editor_mousedown(e: MouseEvent) {
-    const target = e.target! as HTMLElement;
+    const target = e.target as HTMLElement;
+    if (!target) {
+      return;
+    }
+
     const { blockId, connectorId } = target.dataset;
 
     if (blockId == undefined) {
       return;
     }
-    const connectors = line_locations[blockId].connectors;
 
-    const blockIdInt = parseInt(blockId);
-    if (blockIdInt === -1) {
+    if (blockId === "-1") {
       // Only allow to connect something to the starting point if it is not already connected to something
       if (project.starting_block_id === -1) {
         deselect_all();
-        const connector = connectors[0];
         dragging_connector = {
-          block_id: -1,
+          block_id: blockId,
           connector_id: 0,
-          mouseX: connector.x,
-          mouseY: connector.y,
+          mouseX: e.clientX + editor_main.scrollLeft,
+          mouseY: e.clientY + editor_main.scrollTop,
         };
       }
     } else if (connectorId != undefined) {
       const connectorIdInt = parseInt(connectorId);
-      const connector = connectors[connectorIdInt];
       deselect_all();
       dragging_connector = {
-        block_id: blockIdInt,
+        block_id: blockId,
         connector_id: connectorIdInt,
-        mouseX: connector.x,
-        mouseY: connector.y,
+        mouseX: e.clientX + editor_main.scrollLeft,
+        mouseY: e.clientY + editor_main.scrollTop,
       };
     }
   }
@@ -566,6 +450,8 @@
     if (dragging_connector_block_id == null) {
       return;
     }
+
+    dragging_connector.block_id = null;
 
     const element = document.elementFromPoint(
       e.clientX,
@@ -582,7 +468,7 @@
 
     if (element.getAttribute("id") == `block_${blockId}_in`) {
       // Starting point
-      if (dragging_connector.block_id == -1) {
+      if (dragging_connector_block_id === "-1") {
         project.starting_block_id = parseInt(blockId);
       } else {
         const targets =
@@ -595,18 +481,10 @@
         }
       }
     }
-
-    dragging_connector.block_id = null;
   }
 
   function load_project(loadedProject: Project) {
-    // First clear everything
     project = _.cloneDeep({ ...defaultProject, ...loadedProject });
-    line_locations = {};
-    add_start_location();
-
-    is_loading = true;
-    num_draggable_loaded = 0;
   }
 
   function run_all() {
@@ -640,8 +518,8 @@
     if (contentWindow != null) {
       const project_copy = JSON.parse(JSON.stringify(project));
 
-      if (selectedBlockId !== 0) {
-        project_copy.starting_block_id = selectedBlockId;
+      if (selectedBlockId != null) {
+        project_copy.starting_block_id = parseInt(selectedBlockId);
       }
 
       window_api.send("load-project-db", project_copy);
@@ -670,7 +548,7 @@
   <div class="modal">
     <div class="modal-box relative max-w-4xl">
       {#if edit_block !== null}
-        {@const BlockPopupComponent = block_popup_components[edit_block.type]}
+        {@const BlockPopupComponent = blockPopupComponentTypes[edit_block.type]}
         <BlockPopupComponent
           block={edit_block}
           save={saveBlock}
@@ -717,7 +595,7 @@
           <a
             class="active:bg-tilbot-secondary-hardpink"
             onclick={action}
-            onkeyup={action}
+            onkeyup={() => {}}
             role="button"
             tabindex="0"
             aria-label={tip}><Icon class="w-6 h-6" /></a
@@ -801,60 +679,64 @@
           style:height="{project.canvas_height}px"
         >
           {#snippet line(id: string, cid: number, target: number)}
-            {@const source = line_locations[id].connectors[cid]}
-            {@const destination = line_locations[target]}
-            {@const x_offset = Math.abs(destination.x - source.x)}
-            <path
-              d="
-                M{source.x},{source.y}
-                L{source.x + x_offset * 0.05},{source.y}
-                C{source.x + x_offset * 0.5},{source.y}
-                 {destination.x - x_offset * 0.5},{destination.y}
-                 {destination.x - x_offset * 0.05},{destination.y}
-                L{destination.x},{destination.y}
-              "
-              stroke-width="2"
-              fill="none"
-              data-from-block={id}
-              data-from-connector={cid}
-              data-to-block={target}
-              onclick={line_clicked}
-              onkeyup={() => {}}
-              role="button"
-              tabindex="0"
-              class="pointer-events-auto stroke-tilbot-primary-300"
-            />
+            {@const source = lineLocations[id]?.out?.[cid]}
+            {@const destination = lineLocations[target]?.in}
+
+            {#if source && destination}
+              {@const x_offset = Math.abs(destination.x - source.x)}
+
+              <path
+                d="
+                  M{source.x},{source.y}
+                  L{source.x + x_offset * 0.05},{source.y}
+                  C{source.x + x_offset * 0.5},{source.y}
+                   {destination.x - x_offset * 0.5},{destination.y}
+                   {destination.x - x_offset * 0.05},{destination.y}
+                  L{destination.x},{destination.y}
+                "
+                stroke-width="2"
+                fill="none"
+                data-from-block={id}
+                data-from-connector={cid}
+                data-to-block={target}
+                onclick={line_clicked}
+                onkeyup={() => {}}
+                role="button"
+                tabindex="0"
+                class="pointer-events-auto stroke-tilbot-primary-300"
+              />
+            {/if}
           {/snippet}
 
-          {#if Object.entries(line_locations).length > 1}
-            {#each Object.entries(project.blocks) as [id, block]}
-              {#each block.connectors.entries() as [cid, connector]}
-                {#each connector.targets as target}
-                  {@render line(id, cid, target)}
-                {/each}
+          {#each Object.entries(project.blocks ?? {}) as [id, block] (id)}
+            {#each block.connectors.entries() as [cid, connector] (cid)}
+              {#each connector.targets as target (target)}
+                {@render line(id, cid, target)}
               {/each}
             {/each}
+          {/each}
 
-            {#if project.starting_block_id !== -1}
-              {@render line("-1", 0, project.starting_block_id)}
-            {/if}
+          {#if project.starting_block_id !== -1}
+            {@render line("-1", 0, project.starting_block_id)}
           {/if}
 
           <!-- For creating new lines -->
           {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined}
-            {@const line_connector =
-              line_locations[dragging_connector.block_id].connectors[
+            {@const connector =
+              lineLocations[dragging_connector.block_id]?.out?.[
                 dragging_connector.connector_id
               ]}
-            <line
-              class="z-50"
-              x1={line_connector.x}
-              y1={line_connector.y}
-              x2={dragging_connector.mouseX}
-              y2={dragging_connector.mouseY}
-              stroke="black"
-              stroke-width="2"
-            />
+            {#if connector}
+              <line
+                class="z-50"
+                x1={connector.x}
+                y1={connector.y}
+                x2={dragging_connector.mouseX}
+                y2={dragging_connector.mouseY}
+                stroke="black"
+                stroke-width="2"
+              />
+            {/if}
           {/if}
         </svg>
 
@@ -868,38 +750,30 @@
           >
         </div>
 
-        <Start bind:el={start}></Start>
+        <Start
+          bind:lineLocation={
+            () => (lineLocations["-1"] ??= { out: [] }),
+            (value) => setOrDelete(lineLocations, "-1", value)
+          }
+        />
 
-        {#if project.blocks !== undefined}
-          {#each Object.entries(project.blocks) as [key, block]}
-            {@const blockId = parseInt(key)}
-            <Draggable
+        {#each Object.entries(project.blocks ?? {}) as [blockId, block] (blockId)}
+          <Draggable {block} parent={editor_main}>
+            {@const BlockComponent = blockComponentTypes[block.type]}
+            <BlockComponent
+              {blockId}
               {block}
-              {editor_main}
-              mounted={() => {
-                draggableMounted(blockId);
-              }}
-              dragStart={draggableDragStart}
-              dragDrop={draggableDragDrop}
-              drag={() => {
-                draggableDrag(blockId);
-              }}
-            >
-              {@const BlockComponent = block_components[block.type]}
-              <BlockComponent
-                {blockId}
-                {block}
-                selected={selectedBlockId === blockId}
-                edit={editBlock}
-                select={selectBlock}
-                remove={removeBlock}
-                connectorMounted={() => {
-                  registerBlock(blockId, block);
-                }}
-              />
-            </Draggable>
-          {/each}
-        {/if}
+              bind:lineLocation={
+                () => (lineLocations[blockId] ??= { out: [] }),
+                (value) => setOrDelete(lineLocations, blockId, value)
+              }
+              selected={selectedBlockId === blockId}
+              edit={editBlock}
+              select={() => selectBlock(blockId)}
+              remove={removeBlock}
+            />
+          </Draggable>
+        {/each}
       </div>
     </div>
 
