@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import Papa from "papaparse";
 
   let toggle: HTMLElement;
@@ -6,7 +7,11 @@
   let selectedVariable: number | null = $state(null);
   let currentCSV: any[][] | null = $state(null);
 
-  const window_api: any = (window as any).api;
+  let windowApi: any;
+
+  onMount(() => {
+    windowApi = (window as any).api;
+  });
 
   // @TODO: sort variables by name alphabetically
 
@@ -35,13 +40,13 @@
     const variable = variables[selectedVariable];
     const csvfile = variable.csvfile;
     if (csvfile !== undefined && variable.type == "csv") {
-      const csv = await window_api.invoke("get-csv", csvfile);
+      const csv = await windowApi.invoke("get-csv", csvfile);
       currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
     }
   }
 
   async function importCSV() {
-    const { filename, csv } = await window_api.invoke("load-csv");
+    const { filename, csv } = await windowApi.invoke("load-csv");
     variables[selectedVariable!].csvfile = filename;
     currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
   }
