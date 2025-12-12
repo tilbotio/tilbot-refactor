@@ -3,8 +3,8 @@
 
   let toggle: HTMLElement;
   let { variables = $bindable([]) } = $props();
-  let selected_variable: number = $state(-1);
-  let current_csv: any = $state();
+  let selectedVariable: number | null = $state(null);
+  let currentCSV: any[][] | null = $state(null);
 
   const window_api: any = (window as any).api;
 
@@ -14,65 +14,41 @@
     toggle.click();
   }
 
-  function new_variable() {
-    let exists = true;
+  function newVariable() {
     let count = 1;
-
-    while (exists) {
-      exists = false;
-      let name = "New variable";
-      if (count > 1) {
-        name += " " + count;
-      }
-
-      for (let i = 0; i < variables.length; i++) {
-        if (variables[i].name == name) {
-          exists = true;
-          break;
-        }
-      }
-
-      if (exists) {
-        count += 1;
-      }
-    }
-
     let name = "New variable";
-    if (count > 1) {
-      name += " " + count;
+
+    const existing = new Set(variables.map((variable) => variable.name));
+    while (existing.has(name)) {
+      name = `New variable ${++count}`;
     }
 
-    variables.push({
-      name: name,
-      type: "csv",
-    });
+    variables.push({ name: name, type: "csv" });
 
-    current_csv = undefined;
-    selected_variable = variables.length - 1;
+    currentCSV = null;
+    selectedVariable = variables.length - 1;
   }
 
-  async function variable_row_clicked(this: HTMLElement) {
-    current_csv = undefined;
-    selected_variable = parseInt(this.dataset.variableId!);
-
-    if (
-      variables[selected_variable].type == "csv" &&
-      variables[selected_variable].csvfile !== undefined
-    ) {
-      const csv = await window_api.invoke("get-csv", variables[selected_variable].csvfile);
-      current_csv = Papa.parse(csv, { delimiter: ";" }).data;
+  async function variableRowClicked(this: HTMLElement) {
+    currentCSV = null;
+    selectedVariable = parseInt(this.dataset.variableId!);
+    const variable = variables[selectedVariable];
+    const csvfile = variable.csvfile;
+    if (csvfile !== undefined && variable.type == "csv") {
+      const csv = await window_api.invoke("get-csv", csvfile);
+      currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
     }
   }
 
-  async function import_csv() {
+  async function importCSV() {
     const { filename, csv } = await window_api.invoke("load-csv");
-    variables[selected_variable].csvfile = filename;
-    current_csv = Papa.parse(csv, { delimiter: ";" }).data;
+    variables[selectedVariable!].csvfile = filename;
+    currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
   }
 
   function reset() {
-    selected_variable = -1;
-    current_csv = undefined;
+    selectedVariable = null;
+    currentCSV = null;
   }
 </script>
 
@@ -107,16 +83,16 @@
                 <tr class="hover">
                   <td
                     data-variable-id={i}
-                    class="cursor-pointer {selected_variable == i
+                    class="cursor-pointer {selectedVariable == i
                       ? 'bg-tilbot-primary-200'
                       : ''}"
-                    onclick={variable_row_clicked}>{variable.name}</td
+                    onclick={variableRowClicked}>{variable.name}</td
                   >
                 </tr>
               {/each}
               <tr>
                 <td>
-                  <button class="btn w-full" onclick={new_variable}
+                  <button class="btn w-full" onclick={newVariable}
                     >+ Variable</button
                   >
                 </td>
@@ -131,7 +107,7 @@
           <div class="flex w-full h-full justify-center items-center">
             No variables in project.
           </div>
-        {:else if selected_variable == -1}
+        {:else if selectedVariable == null}
           <div class="flex w-full h-full justify-center items-center">
             No variable selected.
           </div>
@@ -139,25 +115,25 @@
           <input
             type="text"
             class="input input-bordered w-full max-w-xs"
-            bind:value={variables[selected_variable].name}
+            bind:value={variables[selectedVariable].name}
           />
           <br /><br />
 
-          {#if current_csv !== undefined}
+          {#if currentCSV != null}
             <div class="overflow-x-auto">
               <table class="table table-compact w-full">
                 <thead>
                   <tr>
-                    {#each current_csv[0] as col, c}
+                    {#each currentCSV[0] as col}
                       <th>{col}</th>
                     {/each}
                   </tr>
                 </thead>
                 <tbody>
-                  {#each current_csv as line, l}
+                  {#each currentCSV as line, l}
                     {#if l > 0}
                       <tr>
-                        {#each line as col, c}
+                        {#each line as col}
                           <td>{col}</td>
                         {/each}
                       </tr>
@@ -168,7 +144,7 @@
             </div>
           {/if}
 
-          <button class="btn" onclick={import_csv}>Import CSV data</button>
+          <button class="btn" onclick={importCSV}>Import CSV data</button>
         {/if}
       </div>
     </div>

@@ -2,66 +2,56 @@
   import { onMount } from "svelte";
   import { InformationCircle, XCircle } from "svelte-heros-v2";
 
-  let error = $state(false);
-  let error_txt = $state("");
-  let info = $state(false);
-  let info_txt = $state("");
+  let error: string | null = $state(null);
+  let info: string | null = $state(null);
 
   onMount(async () => {
     // Check if an admin account exists, if not create one.
     try {
       const response = await fetch("/api/admin_account_exists");
-      const txt = await response.text();
-      if (txt == "CREATED") {
-        info_txt =
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      if (text === "CREATED") {
+        info =
           'No admin account was found, so I created it. Log in with username "admin", password "admin"';
-        info = true;
       }
     } catch (err) {
-      error_txt =
+      console.log(err);
+      error =
         "Unknown error occurred. Please contact your administrator and try again later.";
-      error = true;
     }
   });
 
-  async function login(e: any) {
+  async function login(e: Event) {
     e.preventDefault();
 
-    error = false;
-    info = false;
+    error = null;
+    info = null;
 
-    const formData = new FormData(e.target);
-
-    const data: any = {};
-
-    for (let field of formData) {
-      const [key, value] = field;
-      data[key] = value;
-    }
+    const data = Object.fromEntries(new FormData(e.target as HTMLFormElement));
 
     try {
       const response = await fetch("/api/login", {
         method: "post",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const txt = await response.text();
+      const text = await response.text();
       if (!response.ok) {
-        throw new Error(txt);
+        throw new Error(text);
       }
-      if (txt == "OK") {
+      if (text === "OK") {
         window.location.replace("/dashboard");
       } else {
-        error_txt = "Incorrect username or password.";
-        error = true;
+        error = "Incorrect username or password.";
+        console.log(text);
       }
     } catch (err) {
-      error_txt =
+      error =
         "Unknown error occurred. Please contact your administrator and try again later.";
-      error = true;
       console.log(err);
     }
   }
@@ -108,13 +98,13 @@
       {#if error}
         <div class="alert alert-error shadow-lg justify-start">
           <XCircle class="flex-shrink-0 h-6 w-6" />
-          <span>{error_txt}</span>
+          <span>{error}</span>
         </div>
       {/if}
       {#if info}
         <div class="alert alert-info shadow-lg justify-start">
           <InformationCircle class="shrink-0 w-6 h-6" />
-          <span>{info_txt}</span>
+          <span>{info}</span>
         </div>
       {/if}
     </div>

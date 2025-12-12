@@ -54,19 +54,19 @@
     Trigger: TriggerBlockPopup,
   };
 
-  let editor_main: HTMLElement = $state(null) as any;
-  let jsonfileinput: HTMLElement = null as any;
+  let editorContainer: HTMLElement = $state(null) as any;
+  let jsonFileInput: HTMLElement = null as any;
   let simulator: HTMLIFrameElement = null as any;
-  let variables_window: any = $state();
-  let settings_window: any = $state();
+  let variablesWindow: any = $state();
+  let settingsWindow: any = $state();
 
   let project: Project = $state(_.cloneDeep(defaultProject));
 
-  let modal_launch = $state() as HTMLInputElement;
-  let modal_edit = $state() as HTMLInputElement;
+  let launchModal = $state() as HTMLInputElement;
+  let editModal = $state() as HTMLInputElement;
 
   let selectedBlockId: string | null = $state(null);
-  let edit_block: ProjectBlock | null = $state(null);
+  let editingBlock: ProjectBlock | null = $state(null);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
   const lineLocations: {
@@ -80,15 +80,15 @@
   // there's no sane default we can give, so leave it undefined for now.
   // Setting "boolean | undefined" as the type is also not quite a good fit,
   // as this value should never be undefined during the normal lifetime.
-  let is_electron = $state() as boolean;
-  let local_ip = $state("");
-  let public_ip = $state("");
+  let isElectron = $state() as boolean;
+  let localIP = $state("");
+  let publicIP = $state("");
 
   // For creating lines
-  let dragging_connector = $state(
+  let draggingConnector = $state(
     {} as {
-      block_id: string | null;
-      connector_id: number | null;
+      blockId: string | null;
+      connectorId: number | null;
       mouseX: number;
       mouseY: number;
     }
@@ -96,32 +96,33 @@
 
   let generalSettings: { [key: string]: any } = $state({});
   let path = $state("");
-  let chatgpt_running = $state(false);
+  let chatGPTrunning = $state(false);
 
-  let alert_visible = $state(false);
+  let alertVisible = $state(false);
 
-  let btn_del_line_visible = $state(false);
+  let isLineDeleteButtonVisible = $state(false);
 
-  let window_api: any;
+  let windowAPI: any;
 
   onMount(() => {
-    window_api = (window as any)?.api;
+    windowAPI = (window as any)?.api;
 
     // Set a property on the window so that the simulator knows it's part of the editor.
     window.isTilbotEditor = true;
 
-    is_electron =
+    isElectron =
       typeof navigator === "object" &&
       typeof navigator.userAgent === "string" &&
       navigator.userAgent.indexOf("Electron") >= 0;
 
-    if (is_electron) {
+    if (isElectron) {
       // Hack to fix the simulator in Electron (specifically on OS X)
       simulator!.src = "index.html";
 
       (async () => {
         try {
-          ({ public_ip, local_ip } = await window_api.invoke("server-ip"));
+          ({ public_ip: publicIP, local_ip: localIP } =
+            await windowAPI.invoke("server-ip"));
         } catch (e) {
           console.log(`Error fetching server IP: ${e}`);
         }
@@ -129,8 +130,7 @@
 
       (async () => {
         try {
-          ({ generalSettings, path } =
-            await window_api.invoke("load-settings"));
+          ({ generalSettings, path } = await windowAPI.invoke("load-settings"));
         } catch (e) {
           console.log(`Error loading settings: ${e}`);
         }
@@ -144,89 +144,90 @@
     project.canvas_height = screen.height * 1.5;
   });
 
-  function new_block(type: ProjectBlockType) {
+  function newBlock(type: ProjectBlockType) {
     // @TODO: take into account current level / groupblock
     const connectors: ProjectConnector[] = [];
-    const current_block_id = project.current_block_id;
-    const current_block: ProjectBlock = (project.blocks[current_block_id] = {
+    const currentBlockId = project.current_block_id;
+    const currentBlock: ProjectBlock = (project.blocks[currentBlockId] = {
       type: type,
       name: `Block ${project.current_block_id}`,
       content: "",
-      x: editor_main.scrollLeft + screen.width * 0.35,
-      y: editor_main.scrollTop + screen.height * 0.4,
+      x: editorContainer.scrollLeft + screen.width * 0.35,
+      y: editorContainer.scrollTop + screen.height * 0.4,
       connectors,
     });
 
-    if (type == "Auto") {
+    if (type === "Auto") {
       connectors.push({
         type: "Basic",
         targets: [] as number[],
       });
-    } else if (type == "Text") {
+    } else if (type === "Text") {
       connectors.push({
         type: "Labeled",
         label: "[else]",
         targets: [],
       });
-    } else if (type == "Trigger") {
-      current_block.name = `Trigger ${project.current_block_id}`;
+    } else if (type === "Trigger") {
+      currentBlock.name = `Trigger ${project.current_block_id}`;
     }
 
     project.current_block_id++;
 
-    deselect_all();
+    deselectAll();
 
     setTimeout(function () {
-      selectedBlockId = `${current_block_id}`;
+      selectedBlockId = `${currentBlockId}`;
     }, 50);
   }
 
-  async function btn_load_click() {
-    const loadedProject = await window_api.invoke("load-project");
+  async function loadButtonClicked() {
+    const loadedProject = await windowAPI.invoke("load-project");
     if (loadedProject != null) {
-      load_project(loadedProject);
+      loadProject(loadedProject);
     }
     //jsonfileinput.click(); // For web version
   }
 
-  async function btn_save_click() {
-    if (await window_api.invoke("save-project", $state.snapshot(project))) {
-      alert_visible = true;
+  async function saveButtonClicked() {
+    if (await windowAPI.invoke("save-project", $state.snapshot(project))) {
+      alertVisible = true;
 
       setTimeout(function () {
-        alert_visible = false;
+        alertVisible = false;
       }, 3000);
     }
   }
 
-  function btn_variables_click() {
-    variables_window.show();
+  function variablesButtonClicked() {
+    variablesWindow.show();
   }
 
-  function btn_settings_click() {
-    settings_window.show();
+  function settingsButtonClicked() {
+    settingsWindow.show();
   }
 
-  function btn_launch_click() {
-    modal_launch.click();
-    window_api.send("open-server", JSON.stringify(project));
+  function launchButtonClicked() {
+    launchModal.click();
+    windowAPI.send("open-server", JSON.stringify(project));
   }
 
-  function btn_close_server_click() {
-    modal_launch.click();
-    window_api.send("close-server");
+  function closeServerButtonClicked() {
+    launchModal.click();
+    windowAPI.send("close-server");
   }
 
-  function import_project_file(event: Event) {
+  function importProjectFile(event: Event) {
     if (event.target !== null) {
       const tar = event.target as HTMLInputElement;
 
       if (tar.files !== null && tar.files[0] !== undefined) {
         const reader = new FileReader();
-        reader.onload = function (load_event) {
-          if (load_event.target !== null) {
-            const res = load_event.target.result as string;
-            load_project(JSON.parse(res));
+        reader.onload = function (loadEvent: ProgressEvent) {
+          const target = loadEvent.target as FileReader;
+          if (target !== null) {
+            const res = target.result as string;
+            loadProject(JSON.parse(res));
           }
         };
 
@@ -266,38 +267,38 @@
     projectSettings: ProjectSettings
   ) {
     project.settings = projectSettings;
-    window_api.send("save-settings", $state.snapshot(generalSettings));
+    windowAPI.send("save-settings", $state.snapshot(generalSettings));
   }
 
-  function chatgptRunAll() {
-    run_all();
-    chatgpt_running = true;
+  function chatGPTrunAll() {
+    runAll();
+    chatGPTrunning = true;
   }
 
-  function chatgptSendMessage(message: string) {
+  function chatGPTsendMessage(message: string) {
     setTimeout(function () {
-      send_chatgpt_message(message);
+      sendChatGPTmessage(message);
     }, 500);
   }
 
   function saveBlock(block: ProjectBlock) {
     project.blocks[selectedBlockId!] = block;
-    edit_block = null;
-    modal_edit.click();
+    editingBlock = null;
+    editModal.click();
   }
 
   function cancelBlock() {
-    edit_block = null;
-    modal_edit.click();
+    editingBlock = null;
+    editModal.click();
   }
 
   function editBlock(blockId: string) {
-    edit_block = project.blocks[blockId];
-    modal_edit.click();
+    editingBlock = project.blocks[blockId];
+    editModal.click();
   }
 
   function removeBlock(blockId: string) {
-    deselect_all();
+    deselectAll();
 
     const blocks = project.blocks;
     const blockIdInt = parseInt(blockId);
@@ -317,16 +318,16 @@
   }
 
   function selectBlock(blockId: string) {
-    deselect_all();
+    deselectAll();
     selectedBlockId = blockId;
   }
 
-  function line_clicked(e: MouseEvent) {
-    select_line(e.target as HTMLElement);
+  function lineClicked(e: MouseEvent) {
+    selectLine(e.target as HTMLElement);
     e.stopPropagation();
   }
 
-  function deselect_all() {
+  function deselectAll() {
     selectedBlockId = null;
     const lines = document.getElementsByTagName("path");
 
@@ -334,25 +335,25 @@
       line.classList.remove("stroke-tilbot-secondary-hardpink");
     }
 
-    btn_del_line_visible = false;
+    isLineDeleteButtonVisible = false;
   }
 
-  function select_line(line: HTMLElement) {
-    deselect_all();
+  function selectLine(line: HTMLElement) {
+    deselectAll();
 
     line.classList.add("stroke-tilbot-secondary-hardpink");
 
     const rect = line.getBoundingClientRect();
-    const left = rect.left + rect.width / 2 + editor_main.scrollLeft - 8;
-    const top = rect.top + rect.height / 2 + editor_main.scrollTop - 28;
+    const left = rect.left + rect.width / 2 + editorContainer.scrollLeft - 8;
+    const top = rect.top + rect.height / 2 + editorContainer.scrollTop - 28;
 
     const style = document.getElementById("btn_del_line")!.style;
     style.setProperty("left", `${left} px`);
     style.setProperty("top", `${top} px`);
-    btn_del_line_visible = true;
+    isLineDeleteButtonVisible = true;
   }
 
-  function delete_selected_line() {
+  function deleteSelectedLine() {
     const line: HTMLElement = document.querySelector(
       "path.stroke-tilbot-secondary-hardpink"
     )!;
@@ -372,11 +373,11 @@
     }
   }
 
-  const max_click_offset = 3;
-  const click_offsets: [number, number][] = [];
-  for (let x = -max_click_offset; x <= max_click_offset; x++) {
-    for (let y = -max_click_offset; y <= max_click_offset; y++) {
-      click_offsets.push([x, y]);
+  const maxClickOffset = 3;
+  const clickOffsets: [number, number][] = [];
+  for (let x = -maxClickOffset; x <= maxClickOffset; x++) {
+    for (let y = -maxClickOffset; y <= maxClickOffset; y++) {
+      clickOffsets.push([x, y]);
     }
   }
 
@@ -386,31 +387,31 @@
   }
 
   // Try the points closest to the mouse position first
-  click_offsets.sort((a, b) => length2(...a) - length2(...b));
+  clickOffsets.sort((a, b) => length2(...a) - length2(...b));
 
-  function editor_clicked(e: MouseEvent) {
+  function editorClicked(e: MouseEvent) {
     if (e.button == 0) {
-      deselect_all();
+      deselectAll();
 
       // Find and select a line if nearby, to increase the hitbox on the rather thin connector lines.
-      for (const [x, y] of click_offsets) {
+      for (const [x, y] of clickOffsets) {
         const el = document.elementFromPoint(e.clientX + x, e.clientY + y);
         if (el?.nodeName?.toLowerCase() === "path") {
-          select_line(el as HTMLElement);
+          selectLine(el as HTMLElement);
           return;
         }
       }
     }
   }
 
-  function editor_mousemove(e: MouseEvent) {
-    if (dragging_connector.block_id != null) {
-      dragging_connector.mouseX = e.clientX + editor_main.scrollLeft;
-      dragging_connector.mouseY = e.clientY + editor_main.scrollTop;
+  function editorMouseMoved(e: MouseEvent) {
+    if (draggingConnector.blockId != null) {
+      draggingConnector.mouseX = e.clientX + editorContainer.scrollLeft;
+      draggingConnector.mouseY = e.clientY + editorContainer.scrollTop;
     }
   }
 
-  function editor_mousedown(e: MouseEvent) {
+  function editorMouseDown(e: MouseEvent) {
     const target = e.target as HTMLElement;
     if (!target) {
       return;
@@ -425,33 +426,33 @@
     if (blockId === "-1") {
       // Only allow to connect something to the starting point if it is not already connected to something
       if (project.starting_block_id === -1) {
-        deselect_all();
-        dragging_connector = {
-          block_id: blockId,
-          connector_id: 0,
-          mouseX: e.clientX + editor_main.scrollLeft,
-          mouseY: e.clientY + editor_main.scrollTop,
+        deselectAll();
+        draggingConnector = {
+          blockId,
+          connectorId: 0,
+          mouseX: e.clientX + editorContainer.scrollLeft,
+          mouseY: e.clientY + editorContainer.scrollTop,
         };
       }
     } else if (connectorId != undefined) {
       const connectorIdInt = parseInt(connectorId);
-      deselect_all();
-      dragging_connector = {
-        block_id: blockId,
-        connector_id: connectorIdInt,
-        mouseX: e.clientX + editor_main.scrollLeft,
-        mouseY: e.clientY + editor_main.scrollTop,
+      deselectAll();
+      draggingConnector = {
+        blockId,
+        connectorId: connectorIdInt,
+        mouseX: e.clientX + editorContainer.scrollLeft,
+        mouseY: e.clientY + editorContainer.scrollTop,
       };
     }
   }
 
-  function editor_mouseup(e: MouseEvent) {
-    const dragging_connector_block_id = dragging_connector.block_id;
-    if (dragging_connector_block_id == null) {
+  function editorMouseUp(e: MouseEvent) {
+    const draggingConnectorBlockId = draggingConnector.blockId;
+    if (draggingConnectorBlockId == null) {
       return;
     }
 
-    dragging_connector.block_id = null;
+    draggingConnector.blockId = null;
 
     const element = document.elementFromPoint(
       e.clientX,
@@ -468,12 +469,12 @@
 
     if (element.getAttribute("id") == `block_${blockId}_in`) {
       // Starting point
-      if (dragging_connector_block_id === "-1") {
+      if (draggingConnectorBlockId === "-1") {
         project.starting_block_id = parseInt(blockId);
       } else {
         const targets =
-          project.blocks[dragging_connector_block_id].connectors[
-            dragging_connector.connector_id!
+          project.blocks[draggingConnectorBlockId].connectors[
+            draggingConnector.connectorId!
           ].targets;
         const blockIdInt = parseInt(blockId);
         if (targets.indexOf(blockIdInt) == -1) {
@@ -483,15 +484,15 @@
     }
   }
 
-  function load_project(loadedProject: Project) {
+  function loadProject(loadedProject: Project) {
     project = _.cloneDeep({ ...defaultProject, ...loadedProject });
   }
 
-  function run_all() {
-    chatgpt_running = false;
+  function runAll() {
+    chatGPTrunning = false;
     const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
-      window_api.send("load-project-db", project);
+      windowAPI.send("load-project-db", project);
       contentWindow.postMessage(
         { project: JSON.stringify(project), path: path },
         "*"
@@ -499,32 +500,32 @@
     }
   }
 
-  function send_chatgpt_message(msg: string) {
+  function sendChatGPTmessage(msg: string) {
     const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
       contentWindow.postMessage("chatgpt|" + msg, "*");
     }
   }
 
-  function send_chatgpt_variation(msg: string) {
+  function sendChatCPTvariation(msg: string) {
     const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
       contentWindow.postMessage("variation|" + msg, "*");
     }
   }
 
-  function run_selected() {
+  function runSelected() {
     const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
-      const project_copy = JSON.parse(JSON.stringify(project));
+      const projectCopy = JSON.parse(JSON.stringify(project));
 
       if (selectedBlockId != null) {
-        project_copy.starting_block_id = parseInt(selectedBlockId);
+        projectCopy.starting_block_id = parseInt(selectedBlockId);
       }
 
-      window_api.send("load-project-db", project_copy);
+      windowAPI.send("load-project-db", projectCopy);
 
-      contentWindow.postMessage(JSON.stringify(project_copy), "*");
+      contentWindow.postMessage(JSON.stringify(projectCopy), "*");
     }
   }
 </script>
@@ -534,23 +535,24 @@
   <img src="images/tilbot_logo.svg" alt="Tilbot logo" class="ml-1 mt-2 w-48" />
   <!--</a>-->
 
-  <Variables bind:this={variables_window} variables={project.variables} />
+  <Variables bind:this={variablesWindow} variables={project.variables} />
 
   <Settings
-    bind:this={settings_window}
+    bind:this={settingsWindow}
     projectSettings={project.settings}
     settings={generalSettings}
     path="{path}/avatar"
     save={saveSettings}
   />
 
-  <input type="checkbox" bind:this={modal_edit} class="modal-toggle" />
+  <input type="checkbox" bind:this={editModal} class="modal-toggle" />
   <div class="modal">
     <div class="modal-box relative max-w-4xl">
-      {#if edit_block !== null}
-        {@const BlockPopupComponent = blockPopupComponentTypes[edit_block.type]}
+      {#if editingBlock !== null}
+        {@const BlockPopupComponent =
+          blockPopupComponentTypes[editingBlock.type]}
         <BlockPopupComponent
-          block={edit_block}
+          block={editingBlock}
           save={saveBlock}
           cancel={cancelBlock}
         />
@@ -558,7 +560,7 @@
     </div>
   </div>
 
-  <input type="checkbox" bind:this={modal_launch} class="modal-toggle" />
+  <input type="checkbox" bind:this={launchModal} class="modal-toggle" />
   <div class="modal">
     <div class="modal-box relative">
       <h3 class="text-lg font-bold">
@@ -570,10 +572,10 @@
       </h3>
       <div class="divider"></div>
       <p class="py-4">
-        Connect devices on the same network to: {local_ip}:2801
+        Connect devices on the same network to: {localIP}:2801
       </p>
       <p class="py-4">
-        Or via the internet: {public_ip}:2801<br />
+        Or via the internet: {publicIP}:2801<br />
         <span class="text-sm"
           >(make sure your router is set up to forward port 2801)</span
         >
@@ -581,7 +583,7 @@
       <br />
       <div class="divider"></div>
       <p>
-        <button class="btn btn-active" onclick={btn_close_server_click}
+        <button class="btn btn-active" onclick={closeServerButtonClicked}
           >Close server</button
         >
       </p>
@@ -608,7 +610,7 @@
       Icon: Component,
       type: ProjectBlockType
     )}
-      {@render menuItem(tip, Icon, () => new_block(type))}
+      {@render menuItem(tip, Icon, () => newBlock(type))}
     {/snippet}
 
     <ul class="menu p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md">
@@ -626,16 +628,16 @@
 
       <li>&nbsp;<br /><br /></li>
 
-      {@render menuItem("Variables & data", Variable, btn_variables_click)}
-      {@render menuItem("Settings", Cog6Tooth, btn_settings_click)}
-      {#if is_electron}
-        {@render menuItem("Launch project", RocketLaunch, btn_launch_click)}
+      {@render menuItem("Variables & data", Variable, variablesButtonClicked)}
+      {@render menuItem("Settings", Cog6Tooth, settingsButtonClicked)}
+      {#if isElectron}
+        {@render menuItem("Launch project", RocketLaunch, launchButtonClicked)}
       {/if}
 
       <li>&nbsp;<br /><br /></li>
 
-      {@render menuItem("Load project", Folder, btn_load_click)}
-      {@render menuItem("Save project", FolderArrowDown, btn_save_click)}
+      {@render menuItem("Load project", Folder, loadButtonClicked)}
+      {@render menuItem("Save project", FolderArrowDown, saveButtonClicked)}
     </ul>
   </div>
 
@@ -643,7 +645,7 @@
     id="alert"
     class={[
       "flex justify-center w-full absolute top-4",
-      { invisible: !alert_visible },
+      { invisible: !alertVisible },
     ]}
   >
     <div class="alert alert-success shadow-lg w-[250px]">
@@ -657,16 +659,16 @@
   <div class="flex flex-row w-screen h-screen absolute top-0 z-0">
     <div
       id="editor_main"
-      bind:this={editor_main}
+      bind:this={editorContainer}
       class="grow overflow-auto"
       style="max-width: calc(100vw - 24rem)"
       role="button"
       tabindex="-1"
-      onclick={editor_clicked}
+      onclick={editorClicked}
       onkeyup={() => {}}
-      onmousedown={editor_mousedown}
-      onmousemove={editor_mousemove}
-      onmouseup={editor_mouseup}
+      onmousedown={editorMouseDown}
+      onmousemove={editorMouseMoved}
+      onmouseup={editorMouseUp}
     >
       <div
         class="relative"
@@ -683,15 +685,15 @@
             {@const destination = lineLocations[target]?.in}
 
             {#if source && destination}
-              {@const x_offset = Math.abs(destination.x - source.x)}
+              {@const xOffset = Math.abs(destination.x - source.x)}
 
               <path
                 d="
                   M{source.x},{source.y}
-                  L{source.x + x_offset * 0.05},{source.y}
-                  C{source.x + x_offset * 0.5},{source.y}
-                   {destination.x - x_offset * 0.5},{destination.y}
-                   {destination.x - x_offset * 0.05},{destination.y}
+                  L{source.x + xOffset * 0.05},{source.y}
+                  C{source.x + xOffset * 0.5},{source.y}
+                   {destination.x - xOffset * 0.5},{destination.y}
+                   {destination.x - xOffset * 0.05},{destination.y}
                   L{destination.x},{destination.y}
                 "
                 stroke-width="2"
@@ -699,7 +701,7 @@
                 data-from-block={id}
                 data-from-connector={cid}
                 data-to-block={target}
-                onclick={line_clicked}
+                onclick={lineClicked}
                 onkeyup={() => {}}
                 role="button"
                 tabindex="0"
@@ -721,18 +723,18 @@
           {/if}
 
           <!-- For creating new lines -->
-          {#if dragging_connector.block_id != undefined && dragging_connector.connector_id != undefined}
+          {#if draggingConnector.blockId != undefined && draggingConnector.connectorId != undefined}
             {@const connector =
-              lineLocations[dragging_connector.block_id]?.out?.[
-                dragging_connector.connector_id
+              lineLocations[draggingConnector.blockId]?.out?.[
+                draggingConnector.connectorId
               ]}
             {#if connector}
               <line
                 class="z-50"
                 x1={connector.x}
                 y1={connector.y}
-                x2={dragging_connector.mouseX}
-                y2={dragging_connector.mouseY}
+                x2={draggingConnector.mouseX}
+                y2={draggingConnector.mouseY}
                 stroke="black"
                 stroke-width="2"
               />
@@ -742,11 +744,11 @@
 
         <div
           id="btn_del_line"
-          class={["absolute", { invisible: !btn_del_line_visible }]}
+          class={["absolute", { invisible: !isLineDeleteButtonVisible }]}
         >
           <button
             class="btn btn-xs btn-circle bg-tilbot-secondary-hardpink border-tilbot-secondary-hardpink hover:bg-white hover:text-tilbot-secondary-hardpink hover:border-tilbot-secondary-hardpink"
-            onclick={delete_selected_line}><XMark class="h-4 w-4" /></button
+            onclick={deleteSelectedLine}><XMark class="h-4 w-4" /></button
           >
         </div>
 
@@ -758,7 +760,7 @@
         />
 
         {#each Object.entries(project.blocks ?? {}) as [blockId, block] (blockId)}
-          <Draggable {block} parent={editor_main}>
+          <Draggable {block} parent={editorContainer}>
             {@const BlockComponent = blockComponentTypes[block.type]}
             <BlockComponent
               {blockId}
@@ -779,19 +781,19 @@
 
     <div class="flex flex-col w-full max-w-sm pr-1.5 pl-1.5 bottom-0">
       <div id="simulator_menu" class="w-full mr-1.5 mt-2 text-center">
-        <button class="btn gap-2" onclick={run_all}>
+        <button class="btn gap-2" onclick={runAll}>
           <Play class="w-6 h-6" />
           Run all
         </button>
 
         <ChatGPT
-          is_running={chatgpt_running}
+          isRunning={chatGPTrunning}
           projectSettings={project.settings}
           {generalSettings}
           variables={project.variables}
-          runAll={chatgptRunAll}
-          sendMessage={chatgptSendMessage}
-          sendVariation={send_chatgpt_variation}
+          runAll={chatGPTrunAll}
+          sendMessage={chatGPTsendMessage}
+          sendVariation={sendChatCPTvariation}
         ></ChatGPT>
       </div>
 
@@ -817,6 +819,6 @@
   name="upload"
   type="file"
   class="invisible"
-  bind:this={jsonfileinput}
-  onchange={import_project_file}
+  bind:this={jsonFileInput}
+  onchange={importProjectFile}
 />
