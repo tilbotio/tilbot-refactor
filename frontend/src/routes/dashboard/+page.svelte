@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SvelteComponent, onMount } from "svelte";
+  import { onMount } from "svelte";
   import {
     ArrowDownTray,
     ArrowLeftEndOnRectangle,
@@ -15,69 +15,68 @@
   } from "svelte-heros-v2";
   import NewUser from "./newuser.svelte";
 
-  let data: any = {};
-  let loaded = false;
-  let pass_error = false;
-  let pass_error_txt = "";
-  let pass_success = false;
+  let data: any = $state({});
+  let loaded = $state(false);
+  let passwordChangeError: string | null = $state(null);
+  let passwordChangeSuccess = $state(false);
 
-  let settings_error = false;
-  let settings_error_txt = "";
-  let settings_success = false;
+  let settingsSaveError: string | null = $state(null);
+  let settingsSaveSuccess = $state(false);
 
-  let newuser_window: SvelteComponent;
-  let toggle_users: HTMLInputElement;
-  let toggle_projects: HTMLInputElement;
-  let toggle_settings: HTMLInputElement;
-  let import_file_upload: HTMLInputElement;
-  let import_file: any;
-  let selected_project_id: string;
+  let newuserWindow = $state() as NewUser;
+  let usersToggle = $state() as HTMLInputElement;
+  let projectsToggle = $state() as HTMLInputElement;
+  let settingsToggle = $state() as HTMLInputElement;
+  let importFileUpload = $state() as HTMLInputElement;
+  let importFile = $state() as FileList;
+  let selectedProjectId = $state() as string;
 
   $effect(() => {
-    if (import_file && import_file[0]) {
-      let data = new FormData();
-      data.append("file", import_file[0], import_file[0].name);
-      data.append("project_id", selected_project_id);
-      const fetch_init = {
+    if (importFile && importFile[0]) {
+      const data = new FormData();
+      data.append("file", importFile[0], importFile[0].name);
+      data.append("project_id", selectedProjectId);
+      const fetchInit = {
         method: "post",
         credentials: "include" as RequestCredentials,
         body: data,
       };
 
-      async function background_fetch() {
+      (async () => {
         try {
-          const response = await fetch("/api/import_project", fetch_init);
-          const txt = await response.text();
-          if (txt == "NOT_LOGGED_IN") {
+          const response = await fetch("/api/import_project", fetchInit);
+          const text = await response.text();
+          if (text === "NOT_LOGGED_IN") {
             location.replace("/login");
           } else {
-            load_data();
+            loadData();
           }
         } catch (err) {
           console.log(err);
         }
-      }
-
-      background_fetch();
+      })();
     }
   });
 
   // Load dashboard data
-  onMount(load_data);
+  onMount(loadData);
 
-  function view_bot(id: string) {
+  function viewBot(id: string) {
     window.open(`/?project=${id}`, "_blank");
   }
 
-  async function get_logs(id: string) {
+  async function getLogs(id: string) {
     try {
       const response = await fetch(`api/get_logs?projectid=${id}`, {
         method: "get",
         credentials: "include",
       });
-      const txt = await response.text();
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
       const dataStr =
-        "data:text/plain;charset=utf-8," + encodeURIComponent(txt);
+        "data:text/plain;charset=utf-8," + encodeURIComponent(text);
       const downloadAnchorNode = document.createElement("a");
       downloadAnchorNode.setAttribute("href", dataStr);
       downloadAnchorNode.setAttribute("download", "logs.csv");
@@ -89,26 +88,27 @@
     }
   }
 
-  async function load_data() {
+  async function loadData() {
     try {
       const response = await fetch("/api/get_dashboard", {
         method: "get",
         credentials: "include",
       });
-      const txt = await response.text();
-      if (txt == "NOT_LOGGED_IN") {
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      if (text === "NOT_LOGGED_IN") {
         location.replace("/login");
       } else {
-        let json = JSON.parse(txt);
-        data = json;
-        // console.log(json);
+        data = JSON.parse(text);
         loaded = true;
 
         setTimeout(function () {
-          if (data.users !== undefined && !toggle_users.checked) {
-            toggle_users.click();
-          } else if (data.projects !== undefined && !toggle_projects.checked) {
-            toggle_projects.click();
+          if (data.users !== undefined && !usersToggle.checked) {
+            usersToggle.click();
+          } else if (data.projects !== undefined && !projectsToggle.checked) {
+            projectsToggle.click();
           }
         }, 20);
       }
@@ -117,7 +117,7 @@
     }
   }
 
-  async function logout(e: any) {
+  async function logout(e: MouseEvent) {
     try {
       const response = await fetch("/api/logout", {
         method: "post",
@@ -131,22 +131,16 @@
     }
   }
 
-  async function update_pass(e: any) {
-    pass_error = false;
-    // FIXME: maybe initialize pass_success too?
+  async function updatePassword(e: SubmitEvent) {
+    e.preventDefault();
 
-    const formData = new FormData(e.target);
+    passwordChangeError = null;
+    passwordChangeSuccess = false;
 
-    const data: any = {};
+    const data = Object.fromEntries(new FormData(e.target as HTMLFormElement));
 
-    for (let field of formData) {
-      const [key, value] = field;
-      data[key] = value;
-    }
-
-    if (data["newpass"] != data["newpass2"]) {
-      pass_error_txt = "The two new passwords do not match.";
-      pass_error = true;
+    if (data.newpass != data.newpass2) {
+      passwordChangeError = "The two new passwords do not match.";
     } else {
       try {
         const response = await fetch("/api/change_pass", {
@@ -157,25 +151,24 @@
           },
           body: JSON.stringify(data),
         });
-        const txt = await response.text();
-        if (txt === "true") {
-          pass_success = true;
+        const text = await response.text();
+        if (text === "true") {
+          passwordChangeSuccess = true;
         } else {
-          pass_error_txt =
+          passwordChangeError =
             "Error changing password: did you enter the correct old password?";
-          pass_error = true;
         }
       } catch (err) {
-        pass_error_txt =
+        passwordChangeError =
           "Unknown error occurred. Please contact your administrator and try again later.";
-        pass_error = true;
         console.log(err);
       }
     }
   }
 
-  async function set_user_active(e: any) {
+  async function setUserActive(e: Event) {
     try {
+      const target = e.target as HTMLInputElement;
       const response = await fetch("/api/set_user_active", {
         method: "post",
         credentials: "include",
@@ -183,77 +176,81 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          active: e.target.checked,
-          username: e.target.dataset["username"],
+          active: target.checked,
+          username: target.dataset.username,
         }),
       });
-      const txt = await response.text();
-      console.log(txt);
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      console.log(text);
     } catch (err) {
       console.log(err);
     }
   }
 
-  function handleNewUserMessage(e: any) {
-    if (e.detail.event == "load_data") {
-      load_data();
-    }
-  }
-
-  async function new_project() {
+  async function newProject() {
     try {
       const response = await fetch("/api/create_project", {
         method: "post",
         credentials: "include",
       });
-      const txt = await response.text();
-      if (txt == "OK") {
-        load_data();
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      if (text === "OK") {
+        loadData();
       }
     } catch (err) {
       console.log(err);
     }
   }
 
-  function set_project_inactive(e: any) {
-    async function _do_set_project_inactive() {
-      try {
-        const response = await fetch("/api/set_project_active", {
-          method: "post",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            active: false,
-            projectid: e.target.dataset["id"],
-          }),
-        });
-        const txt = await response.text();
-        console.log(txt);
-        load_data();
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
+  function setProjectInactive(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    const dataset = target.dataset;
     // confirm() is reactive and therefore can't be inside an async context
     if (
-      confirm(
-        `Are you sure you wish to delete the project "${e.target.dataset["name"]}?`
-      )
+      confirm(`Are you sure you wish to delete the project "${dataset.name}?`)
     ) {
-      _do_set_project_inactive();
+      (async () => {
+        try {
+          const response = await fetch("/api/set_project_active", {
+            method: "post",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              active: false,
+              projectid: dataset.id,
+            }),
+          });
+          const text = await response.text();
+          if (!response.ok) {
+            throw new Error(text);
+          }
+          console.log(text);
+          loadData();
+        } catch (err) {
+          console.log(err);
+        }
+      })();
     }
   }
 
-  function import_project(e: any) {
-    selected_project_id = e.target.dataset["id"];
-    import_file_upload.click();
+  function importProject(e: Event) {
+    const target = e.target as HTMLElement;
+    selectedProjectId = target.dataset.id!;
+    importFileUpload.click();
   }
 
-  async function toggle_project_running(e: any) {
+  async function toggleProjectRunning(e: Event) {
     try {
+      const target = e.target as HTMLElement;
+      const dataset = target.dataset;
       const response = await fetch("/api/set_project_status", {
         method: "post",
         credentials: "include",
@@ -261,20 +258,23 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          projectid: e.target.dataset["id"],
-          status: e.target.dataset["status"] == "true" ? 1 : 0,
+          projectid: dataset.id,
+          status: dataset.status === "true" ? 1 : 0,
         }),
       });
-      const txt = await response.text();
-      console.log(txt);
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      console.log(text);
     } catch (err) {
       console.log(err);
     }
   }
 
-  async function save_settings() {
-    settings_error = false;
-    settings_success = false;
+  async function saveSettings() {
+    settingsSaveError = null;
+    settingsSaveSuccess = false;
 
     try {
       const response = await fetch("/api/save_settings", {
@@ -287,23 +287,22 @@
           settings: JSON.stringify(data.settings),
         }),
       });
-      const txt = await response.text();
-      console.log(txt);
-      load_data();
-      settings_success = true;
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      console.log(text);
+      loadData();
+      settingsSaveSuccess = true;
     } catch (err) {
-      settings_error_txt =
+      settingsSaveError =
         "An unknown error occurred, please contact your administrator.";
-      settings_error = true;
       console.log(err);
     }
   }
 </script>
 
-<!-- @migration-task Error while migrating Svelte code: `<th>` cannot be a child of `<thead>`. `<thead>` only allows these children: `<tr>`, `<style>`, `<script>`, `<template>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
-https://svelte.dev/e/node_invalid_placement -->
-<NewUser bind:newuserwindow={newuser_window} on:message={handleNewUserMessage}
-></NewUser>
+<NewUser bind:this={newuserWindow} onUserCreated={loadData} />
 {#if loaded}
   <div>
     <div class="w-1/4 h-24 float-left">
@@ -319,7 +318,7 @@ https://svelte.dev/e/node_invalid_placement -->
     </div>
 
     <div class="h-24 mt-6 mr-12 float-right">
-      <button class="btn gap-2" on:click={logout}>
+      <button class="btn gap-2" onclick={logout}>
         <ArrowLeftEndOnRectangle class="w-5 h-5 float-left" />
         Log out
       </button>
@@ -338,14 +337,14 @@ https://svelte.dev/e/node_invalid_placement -->
       <div class="collapse-content flex flex-col items-center">
         <div class="text-lg mb-4">Change your password</div>
 
-        {#if pass_error}
+        {#if passwordChangeError}
           <div class="alert alert-error shadow-lg justify-start">
             <XCircle class="flex-shrink-0 h-6 w-6" />
-            {pass_error_txt}
+            {passwordChangeError}
           </div>
         {/if}
 
-        {#if pass_success}
+        {#if passwordChangeSuccess}
           <div class="alert alert-success shadow-lg">
             <div>
               <CheckCircle class="flex-shrink-0 h-6 w-6" />
@@ -354,44 +353,44 @@ https://svelte.dev/e/node_invalid_placement -->
           </div>
         {/if}
 
-        <form class="w-1/4" on:submit|preventDefault={update_pass}>
+        <form class="w-1/4" onsubmit={updatePassword}>
           <div class="form-control mb-6">
             <label class="label">
               <span class="label-text">Old password</span>
+              <input
+                name="oldpass"
+                id="txt_old_pass"
+                type="password"
+                placeholder="Old password"
+                class="input input-bordered"
+              />
             </label>
-            <input
-              name="oldpass"
-              id="txt_old_pass"
-              type="password"
-              placeholder="Old password"
-              class="input input-bordered"
-            />
           </div>
           <div class="form-control">
             <label class="label">
               <span class="label-text">New password</span>
+              <input
+                name="newpass"
+                id="txt_new_pass"
+                type="password"
+                placeholder="New password"
+                class="input input-bordered"
+              />
             </label>
-            <input
-              name="newpass"
-              id="txt_new_pass"
-              type="password"
-              placeholder="New password"
-              class="input input-bordered"
-            />
           </div>
           <div class="form-control">
             <label class="label">
               <span class="label-text"
                 >New password (again, just to be sure)</span
               >
+              <input
+                name="newpass2"
+                id="txt_new_pass2"
+                type="password"
+                placeholder="New password (again)"
+                class="input input-bordered"
+              />
             </label>
-            <input
-              name="newpass2"
-              id="txt_new_pass2"
-              type="password"
-              placeholder="New password (again)"
-              class="input input-bordered"
-            />
           </div>
           <div class="form-control mt-6">
             <button
@@ -408,7 +407,7 @@ https://svelte.dev/e/node_invalid_placement -->
       <div
         class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box"
       >
-        <input type="checkbox" bind:this={toggle_users} />
+        <input type="checkbox" bind:this={usersToggle} />
         <div class="collapse-title text-xl font-medium">
           <Users class="w-5 h-5 float-left mt-1 mr-4" />
           Users
@@ -435,7 +434,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         class="toggle"
                         data-username={u.username}
                         bind:checked={u.active}
-                        on:change={set_user_active}
+                        onchange={setUserActive}
                       /></td
                     >
                   </tr>
@@ -447,7 +446,9 @@ https://svelte.dev/e/node_invalid_placement -->
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                on:click={newuser_window.show()}>+ Add new user</button
+                onclick={() => {
+                  newuserWindow.show();
+                }}>+ Add new user</button
               >
             </div>
           </div>
@@ -459,7 +460,7 @@ https://svelte.dev/e/node_invalid_placement -->
       <div
         class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box"
       >
-        <input type="checkbox" bind:this={toggle_projects} />
+        <input type="checkbox" bind:this={projectsToggle} />
         <div class="collapse-title text-xl font-medium">
           <RocketLaunch class="w-5 h-5 float-left mt-1 mr-4" />
           Projects
@@ -491,7 +492,9 @@ https://svelte.dev/e/node_invalid_placement -->
                     <th>{p.name}</th>
                     <td class="text-center">
                       <GlobeAlt
-                        on:click={p.status ? view_bot(p.id) : undefined}
+                        onclick={() => {
+                          if (p.status) viewBot(p.id);
+                        }}
                         color={p.status ? "currentColor" : "#e8e8e8"}
                         class="w-6 h-6 inline-block {p.status
                           ? 'cursor-pointer'
@@ -505,19 +508,21 @@ https://svelte.dev/e/node_invalid_placement -->
                         data-id={p.id}
                         data-status={p.status}
                         bind:checked={p.status}
-                        on:change={toggle_project_running}
+                        onchange={toggleProjectRunning}
                       />
                     </td>
                     <td class="text-center">
                       <ArrowDownTray
-                        on:click={import_project}
+                        onclick={importProject}
                         data-id={p.id}
                         class="w-6 h-6 inline-block cursor-pointer"
                       />
                     </td>
                     <td class="text-center">
                       <DocumentArrowDown
-                        on:click={get_logs(p.id)}
+                        onclick={() => {
+                          getLogs(p.id);
+                        }}
                         class="w-6 h-6 inline-block cursor-pointer"
                       />
                     </td>
@@ -530,7 +535,7 @@ https://svelte.dev/e/node_invalid_placement -->
                         </td> -->
                     <td class="text-center">
                       <Trash
-                        on:click={set_project_inactive}
+                        onclick={setProjectInactive}
                         data-id={p.id}
                         data-name={p.name}
                         class="w-6 h-6 inline-block cursor-pointer"
@@ -545,7 +550,7 @@ https://svelte.dev/e/node_invalid_placement -->
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                on:click={new_project}>+ New project</button
+                onclick={newProject}>+ New project</button
               >
             </div>
           </div>
@@ -554,8 +559,8 @@ https://svelte.dev/e/node_invalid_placement -->
 
       <input
         accept=".tilbot"
-        bind:this={import_file_upload}
-        bind:files={import_file}
+        bind:this={importFileUpload}
+        bind:files={importFile}
         type="file"
         name="projectfile"
         class="hidden"
@@ -566,7 +571,7 @@ https://svelte.dev/e/node_invalid_placement -->
       <div
         class="w-11/12 self-center collapse collapse-arrow border border-base-300 bg-base-100 rounded-box"
       >
-        <input type="checkbox" bind:this={toggle_settings} />
+        <input type="checkbox" bind:this={settingsToggle} />
         <div class="collapse-title text-xl font-medium">
           <Cog6Tooth class="w-6 h-6 float-left mt-1 mr-4" />
           Settings
@@ -679,14 +684,14 @@ https://svelte.dev/e/node_invalid_placement -->
               </table>
             {/if}
 
-            {#if settings_error}
+            {#if settingsSaveError}
               <div class="mt-4 alert alert-error shadow-lg justify-start">
                 <XCircle class="stroke-current flex-shrink-0 h-6 w-6" />
-                {settings_error_txt}
+                {settingsSaveError}
               </div>
             {/if}
 
-            {#if settings_success}
+            {#if settingsSaveSuccess}
               <div class="mt-4 alert alert-success shadow-lg">
                 <div>
                   <CheckCircle class="stroke-current flex-shrink-0 h-6 w-6" />
@@ -699,7 +704,7 @@ https://svelte.dev/e/node_invalid_placement -->
               <button
                 type="submit"
                 class="btn w-60 bg-tilbot-primary-400 hover:bg-tilbot-primary-500"
-                on:click={save_settings}>Save settings</button
+                onclick={saveSettings}>Save settings</button
               >
             </div>
           </div>

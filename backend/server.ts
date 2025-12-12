@@ -41,7 +41,7 @@ import LLM from "../app/llm.cjs";
 function getOrCreateToken(tokenPath: string): string {
   try {
     return readFileSync(tokenPath, { encoding: "utf8" });
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === "ENOENT") {
       // File does not exist, generate token and save
       const token = randomBytes(32).toString("base64");
@@ -119,6 +119,20 @@ await Promise.all([
 
   app.register(fastifyMultiPart),
 ]);
+
+// Handle TilbotErrors by sending their api_status_code as the response.
+// This handler must (apparently?) be registered before any prefixes.
+app.setErrorHandler((err, req, res) => {
+  console.log(err);
+  if (res.sent) {
+    // Not much we can do now that data has already been sent.
+  } else if (err instanceof TilBotError) {
+    res.status(200);
+    res.send(err.api_status_code);
+  } else {
+    res.send("NOK");
+  }
+});
 
 // add a route that lives separately from the SvelteKit app
 app.post("/api/login", async (req, res) => {
@@ -505,7 +519,7 @@ async function stop_bot(projectId: string) {
     console.error(`Error stopping bot: ${error}`);
   }
 
-  const socket = projectControllers[projectId]?.socket;
+  const socket = projectControllers.get(projectId)?.output?.socket;
   if (socket) {
     socket.close();
   }
@@ -518,22 +532,10 @@ await app.register(fastifyStatic, {
 });
 
 // Implement the default response for successful requests
+// This handler must (apparently?) be registered after any prefixes.
 app.addHook("onSend", async (req, res, payload) => {
   if (!res.sent && payload === undefined) {
     return "OK";
-  }
-});
-
-// Handle TilbotErrors by sending their api_status_code as the response
-app.setErrorHandler((err, req, res) => {
-  console.log(err);
-  if (res.sent) {
-    // Not much we can do now that data has already been sent.
-  } else if (err instanceof TilBotError) {
-    res.status(200);
-    res.send(err.api_status_code);
-  } else {
-    res.send("NOK");
   }
 });
 

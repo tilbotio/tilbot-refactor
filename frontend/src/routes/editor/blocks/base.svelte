@@ -95,9 +95,7 @@
   ]}
   id="block_{blockId}"
   onclick={selectBlock}
-  onkeydown={selectBlock}
-  role="button"
-  tabindex="0"
+  role="none"
 >
   <ConnectorPad bind:this={inConnectorPad} {blockId} />
 

@@ -54,8 +54,7 @@
   onmousemove={mouseMove}
   onmouseleave={mouseMove}
   class="select-none absolute"
-  role="button"
-  tabindex="-1"
+  role="none"
 >
   {@render children()}
 </div>

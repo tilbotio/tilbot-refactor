@@ -7,47 +7,53 @@
     projectSettings,
     generalSettings,
     variables,
-    is_running = $bindable(),
+    isRunning = $bindable(),
     runAll = () => {},
     sendMessage = () => {},
     sendVariation = () => {},
   } = $props();
 
-  let chatgpt_str: string = "";
-  let data_str: string = "";
-  let loaded_var: string = "";
-  let openai: any;
-  let msgs: Array<any>;
-  let var_msgs: Array<any>;
-  let window_api: any;
+  let prompt: string = "";
+  let promptData: string = "";
+  let openAIApi: OpenAIApi | null = $state(null);
+  let messages: Array<any>;
+  let variableMessages: Array<any>;
+  let windowApi: any;
 
-  onMount(() => {
-    window_api = (window as any)?.api;
-
-    window.addEventListener("message", message_received, false);
+  $effect(() => {
+    isRunning = openAIApi != null;
   });
 
-  async function message_received(event: MessageEvent) {
-    if (event.data.msg == "chatgptsim" && is_running) {
+  onMount(() => {
+    windowApi = (window as any)?.api;
+
+    window.addEventListener("message", messageReceived, false);
+  });
+
+  async function messageReceived(event: MessageEvent) {
+    if (!openAIApi) {
+      return;
+    }
+    if (event.data.msg == "chatgptsim") {
       // Bot text from the simulator
       if (event.data.type == "Auto") {
-        chatgpt_str += event.data.content + "\n\n";
+        prompt += event.data.content + "\n\n";
       } else {
-        chatgpt_str += event.data.content;
-        console.log(chatgpt_str);
+        prompt += event.data.content;
+        console.log(prompt);
 
-        msgs.push({
+        messages.push({
           role: "user",
-          content: chatgpt_str,
+          content: prompt,
         });
 
         console.log("=====");
-        console.log(msgs);
+        console.log(messages);
         console.log("=====");
 
-        const completion = await openai.createChatCompletion({
+        const completion = await openAIApi.createChatCompletion({
           model: generalSettings.chatgpt_sim_version,
-          messages: msgs,
+          messages,
           temperature: projectSettings.temperature,
         });
 
@@ -56,59 +62,62 @@
         // completion.data.usage.total_tokens
         // @TODO: stop in case ChatGPT keeps generating the same text
 
-        let resp = completion.data.choices[0].message.content;
+        let resp = completion.data.choices[0].message!.content!;
 
         if (event.data.type == "MC") {
-          let mc_options_str = chatgpt_str.substr(
-            chatgpt_str.indexOf("{") + 1,
-            chatgpt_str.indexOf("}") - chatgpt_str.indexOf("{") - 1
+          const leftBraceIndex = prompt.indexOf("{");
+          const rightBraceIndex = prompt.indexOf("}");
+          const mcOptions = prompt.substring(
+            leftBraceIndex + 1,
+            rightBraceIndex
           );
-          let mc_options = mc_options_str.split(";");
 
-          for (let i = 0; i < mc_options.length; i++) {
+          for (const option of mcOptions.split(";")) {
             if (
               resp
                 .toLowerCase()
                 .includes(
-                  mc_options[i]
+                  option
                     .toLowerCase()
                     .replace("!", "")
                     .replace(".", "")
                     .replace("?", "")
                 )
             ) {
-              console.log(mc_options[i]);
+              console.log(option);
 
-              msgs.push({
+              messages.push({
                 role: "assistant",
-                content: mc_options[i],
+                content: option,
               });
 
               // Deprecated, new turbo version does not need this delay (and won't get it)
               if (generalSettings.chatgpt_sim_version == "gpt-4") {
                 // Since the GPT-4 API call frequency seems to be very limited, add artificial delay.
                 setTimeout(() => {
-                  sendMessage(mc_options[i]);
+                  sendMessage(option);
                 }, 20000);
               } else {
-                sendMessage(mc_options[i]);
+                sendMessage(option);
               }
 
               break;
             }
           }
         } else {
-          if (resp.indexOf("{") !== -1 && resp.indexOf("}") !== -1) {
-            resp = resp.replace(
-              resp.substr(
-                resp.indexOf("{"),
-                resp.indexOf("}") - resp.indexOf("{") + 2
-              ),
-              ""
-            );
+          const leftBraceIndex = resp.indexOf("{");
+          const rightBraceIndex = resp.indexOf("}");
+          if (
+            leftBraceIndex !== -1 &&
+            rightBraceIndex !== -1 &&
+            leftBraceIndex < rightBraceIndex
+          ) {
+            resp =
+              resp.substring(0, leftBraceIndex) +
+              resp.substring(rightBraceIndex + 1);
           }
 
-          msgs.push({
+          messages.push({
             role: "assistant",
             content: resp,
           });
@@ -122,123 +131,116 @@
           }
         }
 
-        chatgpt_str = "";
+        prompt = "";
       }
     } else if (event.data.msg == "variation") {
       if (
         event.data.memory === undefined ||
         !event.data.memory ||
-        var_msgs === undefined ||
-        var_msgs.length == 0
+        variableMessages === undefined ||
+        variableMessages.length == 0
       ) {
-        var_msgs = [
+        variableMessages = [
           {
             role: "system",
             content: event.data.prompt,
           },
         ];
       } else {
-        var_msgs[0] = {
+        variableMessages[0] = {
           role: "system",
           content: event.data.prompt,
         };
       }
 
-      var_msgs.push({
+      variableMessages.push({
         role: "user",
         content: event.data.content,
       });
 
-      console.log(var_msgs);
+      console.log(variableMessages);
 
-      let resp = "";
+      let content: string;
 
       // Check if ChatGPT or another LLM that is triggered via API
       if (generalSettings.llm_setting == "chatgpt") {
-        const configuration = new Configuration({
-          apiKey: generalSettings.chatgpt_api_key,
-        });
-
-        let openai = new OpenAIApi(configuration);
-
-        const completion = await openai.createChatCompletion({
+        const completion = await openAIApi.createChatCompletion({
           //model: "gpt-3.5-turbo",
           model: generalSettings.chatgpt_sim_version,
-          messages: var_msgs,
+          messages: variableMessages,
           temperature: projectSettings.temperature,
         });
 
         console.log(completion);
 
         if (completion.data.usage!.total_tokens >= 3500) {
-          var_msgs.splice(1, 2);
+          variableMessages.splice(1, 2);
         }
 
-        resp = completion.data.choices[0].message!.content!;
+        content = completion.data.choices[0].message!.content!;
       } else {
         let url = generalSettings.llm_api_address;
-        if (generalSettings.llm_api_address.indexOf("http") == -1) {
-          url = "http://" + url;
+        if (generalSettings.llm_api_address.indexOf("://") == -1) {
+          url = "https://" + url;
         }
-        let r = await fetch(
-          url + "/get-response?q=" + JSON.stringify({ messages: var_msgs }),
+        const response = await fetch(
+          url +
+            `/get-response?q=${encodeURIComponent(
+              JSON.stringify({ messages: variableMessages })
+            )}`,
           {
             method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
+            headers: { Accept: "application/json" },
           }
         );
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
 
-        resp = (await r.json()).response;
+        content = (await response.json()).response;
       }
 
       if (event.data.memory !== undefined && event.data.memory) {
-        var_msgs.push({
-          role: "assistant",
-          content: resp,
-        });
+        variableMessages.push({ role: "assistant", content });
       }
-      sendVariation(resp);
+      sendVariation(content);
     } else if (event.data.msg == "reset_var_mem") {
-      var_msgs = [];
+      variableMessages = [];
     }
   }
 
-  function stop_chatgpt() {
-    is_running = false;
+  function startChatGPT() {
+    openAIApi = null;
   }
 
-  async function run_chatgpt() {
-    data_str = projectSettings.llm_prompt_data;
+  async function runChatGPT() {
+    promptData = projectSettings.llm_prompt_data;
 
     const configuration = new Configuration({
       apiKey: generalSettings.chatgpt_api_key,
     });
 
-    openai = new OpenAIApi(configuration);
+    openAIApi = new OpenAIApi(configuration);
 
     // Fill any data if needed
     // For now we assume at most only one dataset is used
-    let regExp = /\[([^\]]+)\]/g;
-    let matches = regExp.exec(data_str);
+    const regExp = /\[([^\]]+)\]/g;
+    const matches = regExp.exec(promptData);
 
     if (matches !== null) {
-      loaded_var = matches[1];
+      const loadedVar = matches[1];
 
-      for (const [key, value] of Object.entries(
-        variables as { [key: string]: any }
-      )) {
-        if (value.name == loaded_var) {
+      for (const value of Object.values(variables as { [key: string]: any })) {
+        if (value.name == loadedVar) {
           // Shouldn't this be query-db?!
-          const csv = await window_api.invoke("get-csv", value.csvfile);
+          const csv = await windowApi.invoke("get-csv", value.csvfile);
           if (csv != null) {
-            data_str = data_str.replace("[" + loaded_var + "]", csv);
+            promptData = promptData.replace("[" + loadedVar + "]", csv);
 
-            msgs = [
+            messages = [
               {
                 role: "system",
-                content: projectSettings.llm_prompt + "\n" + data_str,
+                content: `${projectSettings.llm_prompt}\n${promptData}`,
               },
             ];
 
@@ -251,10 +253,10 @@
         }
       }
     } else {
-      msgs = [
+      messages = [
         {
           role: "system",
-          content: projectSettings.llm_prompt + "\n" + data_str,
+          content: `${projectSettings.llm_prompt}\n${promptData}`,
         },
       ];
 
@@ -265,14 +267,14 @@
   }
 </script>
 
-{#if is_running}
+{#if isRunning}
   <button
     class="btn btn-circle bg-[#FFC500] hover:bg-[#ECB600] border-[#FFC500] hover:border-[#ECB600] ml-4"
-    onclick={stop_chatgpt}><Stop class="w-6 h-6" /></button
+    onclick={startChatGPT}><Stop class="w-6 h-6" /></button
   >
 {:else}
   <button
     class="btn btn-circle bg-[#FFC500] hover:bg-[#ECB600] border-[#FFC500] hover:border-[#ECB600] ml-4"
-    onclick={run_chatgpt}><Play class="w-6 h-6" /></button
+    onclick={runChatGPT}><Play class="w-6 h-6" /></button
   >
 {/if}
