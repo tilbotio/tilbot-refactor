@@ -4,7 +4,7 @@
   const { onUserCreated } = $props();
 
   let toggle = $state() as HTMLElement;
-  let error: string = $state("");
+  let error: string | null = $state(null);
 
   let user: any = $state({});
 
@@ -19,6 +19,7 @@
 
   async function save() {
     try {
+      error = null;
       const response = await fetch("/api/create_user_account", {
         method: "post",
         credentials: "include",
@@ -27,16 +28,19 @@
         },
         body: JSON.stringify(user),
       });
-      const txt = await response.text();
-      if (txt == "OK") {
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text);
+      }
+      if (text === "OK") {
         onUserCreated();
         toggle.click();
-      } else if (txt == "NOT_LOGGED_IN") {
+      } else if (text === "NOT_LOGGED_IN") {
         location.replace("/login");
-      } else if (txt == "USER_EXISTS") {
+      } else if (text === "USER_EXISTS") {
         error = "A user with that username already exists.";
       } else {
-        error = txt;
+        error = text;
       }
     } catch (err) {
       error = "An unknown error occurred. Please contact your administrator.";
@@ -84,7 +88,7 @@
             </tr>
           </tbody>
         </table>
-        {#if error !== ""}
+        {#if error}
           <div class="alert alert-error shadow-lg justify-start">
             <XCircle class="flex-shrink-0 h-6 w-6" />
             {error}
