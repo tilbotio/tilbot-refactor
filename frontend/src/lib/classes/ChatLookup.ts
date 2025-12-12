@@ -1,8 +1,8 @@
 import type { ProjectControllerLookupInterface } from "../../../../common/projectcontroller/types";
 
 export class ChatLookup implements ProjectControllerLookupInterface {
-    private promise!: Promise<string>;
-    private pendingResolver: ((value: string) => void) | null = null;
+  private promise!: Promise<string>;
+  private pendingResolver: ((value: string) => void) | null = null;
   async cell(db: string, col: string, val: string): Promise<Object[] | null> {
     // Not used in the chatinterface
     return null;
@@ -33,8 +33,8 @@ export class ChatLookup implements ProjectControllerLookupInterface {
 
   resolveVariation(result: string) {
     if (this.pendingResolver) {
-        this.pendingResolver(result);
-        this.pendingResolver = null;
+      this.pendingResolver(result);
+      this.pendingResolver = null;
     }
   }
 }
