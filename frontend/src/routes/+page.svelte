@@ -19,6 +19,7 @@
   let settingsContext: ProjectSettings = $state(loadResult.settings);
 
   let messages = $state<Message[]>([]);
+  // TODO: This is not the problem the IDE makes it out to be; ignore or put in effect?
   setContext("messagesContext", messages);
 
   setContext("runtimeContext", runtimeContext);
