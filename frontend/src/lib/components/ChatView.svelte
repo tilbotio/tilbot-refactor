@@ -9,7 +9,7 @@
     CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
-    Message
+    Message,
   } from "$lib/types/types";
   import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
@@ -23,7 +23,7 @@
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
-  const messages: Message[] = getContext("messagesContext")
+  const messages: Message[] = getContext("messagesContext");
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("text");
@@ -44,11 +44,6 @@
     projectController.output.isTypingIndicatorActive
   );
 
-  // Placeholder for upcoming functions to handle incoming messages and route them correctly
-  function message_received() {
-    return;
-  }
-
   function openBarcodeReader(): void {
     showBarcodeScanner = true;
   }
@@ -61,10 +56,6 @@
     projectController.output.processMessage("user", messageText);
     // Reset currentMessageType to text by default
     currentMessageType = "text";
-  }
-
-  function sendChatGPTMessage(messageText: string): void {
-    projectController.output.processMessage("chatgpt", messageText);
   }
 
   function handleScannedCode(decoded: string): void {
@@ -92,10 +83,6 @@
     projectController.output.botMessage(message);
   }
 
-  function chatgptmessage() {
-    sendChatGPTMessage("Hi! This is a message from ChatGPT");
-  }
-
   function usermessage() {
     sendUserMessage("My first user message, hurrah!");
   }
@@ -110,7 +97,6 @@
 
 <button onclick={botmessage}>Botmessage</button>
 <button onclick={botmessage2}>Botmessage2</button>
-<button onclick={chatgptmessage}>Chatgptmessage</button>
 <button onclick={usermessage}>Usermessage</button>
 <button onclick={testMC}>MC Question</button>
 <!-- This section above is for testing purposes only, remove later. Ignore during review-->
