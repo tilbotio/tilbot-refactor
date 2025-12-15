@@ -8,7 +8,7 @@
   } from "../../../../common/project/types";
   import { ArrowUpOnSquare, Trash } from "svelte-heros-v2";
 
-  let window_api: any;
+  let windowApi: any;
 
   let toggle = $state() as HTMLElement;
   let { projectSettings, settings, path, save: onSave } = $props();
@@ -47,11 +47,11 @@
   }
 
   onMount(() => {
-    window_api = (window as any)?.api;
+    windowApi = (window as any)?.api;
   });
 
   async function load_avatar() {
-    const newAvatar = await window_api.invoke(
+    const newAvatar = await windowApi.invoke(
       "load-avatar",
       projectSettingsCopy.avatar_file
     );
@@ -62,13 +62,13 @@
 
   function delete_avatar() {
     if (projectSettingsCopy.avatar_file !== "") {
-      window_api.send("do-delete-avatar", projectSettingsCopy.avatar_file);
+      windowApi.send("do-delete-avatar", projectSettingsCopy.avatar_file);
       projectSettingsCopy.avatar_file = "";
     }
   }
 
   async function load_avatar_sm() {
-    const newAvatar = await window_api.invoke(
+    const newAvatar = await windowApi.invoke(
       "load-avatar",
       projectSettingsCopy.avatar_file_sm
     );
@@ -79,7 +79,7 @@
 
   function delete_avatar_sm() {
     if (projectSettingsCopy.avatar_file_sm !== "") {
-      window_api.send("do-delete-avatar", projectSettingsCopy.avatar_file_sm);
+      windowApi.send("do-delete-avatar", projectSettingsCopy.avatar_file_sm);
       projectSettingsCopy.avatar_file_sm = "";
     }
   }
