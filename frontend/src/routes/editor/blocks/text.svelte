@@ -2,13 +2,10 @@
   import { Language } from "svelte-heros-v2";
   import BaseBlock, { type BlockProps } from "./base.svelte";
 
-  const {
-    block,
-    ...props
-  }: BlockProps = $props();
+  let { block, lineLocation = $bindable(), ...props }: BlockProps = $props();
 </script>
 
-<BaseBlock Icon={Language} {block} {...props}>
+<BaseBlock Icon={Language} {block} bind:lineLocation {...props}>
   {#if block.chatgpt_variation}
     <mark>
       {@html block.content}
