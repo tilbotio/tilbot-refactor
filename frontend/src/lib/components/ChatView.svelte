@@ -61,45 +61,8 @@
   function handleScannedCode(decoded: string): void {
     sendUserMessage(`barcode: ${decoded}`);
   }
-
-  //Temporary testing functions, can be ignored during review.
-  //TODO: Remove all testing functions below
-
-  function botmessage() {
-    const message = {
-      type: "Text",
-      content: "Hi there, this is the bot speaking",
-      params: null,
-    };
-    projectController.output.botMessage(message);
-  }
-
-  function botmessage2() {
-    const message = {
-      type: "Text",
-      content: "Hi there, this is the second message from the chatbot!",
-      params: null,
-    };
-    projectController.output.botMessage(message);
-  }
-
-  function usermessage() {
-    sendUserMessage("My first user message, hurrah!");
-  }
-
-  function testMC() {
-    currentMessageType = "MC";
-    mcOptions = [{ content: "A" }, { content: "B" }, { content: "C" }];
-  }
-
-  // Remove all functions between here and TODO
 </script>
 
-<button onclick={botmessage}>Botmessage</button>
-<button onclick={botmessage2}>Botmessage2</button>
-<button onclick={usermessage}>Usermessage</button>
-<button onclick={testMC}>MC Question</button>
-<!-- This section above is for testing purposes only, remove later. Ignore during review-->
 {#if showBarcodeScanner}
   <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
 {/if}
