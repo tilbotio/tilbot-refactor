@@ -55,7 +55,7 @@
   function sendUserMessage(messageText: string): void {
     projectController.output.processMessage("user", messageText);
     // Reset currentMessageType to text by default
-    currentMessageType = "text";
+    currentMessageType = "Text";
   }
 
   function handleScannedCode(decoded: string): void {
@@ -88,7 +88,7 @@
   }
 
   function testMC() {
-    currentMessageType = "mc";
+    currentMessageType = "MC";
     mcOptions = [{ content: "A" }, { content: "B" }, { content: "C" }];
   }
 

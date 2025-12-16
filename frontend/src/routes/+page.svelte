@@ -19,9 +19,9 @@
   let settingsContext: ProjectSettings = $state(loadResult.settings);
 
   let messages = $state<Message[]>([]);
-  // TODO: This is not the problem the IDE makes it out to be; ignore or put in effect?
-  setContext("messagesContext", messages);
-  let currentMessageType: CurrentMessageType = $state("text");
+  // https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
+  setContext("messagesContext", () => messages);
+  let currentMessageType: CurrentMessageType = $state("Text");
 
   setContext("runtimeContext", runtimeContext);
   setContext("settingsContext", settingsContext);
@@ -46,7 +46,7 @@
       if (event.data.startsWith("log:")) {
         projectController.log(event.data.substring(5));
       } else if (event.data.startsWith("chatgpt|")) {
-        sendChatGPTMessage(event.data.substring(8));
+        projectController.output.processMessage("chatgpt", event.data.substring(8));
       } else if (event.data.startsWith("variation|")) {
         variation_message(event.data.substring(10));
       } else {
@@ -55,15 +55,15 @@
     }
   }
 
-  function sendChatGPTMessage(messageText: string): void {
-    projectController.output.processMessage("chatgpt", messageText);
-  }
-
   function projectReceived(data: any): void {
     messages = [];
-    // TODO: Add logic to set currentMessageType to text, might need to move that state to runtimeContext
+    currentMessageType = "Auto";
     const chatLookup = new ChatLookup();
     const chatLogger = new ChatLogger();
+    let highestTimeoutId = setTimeout(";");
+    for (var i = 0; i < highestTimeoutId; i++) {
+      clearTimeout(i);
+    }
     projectController = new LocalProjectController(
       chatLookup,
       chatOutput,
