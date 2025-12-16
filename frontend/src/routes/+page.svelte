@@ -7,7 +7,10 @@
   import { ChatLogger } from "$lib/classes/ChatLogger";
   import { RemoteProjectController } from "../../../common/projectcontroller/remote";
   import { LocalProjectController } from "../../../common/projectcontroller/local";
-  import type { ProjectControllerInterface } from "../../../common/projectcontroller/types";
+  import type {
+    ProjectControllerInterface,
+    ProjectControllerLookupInterface,
+  } from "../../../common/projectcontroller/types";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import type { Message, CurrentMessageType } from "$lib/types/types";
   import type { ProjectSettings } from "../../../common/project/types";
@@ -20,7 +23,8 @@
 
   let messages = $state<Message[]>([]);
   // https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
-  setContext("messagesContext", () => messages);
+  // TODO: Nog te fiksen, fix uit bovenstaande werkte niet (messages was geen array at runtime)
+  setContext("messagesContext", messages);
   let currentMessageType: CurrentMessageType = $state("Text");
 
   setContext("runtimeContext", runtimeContext);
@@ -30,6 +34,8 @@
   let projectController: ProjectControllerInterface<ChatOutput> = $state(
     new RemoteProjectController(chatOutput)
   );
+
+  let chatLookup: ChatLookup | null = null;
 
   $effect(() => {
     chatOutput.projectController = projectController;
@@ -46,7 +52,10 @@
       if (event.data.startsWith("log:")) {
         projectController.log(event.data.substring(5));
       } else if (event.data.startsWith("chatgpt|")) {
-        projectController.output.processMessage("chatgpt", event.data.substring(8));
+        projectController.output.processMessage(
+          "chatgpt",
+          event.data.substring(8)
+        );
       } else if (event.data.startsWith("variation|")) {
         variation_message(event.data.substring(10));
       } else {
@@ -58,10 +67,10 @@
   function projectReceived(data: any): void {
     messages = [];
     currentMessageType = "Auto";
-    const chatLookup = new ChatLookup();
+    chatLookup = new ChatLookup();
     const chatLogger = new ChatLogger();
     let highestTimeoutId = setTimeout(";");
-    for (var i = 0; i < highestTimeoutId; i++) {
+    for (let i = 0; i < highestTimeoutId; i++) {
       clearTimeout(i);
     }
     projectController = new LocalProjectController(
@@ -76,8 +85,8 @@
     window.parent.postMessage(windowmsg);
   }
 
-  function variation_message(data: any): void {
-    // Nog toe te voegen
+  function variation_message(content: string): void {
+    chatLookup!.resolveVariation(content);
   }
 </script>
 
