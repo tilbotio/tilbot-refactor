@@ -18,7 +18,7 @@
   let runtimeContext: RuntimeContext = $state(loadResult.runtimeContext);
   let settingsContext: ProjectSettings = $state(loadResult.settings);
 
-  let messages = $state<Message[]>([]);
+  const messages = $state<Message[]>([]);
   setContext("messagesContext", messages);
   let currentMessageType: CurrentMessageType = $state("Text");
 
