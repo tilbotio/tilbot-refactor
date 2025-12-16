@@ -7,10 +7,7 @@
   import { ChatLogger } from "$lib/classes/ChatLogger";
   import { RemoteProjectController } from "../../../common/projectcontroller/remote";
   import { LocalProjectController } from "../../../common/projectcontroller/local";
-  import type {
-    ProjectControllerInterface,
-    ProjectControllerLookupInterface,
-  } from "../../../common/projectcontroller/types";
+  import type { ProjectControllerInterface } from "../../../common/projectcontroller/types";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import type { Message, CurrentMessageType } from "$lib/types/types";
   import type { ProjectSettings } from "../../../common/project/types";
