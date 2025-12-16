@@ -9,7 +9,7 @@
   import { LocalProjectController } from "../../../common/projectcontroller/local";
   import type { ProjectControllerInterface } from "../../../common/projectcontroller/types";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
-  import type { Message } from "$lib/types/types";
+  import type { Message, CurrentMessageType } from "$lib/types/types";
   import type { ProjectSettings } from "../../../common/project/types";
 
   let { data: loadResult }: PageProps = $props();
@@ -21,6 +21,7 @@
   let messages = $state<Message[]>([]);
   // TODO: This is not the problem the IDE makes it out to be; ignore or put in effect?
   setContext("messagesContext", messages);
+  let currentMessageType: CurrentMessageType = $state("text");
 
   setContext("runtimeContext", runtimeContext);
   setContext("settingsContext", settingsContext);
@@ -80,4 +81,4 @@
   }
 </script>
 
-<ChatView {projectController} />
+<ChatView {projectController} {currentMessageType} />

@@ -6,10 +6,10 @@
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import type { ProjectSettings } from "../../../../common/project/types";
   import type {
-    CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
     Message,
+    CurrentMessageType,
   } from "$lib/types/types";
   import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
@@ -17,16 +17,16 @@
 
   type Props = {
     projectController: ProjectControllerInterface<ChatOutput>;
+    currentMessageType: CurrentMessageType;
   };
 
-  const { projectController }: Props = $props();
+  let { projectController, currentMessageType }: Props = $props();
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
   const messages: Message[] = getContext("messagesContext");
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
-  let currentMessageType: CurrentMessageType = $state("text");
   let mcOptions: McOption[] = $state([]);
 
   let scrollContainer: HTMLDivElement;
