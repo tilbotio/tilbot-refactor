@@ -19,8 +19,6 @@
   let settingsContext: ProjectSettings = $state(loadResult.settings);
 
   let messages = $state<Message[]>([]);
-  // https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
-  // TODO: Nog te fiksen, fix uit bovenstaande werkte niet (messages was geen array at runtime)
   setContext("messagesContext", messages);
   let currentMessageType: CurrentMessageType = $state("Text");
 
@@ -62,7 +60,8 @@
   }
 
   function projectReceived(data: any): void {
-    messages = [];
+    // To prevent this error: https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
+    messages.length = 0;
     currentMessageType = "Auto";
     chatLookup = new ChatLookup();
     const chatLogger = new ChatLogger();
