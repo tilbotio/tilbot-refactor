@@ -57,7 +57,7 @@
           event.data.substring(8)
         );
       } else if (event.data.startsWith("variation|")) {
-        variation_message(event.data.substring(10));
+        variationMessage(event.data.substring(10));
       } else {
         projectController.output.processMessage("user", event.data);
       }
@@ -85,7 +85,7 @@
     window.parent.postMessage(windowmsg);
   }
 
-  function variation_message(content: string): void {
+  function variationMessage(content: string): void {
     chatLookup!.resolveVariation(content);
   }
 </script>
