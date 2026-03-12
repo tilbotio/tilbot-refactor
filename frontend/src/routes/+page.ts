@@ -26,6 +26,7 @@ export const load: PageLoad = ({ url, fetch }) => {
       }
     } catch (e) {
       runtimeContext.isTilbotEditor = false;
+      console.log("Not Tilbot Editor");
     }
   }
 

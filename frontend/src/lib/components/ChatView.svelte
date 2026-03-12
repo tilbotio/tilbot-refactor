@@ -6,10 +6,10 @@
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import type { ProjectSettings } from "../../../../common/project/types";
   import type {
-    CurrentMessageType,
     McOption,
     ShowBarcodeScanner,
-    Message
+    Message,
+    CurrentMessageType,
   } from "$lib/types/types";
   import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
@@ -17,16 +17,16 @@
 
   type Props = {
     projectController: ProjectControllerInterface<ChatOutput>;
+    currentMessageType: CurrentMessageType;
   };
 
-  const { projectController }: Props = $props();
+  let { projectController, currentMessageType }: Props = $props();
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
-  const messages: Message[] = getContext("messagesContext")
+  const messages: Message[] = getContext("messagesContext");
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
-  let currentMessageType: CurrentMessageType = $state("text");
   let mcOptions: McOption[] = $state([]);
 
   let scrollContainer: HTMLDivElement;
@@ -44,11 +44,6 @@
     projectController.output.isTypingIndicatorActive
   );
 
-  // Placeholder for upcoming functions to handle incoming messages and route them correctly
-  function message_received() {
-    return;
-  }
-
   function openBarcodeReader(): void {
     showBarcodeScanner = true;
   }
@@ -60,60 +55,14 @@
   function sendUserMessage(messageText: string): void {
     projectController.output.processMessage("user", messageText);
     // Reset currentMessageType to text by default
-    currentMessageType = "text";
-  }
-
-  function sendChatGPTMessage(messageText: string): void {
-    projectController.output.processMessage("chatgpt", messageText);
+    currentMessageType = "Text";
   }
 
   function handleScannedCode(decoded: string): void {
     sendUserMessage(`barcode: ${decoded}`);
   }
-
-  //Temporary testing functions, can be ignored during review.
-  //TODO: Remove all testing functions below
-
-  function botmessage() {
-    const message = {
-      type: "Text",
-      content: "Hi there, this is the bot speaking",
-      params: null,
-    };
-    projectController.output.botMessage(message);
-  }
-
-  function botmessage2() {
-    const message = {
-      type: "Text",
-      content: "Hi there, this is the second message from the chatbot!",
-      params: null,
-    };
-    projectController.output.botMessage(message);
-  }
-
-  function chatgptmessage() {
-    sendChatGPTMessage("Hi! This is a message from ChatGPT");
-  }
-
-  function usermessage() {
-    sendUserMessage("My first user message, hurrah!");
-  }
-
-  function testMC() {
-    currentMessageType = "mc";
-    mcOptions = [{ content: "A" }, { content: "B" }, { content: "C" }];
-  }
-
-  // Remove all functions between here and TODO
 </script>
 
-<button onclick={botmessage}>Botmessage</button>
-<button onclick={botmessage2}>Botmessage2</button>
-<button onclick={chatgptmessage}>Chatgptmessage</button>
-<button onclick={usermessage}>Usermessage</button>
-<button onclick={testMC}>MC Question</button>
-<!-- This section above is for testing purposes only, remove later. Ignore during review-->
 {#if showBarcodeScanner}
   <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
 {/if}

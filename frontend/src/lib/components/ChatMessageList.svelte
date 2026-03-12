@@ -12,7 +12,7 @@
 
   let { isTypingIndicatorActive, avatar_file_sm }: Props = $props();
 
-  const messages: Message[] = getContext("messagesContext")
+  const messages: Message[] = getContext("messagesContext");
 
   function isNewBotMessageBlock(index: number): boolean {
     return index === 0 || messages[index - 1]?.from != "bot";
