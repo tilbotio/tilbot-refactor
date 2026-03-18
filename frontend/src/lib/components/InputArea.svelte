@@ -18,6 +18,7 @@
 
   function handleTextSubmit(): void {
     console.log("Text submitted");
+    console.log(inputText);
     onSend(inputText);
     inputText = "";
   }
@@ -42,7 +43,7 @@
   }
 </script>
 
-{#if currentMessageType === "mc"}
+{#if currentMessageType === "MC"}
   <div class="bg-gray-100 w-full drop-shadow-md p-3 text-center">
     {#each mcOptions as option}
       <button
