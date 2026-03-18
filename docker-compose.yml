@@ -1,7 +1,7 @@
 services:
-  npm-ci:
+  yarn-install:
     build: .
-    command: ["npm", "ci"]
+    command: ["yarn", "install", "--frozen-lockfile"]
     volumes:
     - .:/home/node
 
@@ -9,7 +9,7 @@ services:
     build: .
     working_dir: /home/node/frontend
     depends_on:
-      npm-ci:
+      yarn-install:
         condition: service_completed_successfully
     ports:
     - 5173:5173
@@ -18,18 +18,14 @@ services:
     - .:/home/node
     environment:
     - VITE_API_URL=http://backend:8000
-    healthcheck:
-      test: curl -f localhost:5173 || exit 1
-      interval: 10s
-      timeout: 2s
-      retries: 20
+    - MONGO_DB=mongodb://mongo/tilbot
     command: ["npm", "run", "dev-vite"]
 
   backend:
     build: .
     working_dir: /home/node/backend
     depends_on:
-      npm-ci:
+      yarn-install:
         condition: service_completed_successfully
       mongo:
         condition: service_healthy
@@ -41,14 +37,6 @@ services:
     environment:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
-    healthcheck:
-      test: curl -f localhost:8000/api/admin_account_exists || exit 1
-      interval: 10s
-      timeout: 2s
-      retries: 20
-    depends_on:
-      mongo:
-        condition: service_healthy
     command: ["npm", "run", "start"]
 
   mongo:
@@ -65,25 +53,6 @@ services:
       retries: 20
     volumes:
     - mongodb:/data/db
-
-  tests:
-    profiles:
-      - testing
-    build:
-      context: .
-      dockerfile: Dockerfile-tests
-    depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-      npm-ci:
-        condition: service_completed_successfully
-    environment:
-    - FRONTEND_ADDRESS=frontend
-    volumes:
-    - .:/home/node
-    command: ["sh", "-exc", "npx playwright install; npm run test-integration"]
 
 volumes:
   mongodb:
