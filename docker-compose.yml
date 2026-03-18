@@ -20,6 +20,11 @@ services:
     environment:
     - VITE_API_URL=http://backend:8000
     - MONGO_DB=mongodb://mongo/tilbot
+    healthcheck:
+      test: curl -f localhost:5173 || exit 1
+      interval: 10s
+      timeout: 2s
+      retries: 20
     command: ["yarn", "run", "dev"]
 
   backend:
@@ -28,6 +33,8 @@ services:
     depends_on:
       yarn-install:
         condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
     ports:
     - 8000-8010:8000-8010
     restart: unless-stopped
@@ -36,6 +43,11 @@ services:
     environment:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
+    healthcheck:
+      test: curl -f localhost:8000/api/admin_account_exists || exit 1
+      interval: 10s
+      timeout: 2s
+      retries: 20
     command: ["yarn", "run", "start"]
 
   mongo:
@@ -45,9 +57,33 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: tilbot
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 2s
+      retries: 20
     volumes:
     - mongodb:/data/db
     entrypoint: sh -ec "exec docker-entrypoint.sh mongod >/dev/null 2>&1"
+
+  tests:
+    profiles:
+      - testing
+    build:
+      context: .
+      dockerfile: Dockerfile-tests
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      npm-ci:
+        condition: service_completed_successfully
+    environment:
+    - FRONTEND_ADDRESS=frontend
+    volumes:
+    - .:/home/node
+    command: ["sh", "-exc", "npx playwright install; npm run test-integration"]
 
 volumes:
   mongodb:

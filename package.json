@@ -9,7 +9,9 @@
       "backend",
       "socket-io",
       "app",
-      "tests/integration/app"
+      "tests/unit",
+      "tests/integration/app",
+      "tests/integration/frontend"
     ]
   },
   "scripts": {
@@ -26,6 +28,9 @@
     "package-linux": "yarn build:app && yarn workspace app package-linux",
     "package-mac-x64": "yarn build:app && yarn workspace app package-mac-x64",
     "package-mac-arm": "yarn build:app && yarn workspace app package-mac-arm",
+    "test-unit": "npm run test --workspace=tests/unit",
+    "test-integration": "npm run test --workspace=tests/integration",
+    "test-integration-ui": "npm run test-ui --workspace=tests/integration",
     "test-integration-app": "TILBOT_ENV=app npm run build --workspace=frontend && npm run test --workspace=tests/integration/app",
     "test-integration-app-ui": "TILBOT_ENV=app npm run build --workspace=frontend && npm run test-ui --workspace=tests/integration/app"
   },

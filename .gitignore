@@ -28,3 +28,13 @@ app/build
 /tilbot-win32-x64
 /tmp_upload/
 /dist
+
+.DS_Store
+
+# Playwright
+/tests/integration/frontend/test-results/
+/tests/integration/frontend/playwright-report/
+/tests/integration/frontend/blob-report/
+/tests/integration/frontend/playwright/.cache/
+/tests/integration/.npm/
+/tests/integration/frontend/.npm/
