@@ -88,6 +88,7 @@
 </script>
 
 <div
+  bind:this={root}
   class={[
     "card w-64 bg-slate-100 transition-transform indicator",
     selected ? "shadow-xl z-50" : "shadow-md",
@@ -95,7 +96,6 @@
   id="block_{blockId}"
   onclick={selectBlock}
   role="none"
-  bind:this={root}
 >
   <ConnectorPad bind:this={inConnectorPad} {blockId} />
 
