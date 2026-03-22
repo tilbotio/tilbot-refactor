@@ -9,7 +9,7 @@
   import { LocalProjectController } from "../../../common/projectcontroller/local";
   import type { ProjectControllerInterface } from "../../../common/projectcontroller/types";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
-  import type { Message, CurrentMessageType } from "$lib/types/types";
+  import type { Message } from "$lib/types/types";
   import type { ProjectSettings } from "../../../common/project/types";
 
   let { data: loadResult }: PageProps = $props();
@@ -20,7 +20,6 @@
 
   const messages = $state<Message[]>([]);
   setContext("messagesContext", messages);
-  let currentMessageType: CurrentMessageType = $state("Text");
 
   setContext("runtimeContext", runtimeContext);
   setContext("settingsContext", settingsContext);
@@ -62,7 +61,6 @@
   function projectReceived(data: any): void {
     // To prevent this error: https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
     messages.length = 0;
-    currentMessageType = "Auto";
     chatLookup = new ChatLookup();
     const chatLogger = new ChatLogger();
     let highestTimeoutId = setTimeout(";");
@@ -86,4 +84,4 @@
   }
 </script>
 
-<ChatView {projectController} {currentMessageType} />
+<ChatView {projectController} />

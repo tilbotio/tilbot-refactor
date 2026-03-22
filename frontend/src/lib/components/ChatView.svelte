@@ -17,16 +17,16 @@
 
   type Props = {
     projectController: ProjectControllerInterface<ChatOutput>;
-    currentMessageType: CurrentMessageType;
   };
 
-  let { projectController, currentMessageType }: Props = $props();
+  let { projectController }: Props = $props();
 
   const runtimeContext: RuntimeContext = getContext("runtimeContext");
   const settingsContext: ProjectSettings = getContext("settingsContext");
   const messages: Message[] = getContext("messagesContext");
 
   let showBarcodeScanner: ShowBarcodeScanner = $state(false);
+  let currentMessageType: CurrentMessageType = $state("Auto");
   let mcOptions: McOption[] = $state([]);
 
   let scrollContainer: HTMLDivElement;
@@ -37,6 +37,25 @@
         await tick();
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       })();
+    }
+
+    if (messages.length) {
+      // Check if we should update the input type.
+      let latest = messages[messages.length - 1];
+
+      if (latest.from == "bot") {
+        currentMessageType = latest.type || "Auto";
+        const newMcOptions = [];
+
+        if (currentMessageType === "MC") {
+          console.log(latest.params.options);
+          for (const content of latest.params.options) {
+            newMcOptions.push({ content });
+          }
+        }
+
+        mcOptions = newMcOptions;
+      }
     }
   });
 

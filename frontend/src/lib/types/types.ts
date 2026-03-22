@@ -4,6 +4,7 @@ export type Message = {
   from: "bot" | "user" | "chatgpt";
   content: string;
   params?: any;
+  type?: CurrentMessageType;  
 };
 
 export type NewBotMessageBlock = boolean;

@@ -4,7 +4,7 @@ import type {
 } from "../../../../common/projectcontroller/types";
 import type { RuntimeContext } from "$lib/types/RuntimeContext";
 import type { ProjectSettings } from "../../../../common/project/types";
-import type { Message } from "$lib/types/types";
+import type { CurrentMessageType, Message } from "$lib/types/types";
 import { getContext } from "svelte";
 
 export class ChatOutput implements ProjectControllerOutputInterface {
@@ -53,7 +53,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
 
     setTimeout(() => {
       this.isTypingIndicatorActive = false;
-      this.processMessage("bot", block.content, null);
+      this.processMessage("bot", block.content, block.params, block.type as CurrentMessageType);
     }, timeout);
   }
 
@@ -72,9 +72,10 @@ export class ChatOutput implements ProjectControllerOutputInterface {
   processMessage(
     from: Message["from"],
     content: Message["content"],
-    params?: Message["params"]
+    params?: Message["params"],
+    type?: Message["type"],    
   ) {
-    this.messages.push({ from, content, params });
+    this.messages.push({ from, content, params, type });
     if (from == "bot") {
       this.projectController?.message_sent_event();
     } else {
