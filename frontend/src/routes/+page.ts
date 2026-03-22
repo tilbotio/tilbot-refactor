@@ -5,7 +5,7 @@ import { defaultProjectSettings } from "../../../common/project/types";
 import _ from "lodash";
 
 export const load: PageLoad = ({ url, fetch }) => {
-  const showHeaderParam = url.searchParams.get("show_header") || "1";
+  const showHeaderParam = (!browser || window.parent.isTilbotEditor)?"1":url.searchParams.get("show_header") || "1";
 
   const runtimeContext: RuntimeContext = {
     path: "",
@@ -13,8 +13,8 @@ export const load: PageLoad = ({ url, fetch }) => {
     isTilbotEditor: false,
     // As showHeader is not altered in the application, we do not consider it a state
     showHeader: showHeaderParam === "1",
-    participantId: url.searchParams.get("pid") || null,
-    projectId: url.searchParams.get("project") || null,
+    participantId: (!browser || window.parent.isTilbotEditor)?null:url.searchParams.get("pid") || null,
+    projectId: (!browser || window.parent.isTilbotEditor)?null:url.searchParams.get("project") || null,
   };
 
   let settings = _.cloneDeep(defaultProjectSettings);
