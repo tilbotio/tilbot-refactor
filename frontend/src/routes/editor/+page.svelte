@@ -492,7 +492,7 @@
     chatGPTrunning = false;
     const contentWindow = simulator.contentWindow;
     if (contentWindow != null) {
-      windowAPI.send("load-project-db", project);
+      windowAPI.send("load-project-db", $state.snapshot(project));
       contentWindow.postMessage(
         { project: JSON.stringify(project), path: path },
         "*"

@@ -73,7 +73,7 @@
       chatLookup,
       chatOutput,
       chatLogger,
-      data.project
+      JSON.parse(data.project)
     );
     let windowmsg = {
       msg: "reset_var_mem",
