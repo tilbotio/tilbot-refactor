@@ -18,11 +18,11 @@
     "dev:frontend": "yarn workspace frontend dev",
     "dev:backend": "yarn workspace backend start",
     "dev": "concurrently \"yarn dev:frontend\" \"yarn dev:backend\"",
-    "prod": "TILBOT_ENV=web concurrently \"yarn workspace frontend build\" \"yarn dev:backend\"",
+    "prod": "cross-env TILBOT_ENV=web concurrently \"yarn workspace frontend build\" \"yarn dev:backend\"",
     "preview": "yarn workspace frontend preview",
     "check": "yarn workspace frontend check",
     "check:watch": "yarn workspace frontend check:watch",
-    "build:app": "TILBOT_ENV=app yarn workspace frontend build",
+    "build:app": "cross-env TILBOT_ENV=app yarn workspace frontend build",
     "app": "yarn build:app && yarn workspace app start",
     "package-win": "yarn build:app && yarn workspace app package-win",
     "package-linux": "yarn build:app && yarn workspace app package-linux",
@@ -31,11 +31,12 @@
     "test-unit": "npm run test --workspace=tests/unit",
     "test-integration": "npm run test --workspace=tests/integration",
     "test-integration-ui": "npm run test-ui --workspace=tests/integration",
-    "test-integration-app": "TILBOT_ENV=app npm run build --workspace=frontend && npm run test --workspace=tests/integration/app",
-    "test-integration-app-ui": "TILBOT_ENV=app npm run build --workspace=frontend && npm run test-ui --workspace=tests/integration/app"
+    "test-integration-app": "yarn build:app && npm run test --workspace=tests/integration/app",
+    "test-integration-app-ui": "yarn build:app && npm run test-ui --workspace=tests/integration/app"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",    
     "tslib": "^2.3.1"
   }
 }
