@@ -4,7 +4,7 @@ services:
     build: .
     command: ["yarn", "install", "--frozen-lockfile"]
     volumes:
-    - .:/home/node
+      - .:/home/node
 
   frontend:
     build: .
@@ -13,13 +13,13 @@ services:
       yarn-install:
         condition: service_completed_successfully
     ports:
-    - 5173:5173
+      - 5173:5173
     restart: unless-stopped
     volumes:
-    - .:/home/node
+      - .:/home/node
     environment:
-    - VITE_API_URL=http://backend:8000
-    - MONGO_DB=mongodb://mongo/tilbot
+      - VITE_API_URL=http://backend:8000
+      - MONGO_DB=mongodb://mongo/tilbot
     healthcheck:
       test: curl -f localhost:5173 || exit 1
       interval: 10s
@@ -36,10 +36,10 @@ services:
       mongo:
         condition: service_healthy
     ports:
-    - 8000-8010:8000-8010
+      - 8000-8010:8000-8010
     restart: unless-stopped
     volumes:
-    - .:/home/node
+      - .:/home/node
     environment:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
@@ -53,7 +53,7 @@ services:
   mongo:
     image: mongo
     ports:
-    - 27017:27017
+      - 27017:27017
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: tilbot
@@ -63,7 +63,7 @@ services:
       timeout: 2s
       retries: 20
     volumes:
-    - mongodb:/data/db
+      - mongodb:/data/db
     entrypoint: sh -ec "exec docker-entrypoint.sh mongod >/dev/null 2>&1"
 
   tests:
@@ -80,9 +80,9 @@ services:
       npm-ci:
         condition: service_completed_successfully
     environment:
-    - FRONTEND_ADDRESS=frontend
+      - FRONTEND_ADDRESS=frontend
     volumes:
-    - .:/home/node
+      - .:/home/node
     command: ["sh", "-exc", "npx playwright install; npm run test-integration"]
 
 volumes:
