@@ -15,8 +15,8 @@
   let { data: loadResult }: PageProps = $props();
 
   // Set to $state to allow for future functionality
-  let runtimeContext: RuntimeContext = $state(loadResult.runtimeContext);
-  let settingsContext: ProjectSettings = $state(loadResult.settings);
+  let runtimeContext: RuntimeContext = $derived(loadResult.runtimeContext);
+  let settingsContext: ProjectSettings = $derived(loadResult.settings);
 
   const messages = $state<Message[]>([]);
   setContext("messagesContext", messages);
@@ -37,7 +37,43 @@
 
   onMount(async () => {
     window.addEventListener("message", messageReceived, false);
+    create_websocket();
   });
+
+  function create_websocket() {
+    let restarting = false;
+    let socket: WebSocket | null = null;
+
+    function restart() {
+      if (!restarting) {
+        restarting = true;
+        setTimeout(create_websocket, 1000);
+      }
+      if (socket) {
+        socket.close();
+        socket = null;
+      }
+    }
+
+    if (!runtimeContext.conversationId) {
+      restart();
+      return;
+    }
+
+    if (!(projectController instanceof RemoteProjectController)) {
+      restart();
+      return;
+    }
+
+    const proto = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const url = `${proto}${window.location.host}/ws/chat?conversation=${encodeURIComponent(runtimeContext.conversationId)}`;
+
+    socket = new WebSocket(url);
+    projectController.socket = socket;
+
+    socket.addEventListener("close", restart);
+    socket.addEventListener("error", restart);
+  }
 
   async function messageReceived(event: MessageEvent) {
     if (event.data.project !== undefined) {

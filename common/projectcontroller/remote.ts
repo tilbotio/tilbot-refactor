@@ -40,19 +40,12 @@ class RemoteProjectController<
   }
 
   set socket(socket: any) {
+    this._socket = socket;
     if (socket == null) {
-      this._socket = null;
       return;
     }
 
-    socket.addEventListener("open", () => {
-      if (this.socket) {
-        // We're late to the party.
-        socket.close();
-      } else {
-        this.flushSocket();
-      }
-    });
+    this.flushSocket();
 
     socket.addEventListener("close", () => {
       if (this._socket === socket) {
@@ -83,19 +76,19 @@ class RemoteProjectController<
   }
 
   message_sent_event() {
-    this.emit("message sent");
+    this._socket.send(JSON.stringify(["message sent"]));
   }
 
   receive_message(str: string) {
-    this.emit("user_message", str);
+    this._socket.send(JSON.stringify(["user_message", str]));
   }
 
   log(str: string) {
-    this.emit("log", str);
+    this._socket.send(JSON.stringify(["log", str]));
   }
 
   set_participant_id(pid: string) {
-    this.emit("pid", pid);
+    this._socket.send(JSON.stringify(["pid", pid]));
   }
 }
 
