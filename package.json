@@ -36,7 +36,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "cross-env": "^10.1.0",    
+    "cross-env": "^10.1.0",
     "tslib": "^2.3.1"
-  }
+  },
+  "packageManager": "yarn@4.13.0"
 }

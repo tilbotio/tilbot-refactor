@@ -5,8 +5,7 @@ import { fastifySession } from "@fastify/session";
 import { fastifyCookie } from "@fastify/cookie";
 import fastifyCORS from "@fastify/cors";
 import fastifyFormBody from "@fastify/formbody";
-import fastifyFileUpload from "fastify-file-upload";
-import fastifyMultiPart from "@fastify/multipart";
+import fastifyMultiPart, { MultipartValue } from "@fastify/multipart";
 import fastifyWebSocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import { MongoClient } from "mongodb";
@@ -108,14 +107,6 @@ await Promise.all([
 
   // parse application/x-www-form-urlencoded
   app.register(fastifyFormBody),
-
-  // File uploads
-  app.register(fastifyFileUpload, {
-    safeFileNames: true,
-    abortOnLimit: true,
-    useTempFiles: true,
-    tempFileDir: "/tmp",
-  }),
 
   app.register(fastifyMultiPart),
 ]);
@@ -296,13 +287,9 @@ app.post("/api/set_project_status", async (req, res) => {
  * API call: Import a project
  */
 app.post("/api/import_project", async (req, res) => {
-  // Source: https://medium.com/@ritikkhndelwal/getting-the-data-from-the-multipart-form-data-in-node-js-dc2d99d10f97
-
   console.log("=== IMPORT PROJECT ===");
-  console.log(req.body);
-
-  const body: any = req.body;
-  const project_id = body.project_id;
+  const data = await req.file();
+  const project_id: string = (data?.fields.project_id as MultipartValue).value as string;
 
   // Be extra careful because we're going to do filesystem operations here!
   if (!/^[0-9a-f]{32}$/.test(project_id)) {
@@ -325,8 +312,8 @@ app.post("/api/import_project", async (req, res) => {
   rmSync(pub_dir, { recursive: true, force: true });
   mkdirSync(pub_dir, { recursive: true });
 
-  const raw: any = req.raw;
-  const zip = new AdmZip(raw.files.file.tempFilePath);
+  const file = await data?.toBuffer();
+  const zip = new AdmZip(file);
   const zipEntries = zip.getEntries(); // an array of ZipEntry records
 
   let project_data: string | null = null;

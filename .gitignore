@@ -4,6 +4,7 @@ node_modules
 !/.git*
 /.gitconfig
 !/.npmrc
+!/.yarnrc.yml
 app/build
 /certs
 /currentproject

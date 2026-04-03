@@ -3,21 +3,19 @@
   "version": "1.0.0",
   "description": "Create custom chatbots",
   "author": "Jan de Wit, Tilburg University",
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  },
   "private": true,
   "main": "electron-main.ts",
   "type": "module",
-  "workspaces": {
-    "nohoist": [
-      "**"
-    ]
-  },
   "build": {
     "directories": {
       "buildResources": "_build",
       "output": "../dist"
     },
     "appId": "tilbot",
-    "linux":{
+    "linux": {
       "category": "Science"
     },
     "icon": "../frontend/src/icon/png/1024x1024.png",
