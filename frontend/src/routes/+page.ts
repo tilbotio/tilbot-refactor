@@ -30,7 +30,9 @@ export const load: PageLoad = ({ url, fetch }) => {
     }
   }
 
-  if (runtimeContext.projectId) {
+  // Try to connect to remote server if we have a projectId (server version)
+  // or if we're not in the editor/simulator (local server started from editor).
+  if (runtimeContext.projectId || !runtimeContext.isTilbotEditor) {
     const id = runtimeContext.projectId;
     (async () => {
       runtimeContext.path = `/proj_pub/${id}`;

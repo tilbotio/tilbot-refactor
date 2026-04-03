@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from "fs";
 
 // Source: https://stackoverflow.com/questions/18554360/toisostring-return-wrong-date
 (function() {
@@ -32,9 +32,9 @@ const fs = require('fs');
 
   })();
 
-class Logger {
+export class Logger {
 
-    stream = null;
+    private stream: any = null;
 
     constructor(p) {
         if (p.includes('resources')) {
@@ -62,5 +62,3 @@ class Logger {
       this.stream.write(timestamp + ';participant_id;' + pid + "\r\n");
     }
 }
-
-module.exports = Logger;

@@ -60,7 +60,7 @@ function createWindow() {
     const p = app.getPath("userData");
     fs.mkdirSync(`${p}/currentproject`, { recursive: true });
     fs.writeFileSync(`${p}/currentproject/electron-project.json`, project_json);
-    ps = fork(`${__dirname}/electron-server.cjs`, ["-p=" + p]);
+    ps = fork(`${__dirname}/electron-server.ts`, ["-p=" + p]);
   });
 
   ipcMain.on("close-server", (event) => {
