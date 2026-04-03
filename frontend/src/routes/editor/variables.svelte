@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Papa from "papaparse";
 
   let toggle: HTMLElement;
   let { variables = $bindable([]) } = $props();
@@ -37,18 +36,20 @@
   async function variableRowClicked(this: HTMLElement) {
     currentCSV = null;
     selectedVariable = parseInt(this.dataset.variableId!);
-    const variable = variables[selectedVariable];
+
+    // @TODO: retrieve existing data from database.
+
+    /*const variable = variables[selectedVariable];
     const csvfile = variable.csvfile;
     if (csvfile !== undefined && variable.type == "csv") {
       const csv = await windowApi.invoke("get-csv", csvfile);
       currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
-    }
+    }*/
   }
 
-  async function importCSV() {
-    const { filename, csv } = await windowApi.invoke("load-csv");
-    variables[selectedVariable!].csvfile = filename;
-    currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
+  async function importExcel() {
+    const data = await windowApi.invoke("load-excel");
+    currentCSV = data;
   }
 
   function close() {
@@ -150,7 +151,7 @@
             </div>
           {/if}
 
-          <button class="btn" onclick={importCSV}>Import CSV data</button>
+          <button class="btn" onclick={importExcel}>Import Excel file</button>
         {/if}
       </div>
     </div>

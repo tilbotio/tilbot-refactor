@@ -6,6 +6,7 @@ import fs from "fs";
 import { rm, mkdir, copyFile, readFile, writeFile } from "fs/promises";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
+import { readSheet } from "read-excel-file/node";
 import { CsvData } from "../common/csvdata.ts";
 import { networkInterfaces } from "os";
 import {
@@ -186,17 +187,17 @@ function createWindow() {
   });
 
   ipcMain.handle(
-    "load-csv",
+    "load-excel",
     async (
       event,
       params
-    ): Promise<{ filename: string; csv: string } | null> => {
+    ): Promise<any[][] | null> => {
       const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ["openFile"],
         filters: [
           {
-            name: "Comma-separated value (CSV) file",
-            extensions: [".csv"],
+            name: "Excel file",
+            extensions: [".xlsx"],
           },
         ],
       });
@@ -204,7 +205,12 @@ function createWindow() {
       if (canceled) {
         return null;
       } else {
-        const p = app.getPath("userData");
+        const [load_file] = filePaths;
+
+        // @TODO: import into database and save
+
+        return await readSheet(load_file);
+        /*const p = app.getPath("userData");
 
         await mkdir(`${p}/currentproject/var`, { recursive: true });
 
@@ -212,7 +218,7 @@ function createWindow() {
         const filename = path.basename(load_file);
         await copyFile(load_file, `${p}/currentproject/var/${filename}`);
         const csv = await readFile(load_file, "utf8");
-        return { filename, csv };
+        return { filename, csv };*/
 
         // @TODO: load into csvdb for use
       }

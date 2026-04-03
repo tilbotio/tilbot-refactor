@@ -42,7 +42,8 @@
     "n-readlines": "^1.0.1",
     "node-fetch": "^2.7.0",
     "openai": "^3.3.0",
-    "public-ip": "4.0.4"
+    "public-ip": "4.0.4",
+    "read-excel-file": "^8.0.3"
   },
   "devDependencies": {
     "electron": "^38.1.0",
