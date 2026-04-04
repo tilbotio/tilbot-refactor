@@ -4,7 +4,9 @@
   let toggle: HTMLElement;
   let { variables = $bindable([]) } = $props();
   let selectedVariable: number | null = $state(null);
+  let prevVariablename: string = "";
   let currentCSV: any[][] | null = $state(null);
+  let isSaved: boolean = $state(true);
 
   let windowApi: any;
 
@@ -27,7 +29,9 @@
       name = `New variable ${++count}`;
     }
 
-    variables.push({ name: name, type: "csv" });
+    prevVariablename = name;
+
+    variables.push({ name: name, type: "dataset" });
 
     currentCSV = null;
     selectedVariable = variables.length - 1;
@@ -36,6 +40,7 @@
   async function variableRowClicked(this: HTMLElement) {
     currentCSV = null;
     selectedVariable = parseInt(this.dataset.variableId!);
+    prevVariablename = $state.snapshot(variables[selectedVariable].name);
 
     // @TODO: retrieve existing data from database.
 
@@ -50,6 +55,18 @@
   async function importExcel() {
     const data = await windowApi.invoke("load-excel");
     currentCSV = data;
+
+    isSaved = currentCSV === null;
+  }
+
+  async function saveVariable() {
+    if (selectedVariable !== null) {
+      isSaved = await windowApi.invoke("save-variable", {
+        prevVariablename: prevVariablename,
+        name: $state.snapshot(variables[selectedVariable].name),
+        data: $state.snapshot(currentCSV),
+      });
+    }
   }
 
   function close() {
@@ -108,7 +125,7 @@
           </table>
         </div>
       </div>
-      <div class="flex-1 px-4">
+      <div class="flex-1 px-4 overflow-auto">
         <!-- Variable detail -->
         {#if variables.length == 0}
           <div class="flex w-full h-full justify-center items-center">
@@ -127,7 +144,7 @@
           <br /><br />
 
           {#if currentCSV != null}
-            <div class="overflow-x-auto">
+            <div class="overflow-auto max-h-[83%]">
               <table class="table table-compact w-full">
                 <thead>
                   <tr>
@@ -151,7 +168,19 @@
             </div>
           {/if}
 
-          <button class="btn" onclick={importExcel}>Import Excel file</button>
+          <button class="btn mt-2" onclick={importExcel}>
+            Import Excel file
+          </button>
+
+          <button
+            class="btn mt-2 ml-8 btn-primary {isSaved &&
+            variables[selectedVariable].name == prevVariablename
+              ? 'btn-disabled'
+              : ''}"
+            onclick={saveVariable}
+          >
+            Save
+          </button>
         {/if}
       </div>
     </div>

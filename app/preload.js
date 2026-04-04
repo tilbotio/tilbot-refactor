@@ -21,6 +21,7 @@ const validInvokeChannels = new Set([
   "query-db",
   "query-db-random",
   "save-project",
+  "save-variable",
   "server-ip",
 ]);
 

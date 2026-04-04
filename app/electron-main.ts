@@ -8,6 +8,7 @@ import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { readSheet } from "read-excel-file/node";
 import { CsvData } from "../common/csvdata.ts";
+import { VariableDb } from "../common/variabledb.ts";
 import { networkInterfaces } from "os";
 import {
   defaultGeneralSettings,
@@ -20,6 +21,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let ps: ChildProcess | undefined;
 
 let csv_datas: { [key: string]: CsvData } = {};
+let db: VariableDb = new VariableDb(app.getPath("userData") + '/currentproject/variables.db');
 
 // Get external and internal ip-address as a Promise;
 // this effectively functions as a cached result.
@@ -155,6 +157,7 @@ function createWindow() {
     let projectJson: string | null = null;
 
     if (!canceled) {
+      db.close();
       const p = app.getPath("userData");
 
       // Remove the old temp project
@@ -181,6 +184,7 @@ function createWindow() {
       }
 
       // @TODO: something with additional files like avatar, data files, etc.
+      db = new VariableDb(projectDir + '/variables.db');
     }
 
     return projectJson == null ? null : JSON.parse(projectJson);
@@ -197,7 +201,7 @@ function createWindow() {
         filters: [
           {
             name: "Excel file",
-            extensions: [".xlsx"],
+            extensions: ["xlsx"],
           },
         ],
       });
@@ -222,6 +226,23 @@ function createWindow() {
 
         // @TODO: load into csvdb for use
       }
+    }
+  );
+
+  ipcMain.handle(
+    "save-variable",
+    async (
+      event,
+      params
+    ): Promise<boolean> => {
+
+      // Delete the previous variable if we had it stored.
+      db.delete(params.prevVariablename);
+
+      // Store the new variable.
+      db.save(params.name, params.data);
+
+      return true;
     }
   );
 
@@ -300,6 +321,7 @@ function createWindow() {
 
       const zip = new AdmZip();
       zip.addFile("project.json", Buffer.from(JSON.stringify(project)));
+      zip.addLocalFile(`${p}/currentproject/variables.db`);
 
       for (const variable of project.variables) {
         if (variable.type == "csv") {
