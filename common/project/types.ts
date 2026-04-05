@@ -80,7 +80,7 @@ export type ProjectBlockType = "Auto" | "MC" | "Text" | "Trigger";
 export type ProjectBlock = {
   type: ProjectBlockType;
   name: string;
-  content: string;
+  content: any[];
   x?: number;
   y?: number;
   connectors: ProjectConnector[];

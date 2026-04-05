@@ -151,7 +151,7 @@
     const currentBlock: ProjectBlock = (project.blocks[currentBlockId] = {
       type: type,
       name: `Block ${project.current_block_id}`,
-      content: "",
+      content: [{ text: "" }],
       x: editorContainer.scrollLeft + screen.width * 0.35,
       y: editorContainer.scrollTop + screen.height * 0.4,
       connectors,
