@@ -21,7 +21,6 @@ export class LocalProjectController<
   private _logger: ProjectControllerLoggerInterface;
   private _project: any;
   private _current_block_id: number;
-  private _selected_group_blocks: any[] = [];
   private _client_vars: any;
 
   constructor(
@@ -55,28 +54,6 @@ export class LocalProjectController<
 
   get output(): ProjectControllerOutputType {
     return this._output;
-  }
-
-  get_path() {
-    // console.log(this._selected_group_blocks);
-
-    const path = this._selected_group_blocks.map((block) => block.id);
-
-    // console.log(path);
-
-    return path;
-  }
-
-  move_to_group(params: any) {
-    this._selected_group_blocks.push(params);
-  }
-
-  move_level_up() {
-    this._selected_group_blocks.pop();
-  }
-
-  move_to_root() {
-    this._selected_group_blocks = [];
   }
 
   async send_events(connector: any, input_str: string) {
@@ -122,9 +99,13 @@ export class LocalProjectController<
     }
   }
 
-  send_message(block: any, input: string = "") {
+  send_message(block: any, matchedConnector: string = "", input: string = "") {
     const params: any = {};
-    const content = this.check_variables(block.content, input);
+    const content = this.check_variables(
+      block.content,
+      matchedConnector,
+      input
+    );
     const type = block.type;
 
     if (type == "MC") {
@@ -138,16 +119,6 @@ export class LocalProjectController<
       }
 
       this._output.botMessage({ type, content, params });
-    } else if (type == "List") {
-      params.options = block.items;
-      params.text_input = block.text_input;
-      params.number_input = block.number_input;
-
-      this._output.botMessage({ type, content, params });
-    } else if (type == "Group") {
-      this.move_to_group({ id: this._current_block_id, model: block });
-      this._current_block_id = block.starting_block_id;
-      this.send_message(block.blocks[block.starting_block_id]);
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 
@@ -155,126 +126,55 @@ export class LocalProjectController<
     }
   }
 
-  check_group_exit(id: number) {
-    var path = this.get_path();
-
-    if (id == -1) {
-      const group_block_id = path[path.length - 1];
-      this.move_level_up();
-
-      let block = this._project;
-      for (const step of path) {
-        block = block.blocks[step];
-      }
-
-      for (const connector of block.blocks[group_block_id.toString()]
-        .connectors) {
-        if (connector.from_id == this._current_block_id) {
-          var new_id = connector.targets[0];
-          this._current_block_id = group_block_id;
-          this.check_group_exit(new_id);
-          break;
-        }
-      }
-    } else {
-      this._current_block_id = id;
+  message_sent_event(): void {
+    const current_block =
+      this._project.blocks[this._current_block_id.toString()];
+    if (current_block.type === "Auto") {
+      const connector = current_block.connectors[0];
+      this.send_events(connector, "");
+      this._current_block_id = connector.targets[0];
       this._send_current_message();
     }
   }
 
-  message_sent_event(): void {
-    const path = this.get_path();
-    if (path.length == 0) {
-      const current_block =
-        this._project.blocks[this._current_block_id.toString()];
-      if (current_block.type === "Auto") {
-        const connector = current_block.connectors[0];
-        this.send_events(connector, "");
-        this._current_block_id = connector.targets[0];
-        this._send_current_message();
-      }
-    } else {
-      let block = this._project;
-      for (const step of path) {
-        block = block.blocks[step];
-      }
-
-      const current_block = block.blocks[this._current_block_id.toString()];
-      if (current_block.type == "Auto") {
-        const new_id = current_block.connectors[0].targets[0];
-        this.check_group_exit(new_id);
-      }
-    }
-  }
-
-  _send_current_message(input: string = ""): void {
+  _send_current_message(
+    matchedConnector: string = "",
+    input: string = ""
+  ): void {
     const current_block_id = this._current_block_id ?? -1;
     if (current_block_id == -1) {
       return;
     }
 
-    let block = this._project;
-    for (const step of this.get_path()) {
-      block = block.blocks[step];
-    }
-    block = block.blocks[current_block_id.toString()];
+    let block = this._project.blocks[current_block_id.toString()];
 
-    if (block.chatgpt_variation) {
-      const content = this.check_variables(block.content, input);
-      const prompt = this.check_variables(block.variation_prompt);
-
-      // Keep track of time because it may take the LLM time to generate a response.
-      // We subtract this response time from the (artificial) typing delay since it has already passed.
-      const cur_time = Date.now();
-
-      (async () => {
-        const variation = await this._lookup.variation(
-          content,
-          prompt,
-          block.chatgpt_memory
-        );
-
-        const variationBlock = { ...block, content: variation };
-
-        const delay = variationBlock.delay * 1000 - (Date.now() - cur_time);
-        if (delay > 0) {
-          setTimeout(() => {
-            this.send_message(variationBlock);
-          }, delay);
-        } else {
-          this.send_message(variationBlock);
-        }
-      })();
-    } else {
-      setTimeout(() => {
-        console.log(
-          `sending message '${input}' for block ${JSON.stringify(block)}`
-        );
-        this.send_message(block, input);
-      }, (block.delay ?? 0) * 1000);
-    }
+    setTimeout(() => {
+      console.log(
+        `sending message '${input}' for block ${JSON.stringify(block)}`
+      );
+      this.send_message(block, matchedConnector, input);
+    }, (block.delay ?? 0) * 1000);
   }
 
-  check_variables(content: string, input: string = ""): string {
-    return content.replaceAll(/\[([^\]]+)\]/g, (_, bracketedText) => {
-      if (bracketedText === "input") {
-        return input;
-      } else {
-        // If it's a column from a CSV table, there should be a period.
-        // Element 1 of the match contains the string without the brackets.
-        const csv_parts = bracketedText.split(".");
-        if (csv_parts.length == 2) {
-          const [db, col] = csv_parts;
-          const client_db = this._client_vars[db] ?? {};
-          return this.check_variables(client_db[col] ?? "", input);
-        } else {
-          return this.check_variables(
-            this._client_vars[bracketedText] ?? "",
-            input
-          );
-        }
+  check_variables(
+    content: any[],
+    matchedConnector: string = "",
+    input: string = ""
+  ): string {
+    let txt = "";
+
+    for (let c of content) {
+      console.log(c);
+      if (c.text !== undefined) {
+        txt += c.text;
+      } else if (c.type == "prevTurnText") {
+        txt += input;
+      } else if (c.type == "prevConnectorLabel") {
+        txt += matchedConnector;
       }
-    });
+    }
+
+    return txt;
   }
 
   async check_labeled_connector(
@@ -455,7 +355,7 @@ export class LocalProjectController<
       const { connector, output } = best;
       this._current_block_id = connector.targets[0];
       this.send_events(connector, output as string);
-      this._send_current_message(output as string);
+      this._send_current_message(output as string, str);
     }
 
     // console.log(best);
