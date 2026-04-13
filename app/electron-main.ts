@@ -21,7 +21,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let ps: ChildProcess | undefined;
 
 let csv_datas: { [key: string]: CsvData } = {};
-let db: VariableDb = new VariableDb(app.getPath("userData") + '/currentproject/variables.db');
+let db: VariableDb = new VariableDb(
+  app.getPath("userData") + "/currentproject/variables.db"
+);
 
 // Get external and internal ip-address as a Promise;
 // this effectively functions as a cached result.
@@ -184,7 +186,7 @@ function createWindow() {
       }
 
       // @TODO: something with additional files like avatar, data files, etc.
-      db = new VariableDb(projectDir + '/variables.db');
+      db = new VariableDb(projectDir + "/variables.db");
     }
 
     return projectJson == null ? null : JSON.parse(projectJson);
@@ -192,10 +194,7 @@ function createWindow() {
 
   ipcMain.handle(
     "load-excel",
-    async (
-      event,
-      params
-    ): Promise<any[][] | null> => {
+    async (event, params): Promise<any[][] | null> => {
       const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ["openFile"],
         filters: [
@@ -229,39 +228,23 @@ function createWindow() {
     }
   );
 
+  ipcMain.handle("save-variable", async (event, params): Promise<boolean> => {
+    // Delete the previous variable if we had it stored.
+    db.delete(params.prevVariablename);
+
+    // Store the new variable.
+    db.save(params.name, params.data);
+
+    return true;
+  });
+
   ipcMain.handle(
-    "save-variable",
-    async (
-      event,
-      params
-    ): Promise<boolean> => {
-
-      // Delete the previous variable if we had it stored.
-      db.delete(params.prevVariablename);
-
-      // Store the new variable.
-      db.save(params.name, params.data);
-
-      return true;
+    "get-data-table",
+    async (event, tableName): Promise<any[][]> => {
+      console.log("get data " + tableName);
+      return db.getTable(tableName);
     }
   );
-
-  ipcMain.handle("get-csv", async (event, filename): Promise<string | null> => {
-    const p = app.getPath("userData");
-
-    if (path.basename(filename) !== filename) {
-      return null;
-    }
-
-    try {
-      return await readFile(`${p}/currentproject/var/${filename}`, "utf8");
-    } catch (e: any) {
-      if (e.code !== "ENOENT") {
-        throw e;
-      }
-      return null;
-    }
-  });
 
   ipcMain.handle(
     "load-settings",

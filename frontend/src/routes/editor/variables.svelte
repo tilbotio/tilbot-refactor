@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
 
   let toggle: HTMLElement;
-  let { variables = $bindable([]) } = $props();
+  let { variables = $bindable([]) }: { variables: any[] } = $props();
   let selectedVariable: number | null = $state(null);
   let prevVariablename: string = "";
   let currentCSV: any[][] | null = $state(null);
@@ -40,16 +40,14 @@
   async function variableRowClicked(this: HTMLElement) {
     currentCSV = null;
     selectedVariable = parseInt(this.dataset.variableId!);
-    prevVariablename = $state.snapshot(variables[selectedVariable].name);
+    const variable = $state.snapshot(variables[selectedVariable]);
+    prevVariablename = variable.name;
 
-    // @TODO: retrieve existing data from database.
-
-    /*const variable = variables[selectedVariable];
-    const csvfile = variable.csvfile;
-    if (csvfile !== undefined && variable.type == "csv") {
-      const csv = await windowApi.invoke("get-csv", csvfile);
-      currentCSV = Papa.parse(csv, { delimiter: ";" }).data as any[][];
-    }*/
+    // Retrieve existing data from database.
+    if (variable.type == "dataset") {
+      const data = await windowApi.invoke("get-data-table", variable.name);
+      currentCSV = data;
+    }
   }
 
   async function importExcel() {

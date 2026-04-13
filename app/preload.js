@@ -13,7 +13,7 @@ const validSendChannels = new Set([
 const validReceiveChannels = new Set([]);
 
 const validInvokeChannels = new Set([
-  "get-csv",
+  "get-data-table",
   "load-avatar",
   "load-excel",
   "load-project",
