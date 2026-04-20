@@ -14,6 +14,7 @@ const validReceiveChannels = new Set([]);
 
 const validInvokeChannels = new Set([
   "get-data-table",
+  "get-data-table-cols",
   "load-avatar",
   "load-excel",
   "load-project",

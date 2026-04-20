@@ -553,6 +553,7 @@
           blockPopupComponentTypes[editingBlock.type]}
         <BlockPopupComponent
           block={editingBlock}
+          variables={project.variables}
           save={saveBlock}
           cancel={cancelBlock}
         />

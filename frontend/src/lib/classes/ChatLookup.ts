@@ -13,6 +13,12 @@ export class ChatLookup implements ProjectControllerLookupInterface {
     return null;
   }
 
+  async column(table: string, col: string): Promise<any[] | null> {
+    // @TODO: implement this
+    console.log("lookup column");
+    return null;
+  }
+
   async variation(
     content: string,
     prompt: string,

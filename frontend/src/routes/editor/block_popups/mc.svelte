@@ -7,15 +7,16 @@
 
   const {
     block,
+    variables,
     save = (block: ProjectBlock) => {},
     cancel = () => {},
   } = $props();
 </script>
 
-<BaseBlockPopup Icon={ListBullet} {block} {save} {cancel}>
+<BaseBlockPopup Icon={ListBullet} {block} {variables} {save} {cancel}>
   {#snippet children(blockCopy: ProjectBlock)}
     <p class="py-4">Text for the bot to say:</p>
-    <RichTextEdit bind:value={blockCopy.content} />
+    <RichTextEdit bind:value={blockCopy.content} {variables} />
 
     <br /><br />
 

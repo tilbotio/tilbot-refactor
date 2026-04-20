@@ -77,13 +77,19 @@ export class VariableDb {
     }
   }
 
-  /*  private getColNames(tableName: string): string[] {
+  public getColNames(tableName: string): string[] {
     try {
-        const q = `PRAGMA table_info("${tableName}")`;
+        const q = `SELECT * FROM "${tableName}";`;
         const prep = this.db.prepare(q);
-        const res = prep.columns
+        prep.setReturnArrays(true);
+
+        const cols = prep.columns();
+        let colsArray: any[] = cols.map((c) => c.column);
+        return colsArray;
+    } catch (e) {
+      return [];
     }
-  }*/
+  }
 
   public getRow(table: string, col: string, query: string): any[] {
     return [[null]];

@@ -1,11 +1,24 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     ChatBubbleLeft,
     EllipsisHorizontalCircle,
     Variable,
   } from "svelte-heros-v2";
 
-  let { value = $bindable() } = $props();
+  let { value = $bindable(), variables = $bindable([]) } = $props();
+
+  let colNames: string[] | null = $derived(null);
+
+  let variableModal: HTMLDialogElement;
+  let variableSelect: HTMLSelectElement;
+  let colSelect: HTMLSelectElement;
+
+  let windowApi: any;
+
+  onMount(() => {
+    windowApi = (window as any).api;
+  });
 
   function checkDelBadges(this: any, event: KeyboardEvent) {
     if (
@@ -130,7 +143,77 @@
       }
     }, 100);
   }
+
+  function openVariableWindow() {
+    variableModal.showModal();
+  }
+
+  async function variableSelectChange() {
+    if (variableSelect.selectedIndex !== 0) {
+      colNames = await windowApi.invoke(
+        "get-data-table-cols",
+        variableSelect.value
+      );
+    }
+  }
+
+  function insertVariable() {
+    value.push({
+      type: "variable",
+      variable: variableSelect.value,
+      column: colSelect.value,
+    });
+    value.push({
+      text: "",
+    });
+
+    setTimeout(function () {
+      let editor = document.getElementById("richtexteditor");
+
+      if (editor !== null) {
+        let children = editor.children;
+
+        let tmp = children[children.length - 1] as HTMLElement;
+        tmp.focus();
+      }
+    }, 100);
+  }
 </script>
+
+<dialog id="modal_add_variable" class="modal" bind:this={variableModal}>
+  <div class="modal-box">
+    <h3 class="text-lg font-bold mb-4">Insert variable</h3>
+    {#if variables.length == 0}
+      No variables are defined in this project yet.
+    {:else}
+      <select
+        class="select"
+        bind:this={variableSelect}
+        onchange={variableSelectChange}
+      >
+        <option disabled selected>Pick a variable</option>
+        {#each variables as v}
+          <option>{v.name}</option>
+        {/each}
+      </select>
+
+      {#if colNames !== null}
+        <select class="select" bind:this={colSelect}>
+          <option disabled selected>Pick a column name</option>
+          {#each colNames as c}
+            <option>{c}</option>
+          {/each}
+        </select>
+      {/if}
+    {/if}
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn">Cancel</button>
+        <button class="btn btn-primary" onclick={insertVariable}>Save</button>
+      </form>
+    </div>
+  </div>
+</dialog>
 
 <div class="tooltip" data-tip="Insert text from previous turn">
   <button
@@ -149,7 +232,10 @@
   </button>
 </div>
 <div class="tooltip" data-tip="Insert variable">
-  <button class="btn btn-square btn-outline btn-sm mt-2 mb-2">
+  <button
+    class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+    onclick={openVariableWindow}
+  >
     <Variable class="w-4 h-4" />
   </button>
 </div>
@@ -165,6 +251,11 @@
     {:else if v.type !== undefined && v.type == "prevConnectorLabel"}
       <div class="badge badge-neutral mx-2">
         <EllipsisHorizontalCircle class="w-3 h-3" /> Previous connector label
+      </div>
+    {:else if v.type !== undefined && v.type == "variable"}
+      <div class="badge badge-info mx-2">
+        <Variable class="w-3 h-3 mr-2" />
+        {v.column} from {v.variable}
       </div>
     {:else}
       <div

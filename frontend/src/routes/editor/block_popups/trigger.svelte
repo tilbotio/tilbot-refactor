@@ -6,12 +6,13 @@
 
   const {
     block,
+    variables,
     save = (block: ProjectBlock) => {},
     cancel = () => {},
   } = $props();
 </script>
 
-<BaseBlockPopup Icon={BellAlert} {block} {save} {cancel}>
+<BaseBlockPopup Icon={BellAlert} {block} {variables} {save} {cancel}>
   {#snippet children(blockCopy: ProjectBlock)}
     Answer options:<br />
     <Connectors connectors={blockCopy.connectors} />

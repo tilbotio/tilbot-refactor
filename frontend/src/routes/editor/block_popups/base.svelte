@@ -2,10 +2,14 @@
   import _ from "lodash";
 
   import type { Component } from "svelte";
-  import type { ProjectBlock } from "../../../../../common/project/types.ts";
+  import type {
+    ProjectBlock,
+    ProjectVariable,
+  } from "../../../../../common/project/types.ts";
 
   export type BlockPopupProps = {
     block: ProjectBlock;
+    variables: ProjectVariable[];
   };
 
   type BaseBlockPopupProps = BlockPopupProps & {

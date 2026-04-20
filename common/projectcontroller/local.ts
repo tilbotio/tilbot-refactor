@@ -99,9 +99,9 @@ export class LocalProjectController<
     }
   }
 
-  send_message(block: any, matchedConnector: string = "", input: string = "") {
+  async send_message(block: any, matchedConnector: string = "", input: string = "") {
     const params: any = {};
-    const content = this.check_variables(
+    const content = await this.check_variables(
       block.content,
       matchedConnector,
       input
@@ -156,11 +156,11 @@ export class LocalProjectController<
     }, (block.delay ?? 0) * 1000);
   }
 
-  check_variables(
+  async check_variables(
     content: any[],
     matchedConnector: string = "",
     input: string = ""
-  ): string {
+  ): Promise<string> {
     let txt = "";
 
     for (let c of content) {
@@ -171,6 +171,11 @@ export class LocalProjectController<
         txt += input;
       } else if (c.type == "prevConnectorLabel") {
         txt += matchedConnector;
+      } else if (c.type == "variable") {
+        if (c.variable !== undefined && c.column !== undefined) {
+          const res = await this._lookup.column(c.variable, c.column);
+          console.log(res);
+        }
       }
     }
 
