@@ -64,6 +64,6 @@
     <br /><br />
 
     Answer options:<br />
-    <Connectors connectors={blockCopy.connectors} methodSelector={true} />
+    <Connectors connectors={blockCopy.connectors} {variables} />
   {/snippet}
 </BaseBlockPopup>

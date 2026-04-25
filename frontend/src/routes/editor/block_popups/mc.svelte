@@ -21,6 +21,6 @@
     <br /><br />
 
     Answer options:<br />
-    <Connectors connectors={blockCopy.connectors} />
+    <Connectors connectors={blockCopy.connectors} {variables} />
   {/snippet}
 </BaseBlockPopup>

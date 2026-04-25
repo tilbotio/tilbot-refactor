@@ -1,24 +1,52 @@
 <script lang="ts">
-  import { Plus, Trash } from "svelte-heros-v2";
+  import { Plus, Trash, Variable } from "svelte-heros-v2";
   import Events from "./events.svelte";
   import type { ProjectConnector } from "../../../../../../common/project/types.ts";
+  import Variablepopup from "./variablepopup.svelte";
+  import { ChatCompletionResponseMessageRoleEnum } from "openai";
 
   const {
     connectors,
     methodSelector,
+    variables,
   }: {
     connectors: ProjectConnector[];
     methodSelector?: boolean;
+    variables: [];
   } = $props();
+
+  let variablePopup: Variablepopup;
+  let selectedConnector: number;
+  let selectedLabelPart: number;
+
+  function openVariableWindow(id: number, labelid: number) {
+    selectedConnector = id;
+    selectedLabelPart = labelid;
+
+    variablePopup.showModal();
+  }
+
+  function setVariable(variable: string, column: string) {
+    connectors[selectedConnector].label[selectedLabelPart].variable = variable;
+    connectors[selectedConnector].label[selectedLabelPart].column = column;
+  }
 
   function addConnector() {
     connectors.push({
       type: "Labeled",
-      label: "",
+      label: [
+        {
+          type: "text",
+          content: "",
+        },
+      ],
       targets: [],
     });
   }
 </script>
+
+<Variablepopup bind:this={variablePopup} {variables} onSave={setVariable}
+></Variablepopup>
 
 {#if connectors.length! > 0}
   <table class="table table-zebra w-full mt-2">
@@ -49,14 +77,46 @@
               </select>
             </td>
           {/if}
-          <td
-            ><input
-              type="text"
-              placeholder="Type here"
-              class="input input-bordered w-full max-w-xs"
-              bind:value={connector.label}
-            /></td
-          >
+          <td>
+            {#each connector.label?.entries() as [labelid, label_part] (labelid)}
+              {#if label_part.type !== "else"}
+                <!-- @TODO on change of select remove previously set variables etc. from the label -->
+                <select
+                  bind:value={label_part.type}
+                  class="select select-bordered w-full max-w-xs"
+                >
+                  <option selected value="text">Contains text</option>
+                  <option value="variable">Match variable</option>
+                </select>
+                {#if label_part.type == "text"}
+                  <input
+                    type="text"
+                    placeholder="Type here"
+                    class="input input-bordered w-full max-w-xs"
+                    bind:value={label_part.content}
+                  />
+                {:else if label_part.type == "variable"}
+                  {#if label_part.variable !== undefined}
+                    <div class="badge badge-info mx-2">
+                      <Variable class="w-3 h-3 mr-2" />
+                      {label_part.column} from {label_part.variable}
+                    </div>
+                  {/if}
+
+                  <div class="tooltip" data-tip="Insert variable">
+                    <button
+                      class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                      onclick={() => {
+                        openVariableWindow(id, labelid);
+                      }}
+                    >
+                      <Variable class="w-4 h-4" />
+                    </button>
+                  </div>
+                {/if}
+              {/if}
+            {/each}
+          </td>
           <td><Events bind:events={connector.events} /></td>
           <td
             ><button

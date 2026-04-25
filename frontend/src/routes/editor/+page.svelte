@@ -165,7 +165,11 @@
     } else if (type === "Text") {
       connectors.push({
         type: "Labeled",
-        label: "[else]",
+        label: [
+          {
+            type: "else",
+          },
+        ],
         targets: [],
       });
     } else if (type === "Trigger") {

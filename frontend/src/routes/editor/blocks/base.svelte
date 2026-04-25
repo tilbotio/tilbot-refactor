@@ -1,6 +1,12 @@
 <script lang="ts">
   import { type Component, type SvelteComponent, onDestroy } from "svelte";
-  import { Bolt, Pencil, Trash } from "svelte-heros-v2";
+  import {
+    BarsArrowDown,
+    Bolt,
+    Pencil,
+    Trash,
+    Variable,
+  } from "svelte-heros-v2";
   import ConnectorPad from "./components/connectorpad.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
   import { setOrDelete } from "$lib/utils/functions";
@@ -131,7 +137,20 @@
         <div class="relative text-sm font-medium flex">
           <div class="line-clamp-1 flex-1">
             {#if connector.label}
-              {connector.label}
+              {#each connector.label as label}
+                {#if label.type == "text"}
+                  {label.content}
+                {:else if label.type == "variable"}
+                  <div class="badge badge-info mx-2" style="height: auto">
+                    <Variable class="w-3 h-3 mr-2" />
+                    {label.column} from {label.variable}
+                  </div>
+                {:else if label.type == "else"}
+                  <div class="badge badge-warning mx-2">
+                    <BarsArrowDown class="w-3 h-3 mr-2" /> else
+                  </div>
+                {/if}
+              {/each}
             {/if}
           </div>
           <div>

@@ -69,7 +69,7 @@ export type ProjectConnectorType = "Basic" | "Labeled";
 
 export type ProjectConnector = {
   type: ProjectConnectorType;
-  label?: string;
+  label?: any[];
   targets: number[];
   events?: ProjectEvent[];
   method?: "contains";
