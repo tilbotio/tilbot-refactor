@@ -174,7 +174,9 @@ export class LocalProjectController<
       } else if (c.type == "variable") {
         if (c.variable !== undefined && c.column !== undefined) {
           const res = await this._lookup.column(c.variable, c.column);
-          console.log(res);
+          if (res !== null) {
+            txt += res.join(", ");
+          }
         }
       }
     }

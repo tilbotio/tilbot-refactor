@@ -12,6 +12,7 @@ import {
   ServerControllerLookup,
   ServerControllerOutput,
 } from "../backend/projectcontroller.ts";
+import { VariableDb } from "../common/variabledb.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 console.log(__dirname);
@@ -60,10 +61,11 @@ const projectControllers = new Map();
 // API call: create a new conversation for the project.
 app.get('/api/create_conversation', async (req, res) => {
 
-  const csv_datas: any = {};
+  const db: VariableDb = new VariableDb(join(p, 'currentproject/variables.db'));
+  console.log(db);
 
   const projectController = new LocalProjectController(
-    new ServerControllerLookup(csv_datas, llm),
+    new ServerControllerLookup(db, llm),
     new ServerControllerOutput(),
     new Logger(p),
     project

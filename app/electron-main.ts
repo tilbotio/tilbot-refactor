@@ -250,6 +250,10 @@ function createWindow() {
     return db.getColNames(tableName);
   });
 
+  ipcMain.handle("get-data-table-column", async (event, params): Promise<string[]> => {
+    return db.getColumn(params.tableName, params.columnName);
+  });  
+
   ipcMain.handle(
     "load-settings",
     async (

@@ -95,6 +95,19 @@ export class VariableDb {
     return [[null]];
   }
 
+  public getColumn(tableName: string, col: string): any[] {
+    try {
+      const q = `SELECT "${col}" FROM "${tableName}";`;
+      const prep = this.db.prepare(q);
+      prep.setReturnArrays(true);
+
+      const res = prep.all();
+      return res;
+    } catch (e) {
+      return [];
+    }
+  }
+
   public getCell(table: string, col: string, query: string): any {}
 
   public getRandomRow(): any[] {

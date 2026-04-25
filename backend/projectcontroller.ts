@@ -5,30 +5,30 @@ import type {
     ProjectControllerLookupInterface,
     ProjectControllerOutputInterface,
 } from '../common/projectcontroller/types';
+import { VariableDb } from "../common/variabledb.ts";
 
 export class ServerControllerLookup implements ProjectControllerLookupInterface {
-  private csv_datas: { [key: string]: any };
+  private db: VariableDb;
   private llm: any;
 
-  constructor(csv_datas: { [key: string]: any }, llm: any) {
-    this.csv_datas = csv_datas;
+  constructor(db: VariableDb, llm: any) {
+    this.db = db;
     this.llm = llm;
   }
 
   async cell(db: string, col: string, val: string): Promise<Object[] | null> {
-    const csv = this.csv_datas[db];
-    if (csv === undefined) {
-      return null;
-    }
-    return await csv.get(col, val);
+    // @TODO: implement
+    return null;
   }
 
   async random(db: string): Promise<Object | null> {
-    const csv = this.csv_datas[db];
-    if (csv === undefined) {
-      return null;
-    }
-    return await csv.get_random_line();
+    // @TODO: implement
+    return null;
+  }
+
+  async column(table: string, col: string): Promise<any[] | null> {
+    let res = this.db.getColumn(table, col);
+    return res;
   }
 
   async variation(

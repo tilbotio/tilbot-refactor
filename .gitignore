@@ -39,3 +39,4 @@ app/build
 /tests/integration/frontend/playwright/.cache/
 /tests/integration/.npm/
 /tests/integration/frontend/.npm/
+/backend/projects/

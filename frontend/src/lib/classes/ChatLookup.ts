@@ -3,6 +3,8 @@ import type { ProjectControllerLookupInterface } from "../../../../common/projec
 export class ChatLookup implements ProjectControllerLookupInterface {
   private promise!: Promise<string>;
   private pendingResolver: ((value: string) => void) | null = null;
+  private windowAPI: any = (window.parent as any)?.api;
+
   async cell(db: string, col: string, val: string): Promise<Object[] | null> {
     // Not used in the chatinterface
     return null;
@@ -14,9 +16,7 @@ export class ChatLookup implements ProjectControllerLookupInterface {
   }
 
   async column(table: string, col: string): Promise<any[] | null> {
-    // @TODO: implement this
-    console.log("lookup column");
-    return null;
+    return await this.windowAPI.invoke("get-data-table-column", {tableName: table, columnName: col});
   }
 
   async variation(

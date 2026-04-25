@@ -33,8 +33,9 @@ import {
   ServerControllerOutput,
 } from "./projectcontroller.ts";
 import { Logger } from "./logger.ts";
-import { CsvData } from "../common/csvdata.ts";
+
 import LLM from "../app/llm.cjs";
+import { VariableDb } from "../common/variabledb.ts";
 
 // Generate a somewhat persistent token:
 function getOrCreateToken(tokenPath: string): string {
@@ -321,10 +322,7 @@ app.post("/api/import_project", async (req, res) => {
   zipEntries.forEach((zipEntry) => {
     if (zipEntry.entryName == "project.json") {
       project_data = zipEntry.getData().toString("utf8");
-
-      // @TODO: import project file into database
-      //win.webContents.send('project-load', zipEntry.getData().toString("utf8"));
-    } else if (zipEntry.entryName.startsWith("var/")) {
+    } else if (zipEntry.entryName == "variables.db") {
       zip.extractEntryTo(zipEntry, priv_dir);
     } else {
       zip.extractEntryTo(zipEntry, pub_dir);
@@ -414,19 +412,13 @@ app.get("/api/create_conversation", async (req, res) => {
   const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
   const llm: any = LLM.fromSettings(settings);
-  const csv_datas: any = {};
 
   const p = `${__dirname}/projects/${project.id}`;
 
-  // Set up the data files
-  for (const variable of project.variables) {
-    if (variable.type == "csv") {
-      csv_datas[variable.name] = new CsvData(variable.csvfile, p);
-    }
-  }
+  const db = new VariableDb(p + "/variables.db");
 
   const projectController = new LocalProjectController(
-    new ServerControllerLookup(csv_datas, llm),
+    new ServerControllerLookup(db, llm),
     new ServerControllerOutput(),
     new Logger(projectId),
     project
