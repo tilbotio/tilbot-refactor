@@ -110,11 +110,30 @@ export class LocalProjectController<
 
     if (type == "MC") {
       params.options = [];
+
       for (const connector of block.connectors) {
-        // Remove any additional variables/checks from the connector
-        const cleanedLabel = connector.label.replace(/\[([^\]]+)\]/g, "");
-        if (!params.options.includes(cleanedLabel)) {
-          params.options.push(cleanedLabel);
+        let labelText: string[] = [];
+
+        for (const label_part of connector.label) {
+          if (label_part.type == "text" && labelText.length == 0) {
+            labelText.push(label_part.content);
+          }
+          else if (label_part.type == "variable" && label_part.variable !== undefined && labelText.length == 0) {
+            let options = await this._lookup.column(label_part.variable, label_part.column);
+
+            if (options !== null) {
+              for (const o of options) {
+                labelText.push(o);
+              }  
+            }
+          }
+        }
+
+        for (const txt of labelText) {
+          if (!params.options.includes(txt)) {
+            params.options.push(txt);
+          }
+  
         }
       }
 
@@ -184,144 +203,64 @@ export class LocalProjectController<
     return txt;
   }
 
-  async check_labeled_connector(
-    connector: string,
-    str: string
-  ): Promise<string | null> {
-    // Check for tags / special commands
-    let regExp = /\[([^\]]+)\]/g;
-    let matches = regExp.exec(connector);
-
-    if (matches) {
-      const bracketedText = matches[1].trim();
-
-      // Match an = or != comparison operator, flanked by either whitespace or
-      // word boundaries or the start/end of the string:
-      const comparisonMatch = /(?:\s|\b|^)(!?=)(?:\s|\b|$)/.exec(bracketedText);
-      if (comparisonMatch) {
-        const comparisonIndex = comparisonMatch.index;
-        const operator = comparisonMatch[1];
-
-        const key = `[${bracketedText.substring(0, comparisonIndex).trim()}]`;
-        const val = bracketedText
-          .substring(comparisonIndex + comparisonMatch[0].length)
-          .trim();
-        const res = await this.check_labeled_connector(key, val);
-
-        const shouldBeEqual = operator === "=";
-        const isEqual = res === val;
-
-        return isEqual === shouldBeEqual ? val : null;
-      }
-
-      let shouldMatch = true;
-      // @TODO: do something in case of multiple matches, and support [and] or [or]
-      //let match = matches[0];
-
-      // If it's a column from a CSV table, there should be a period.
-      // Element 1 of the match contains the string without the brackets.
-      const csv_parts = bracketedText.split(".");
-
-      if (csv_parts.length == 2) {
-        let [db, col] = csv_parts;
-
-        if (db.startsWith("!")) {
-          shouldMatch = false;
-          db = db.substring(1);
-        }
-
-        // Check if local variable
-        if (db in this._client_vars) {
-          const varOptions = this._client_vars[db][col].split("|");
-
-          for (const option of varOptions) {
-            const escapedOption = regexEscape(option);
-            if (
-              str.match(new RegExp("\\b" + escapedOption + "\\b", "i")) != null
-            ) {
-              return shouldMatch ? option : null;
-            }
-          }
-
-          return shouldMatch ? null : "";
-        } else {
-          const parts = str.split(" ");
-          const matchedParts: string[] = [];
-
-          for (const part of parts) {
-            const cleanedPart = part
-              .replace("barcode:", "")
-              .replace("?", "")
-              .replace("!", "")
-              .replace(".", "");
-            const res = await this._lookup.cell(db, col, cleanedPart);
-            if (Boolean(res && res.length) === shouldMatch) {
-              matchedParts.push(part);
-            }
-          }
-
-          return matchedParts.length ? matchedParts.join(" ") : null;
-        }
-      } else {
-        if (
-          bracketedText in this._client_vars &&
-          this._client_vars[bracketedText] == str
-        ) {
-          return str;
-        } else {
-          return "";
-        }
-      }
-    } else {
-      const candidate = connector.toLowerCase();
-      const cleanedStr = str.replace("barcode:", "").toLowerCase();
-      if (
-        candidate === cleanedStr ||
-        cleanedStr.match(new RegExp("\\b" + regexEscape(candidate) + "\\b"))
-      ) {
-        return str;
-      }
-    }
-
-    return null;
-  }
-
   async find_best_connector(
     block: any,
-    str: string,
-    else_output: string | null
+    userInput: string
   ) {
     let else_connector = null;
 
+    // Remove punctuation marks
+    let userInputStripped = userInput.replace("?", "").replace("!", "").replace(".", "").replace(",", "");
+
+
     for (const connector of block.connectors) {
-      const label = connector.label;
-      const method = connector.method;
+      let meetsCriteria = true;
+      let found_output: string[] = [];
 
-      if (label.trim() === "[else]") {
-        else_connector = connector;
-      } else if (method !== "barcode" || str.startsWith("barcode:")) {
-        // @TODO: distinguish between contains / exact match options
-        const ands = label.split(/\s*\[and\]\s*/);
-        let num_match = 0;
-        let last_found_output: string | null = null;
+      for (const label_part of connector.label) {
+        if (label_part.type == "else") {
+          else_connector = connector;
+          meetsCriteria = false;
+        }
 
-        for (const and of ands) {
-          const output = await this.check_labeled_connector(and, str);
-          if (output !== null) {
-            num_match++;
-            last_found_output = output;
-          } else {
-            // break; // (or do we really need to evaluate all ANDs?)
+        else if (label_part.type == "text") {
+          if (userInput.toLowerCase().indexOf(label_part.content.toLowerCase()) == -1) {
+            meetsCriteria = false;
+          }
+          else {
+            found_output.push(label_part.content.toLowerCase());
           }
         }
 
-        if (num_match == ands.length) {
-          return { found: true, connector, output: last_found_output };
+        else if (label_part.type == "variable") {
+          // For variables we do a word-by-word match since there can be complex entries in the dataset.
+          let foundAWord = false;
+          let words = userInputStripped.split(" ");
+          for (const word of words) {
+            let lookup = await this._lookup.cell(label_part.variable, label_part.column, word.toLowerCase());
+            if (lookup !== null) {
+              foundAWord = true;
+              found_output.push(word.toLowerCase());
+            }
+          }
+
+          if (!foundAWord) {
+            meetsCriteria = false;
+          }
         }
+      }
+
+      if (meetsCriteria) {
+        return { found: true, connector: connector, output: found_output, isElseConnector: false };
       }
     }
 
-    return { found: false, connector: else_connector, output: else_output };
+    if (else_connector === null) {
+      return { found: false, connector: null, output: [], isElseConnector: false };
+    }
+    else {
+      return { found: true, connector: else_connector, output: [userInput], isElseConnector: true }
+    }
   }
 
   async receive_message(str: string) {
@@ -330,42 +269,37 @@ export class LocalProjectController<
     let best: {
       found: boolean;
       connector: any;
-      output: string | null;
-    } = { found: false, connector: null, output: null };
-
+      output: string[];
+      isElseConnector: boolean;
+    } = { found: false, connector: null, output: [], isElseConnector: false };
+    
     const blocks = this._project.blocks;
     if (this._current_block_id !== undefined && this._current_block_id !== -1) {
       const current_block = blocks[this._current_block_id.toString()];
       if (current_block.type !== "Auto") {
-        best = await this.find_best_connector(current_block, str, str);
+        best = await this.find_best_connector(current_block, str.toString());
       }
     }
 
-    if (!best.found) {
-      // console.log("No connector for current block found, looking for triggers");
+    if (!best.found || best.isElseConnector) {
       // Check if we need to fire a trigger -- after checking responses to query by the bot!
       for (const block of Object.values(blocks) as any[]) {
         if (block.type === "Trigger") {
-          const candidate = await this.find_best_connector(block, str, str);
-          if (candidate.connector) {
-            // Might be a real match or just an [else] connector
-            best = candidate;
-          }
-          if (candidate.found) {
+          let best_trigger = await this.find_best_connector(block, str.toString());
+
+          if (best_trigger.found) {
+            best = best_trigger;
             break;
           }
         }
       }
     }
 
-    if (best.connector) {
-      const { connector, output } = best;
-      this._current_block_id = connector.targets[0];
-      this.send_events(connector, output as string);
-      this._send_current_message(output as string, str);
+    if (best.found) {
+      this._current_block_id = best.connector.targets[0];
+      this.send_events(best, best.output.join(" "));
+      this._send_current_message(best.output.join(" "), str);
     }
-
-    // console.log(best);
   }
 
   set_participant_id(pid: string) {

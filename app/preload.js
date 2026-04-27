@@ -16,6 +16,7 @@ const validInvokeChannels = new Set([
   "get-data-table",
   "get-data-table-cols",
   "get-data-table-column",
+  "get-data-table-cell",
   "load-avatar",
   "load-excel",
   "load-project",

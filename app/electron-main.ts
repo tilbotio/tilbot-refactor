@@ -254,6 +254,10 @@ function createWindow() {
     return db.getColumn(params.tableName, params.columnName);
   });  
 
+  ipcMain.handle("get-data-table-cell", async (event, params): Promise<string[]> => {
+    return db.getCell(params.tableName, params.columnName, params.val);
+  });  
+
   ipcMain.handle(
     "load-settings",
     async (

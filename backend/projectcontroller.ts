@@ -16,9 +16,9 @@ export class ServerControllerLookup implements ProjectControllerLookupInterface 
     this.llm = llm;
   }
 
-  async cell(db: string, col: string, val: string): Promise<Object[] | null> {
-    // @TODO: implement
-    return null;
+  async cell(table: string, col: string, val: string): Promise<Object[] | null> {
+    let res = this.db.getCell(table, col, val);
+    return res;
   }
 
   async random(db: string): Promise<Object | null> {

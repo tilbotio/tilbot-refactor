@@ -108,7 +108,24 @@ export class VariableDb {
     }
   }
 
-  public getCell(table: string, col: string, query: string): any {}
+  public getCell(tableName: string, col: string, query: string): any {
+    // @TODO: maybe implement this: https://stackoverflow.com/questions/6283767/match-only-entire-words-with-like
+    try {
+      const q = `SELECT "${col}" FROM "${tableName}" WHERE "${col}" LIKE '%${query}%';`;
+
+      const prep = this.db.prepare(q);
+      prep.setReturnArrays(true);
+
+      const res = prep.all();
+      if (res.length == 0) {
+        return null;
+      }
+      return res;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }    
+  }
 
   public getRandomRow(): any[] {
     return [null];
