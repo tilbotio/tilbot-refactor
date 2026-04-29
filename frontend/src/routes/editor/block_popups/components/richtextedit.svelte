@@ -138,7 +138,11 @@
     variablePopup.showModal();
   }
 
-  function insertVariable(variable: string, column: string) {
+  function insertVariable(
+    variable: string,
+    column: string,
+    isRandomRow: boolean
+  ) {
     value.push({
       type: "variable",
       variable: variable,
@@ -204,7 +208,12 @@
     {:else if v.type !== undefined && v.type == "variable"}
       <div class="badge badge-info mx-2">
         <Variable class="w-3 h-3 mr-2" />
-        {v.column} from {v.variable}
+        {#if v.isRandomRow !== undefined && v.isRandomRow}
+          random row
+        {:else}
+          {v.column}
+        {/if}
+        from {v.variable}
       </div>
     {:else}
       <div

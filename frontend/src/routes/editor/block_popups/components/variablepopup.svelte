@@ -13,7 +13,12 @@
   let colNames: string[] | null = $derived(null);
   let variableSelect: HTMLSelectElement;
   let colSelect: HTMLSelectElement;
+  let variableElementSelect: HTMLSelectElement;
   let windowApi: any;
+  let saveButton: HTMLButtonElement;
+
+  let variableSelected: any = $state();
+  let variableElementSelected: any = $state();
 
   onMount(() => {
     windowApi = (window as any).api;
@@ -21,6 +26,7 @@
 
   async function variableSelectChange() {
     if (variableSelect.selectedIndex !== 0) {
+      saveButton.classList.remove("disabled");
       colNames = await windowApi.invoke(
         "get-data-table-cols",
         variableSelect.value
@@ -42,6 +48,7 @@
       <select
         class="select"
         bind:this={variableSelect}
+        bind:value={variableSelected}
         onchange={variableSelectChange}
       >
         <option disabled selected>Pick a variable</option>
@@ -50,7 +57,18 @@
         {/each}
       </select>
 
-      {#if colNames !== null}
+      {#if variableSelected !== undefined && variableSelected !== "Pick a variable"}
+        <select
+          class="select"
+          bind:this={variableElementSelect}
+          bind:value={variableElementSelected}
+        >
+          <option selected>Column from dataset</option>
+          <option selected>Random row</option>
+        </select>
+      {/if}
+
+      {#if colNames !== null && variableElementSelected !== undefined && variableElementSelected == "Column from dataset"}
         <select class="select" bind:this={colSelect}>
           <option disabled selected>Pick a column name</option>
           {#each colNames as c}
@@ -63,9 +81,14 @@
       <form method="dialog">
         <button class="btn">Cancel</button>
         <button
-          class="btn btn-primary"
+          class="btn btn-primary disabled"
+          bind:this={saveButton}
           onclick={() => {
-            onSave(variableSelect.value, colSelect.value);
+            onSave(
+              variableSelect.value,
+              colSelect !== undefined ? colSelect.value : "",
+              variableElementSelected == "Random row"
+            );
           }}>Save</button
         >
       </form>

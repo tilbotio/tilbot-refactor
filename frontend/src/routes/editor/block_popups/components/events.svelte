@@ -1,17 +1,22 @@
 <script lang="ts">
   import _ from "lodash";
 
-  import { Bolt, Plus, Trash } from "svelte-heros-v2";
+  import { Bolt, Plus, Trash, Variable } from "svelte-heros-v2";
   import type { ProjectEvent } from "../../../../../../common/project/types.js";
+  import Variablepopup from "./variablepopup.svelte";
 
   let {
     events = $bindable(),
+    variables,
   }: {
     events?: ProjectEvent[];
+    variables: [];
   } = $props();
 
+  let variablePopup: Variablepopup;
   let eventsModal: HTMLInputElement;
   let eventsCopy: ProjectEvent[] = $state([]);
+  let currentEditingId: number = -1;
 
   $effect.pre(() => {
     eventsCopy = _.cloneDeep(events ?? []);
@@ -28,6 +33,21 @@
     });
   }
 
+  function onChangeType(id: number) {
+    if (eventsCopy[id].type == "message") {
+      eventsCopy[id].var_name = undefined;
+      eventsCopy[id].var_value = undefined;
+      eventsCopy[id].content = "";
+    } else {
+      eventsCopy[id].content = "";
+      eventsCopy[id].var_name = "";
+      eventsCopy[id].var_value = {
+        type: "text",
+        text: "",
+      };
+    }
+  }
+
   function removeEvent(id: number) {
     eventsCopy.splice(id, 1);
   }
@@ -40,7 +60,24 @@
   function closeEvents() {
     eventsModal.click();
   }
+
+  function openVariableWindow(id: number) {
+    currentEditingId = id;
+    variablePopup.showModal();
+  }
+
+  function setVariable(variable: string, column: string, isRandomRow: boolean) {
+    eventsCopy[currentEditingId].var_value = {
+      type: "variable",
+      variable: variable,
+      column: column,
+      isRandomRow: isRandomRow,
+    };
+  }
 </script>
+
+<Variablepopup bind:this={variablePopup} {variables} onSave={setVariable}
+></Variablepopup>
 
 <input
   type="checkbox"
@@ -68,6 +105,9 @@
               <td>
                 <select
                   bind:value={event.type}
+                  onchange={() => {
+                    onChangeType(id);
+                  }}
                   class="select select-bordered w-full max-w-xs"
                 >
                   <option selected value="message"
@@ -94,12 +134,38 @@
                     bind:value={event.var_name}
                   />
                   =
-                  <input
-                    type="text"
-                    placeholder="Value"
-                    class="input input-bordered max-w-xs"
-                    bind:value={event.var_value}
-                  />
+                  {#if event.var_value !== undefined && event.var_value.type !== undefined}
+                    {#if event.var_value.type == "text"}
+                      <input
+                        type="text"
+                        placeholder="Value"
+                        class="input input-bordered max-w-xs"
+                        bind:value={event.var_value.text}
+                      />
+                    {:else if event.var_value.type == "variable"}
+                      {#if event.var_value.variable !== undefined}
+                        <div class="badge badge-info mx-2">
+                          <Variable class="w-3 h-3 mr-2" />
+                          {#if event.var_value.isRandomRow !== undefined && event.var_value.isRandomRow}
+                            random row
+                          {:else}
+                            {event.var_value.column}
+                          {/if}
+                          from {event.var_value.variable}
+                        </div>
+                      {/if}
+                    {/if}
+                  {/if}
+                  <div class="tooltip" data-tip="Insert variable">
+                    <button
+                      class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                      onclick={() => {
+                        openVariableWindow(id);
+                      }}
+                    >
+                      <Variable class="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               {/if}
               <td

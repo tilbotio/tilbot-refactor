@@ -60,9 +60,9 @@ export type ProjectEventType = "message" | "variable";
 
 export type ProjectEvent = {
   type: ProjectEventType;
-  content: string;
+  content?: string;
   var_name?: string;
-  var_value?: string;
+  var_value?: any;
 };
 
 export type ProjectConnectorType = "Basic" | "Labeled";

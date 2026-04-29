@@ -26,7 +26,7 @@
     variablePopup.showModal();
   }
 
-  function setVariable(variable: string, column: string) {
+  function setVariable(variable: string, column: string, isRandomRow: boolean) {
     connectors[selectedConnector].label[selectedLabelPart].variable = variable;
     connectors[selectedConnector].label[selectedLabelPart].column = column;
   }
@@ -117,7 +117,7 @@
               {/if}
             {/each}
           </td>
-          <td><Events bind:events={connector.events} /></td>
+          <td><Events bind:events={connector.events} {variables} /></td>
           <td
             ><button
               class="btn btn-square btn-outline btn-sm"
