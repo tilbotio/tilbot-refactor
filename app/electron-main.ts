@@ -224,7 +224,7 @@ function createWindow() {
 
   ipcMain.handle(
     "get-data-table-random-row",
-    async (event, params): Promise<any[]> => {
+    async (event, params): Promise<any> => {
       return db.getRandomRow(params.tableName);
     }
   );

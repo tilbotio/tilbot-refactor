@@ -27,7 +27,7 @@ export class ServerControllerLookup
     return res;
   }
 
-  async random(table: string): Promise<any[] | null> {
+  async random(table: string): Promise<any | null> {
     let res = this.db.getRandomRow(table);
     return res;
   }

@@ -11,7 +11,7 @@ export interface ProjectControllerInterface<
 export interface ProjectControllerLookupInterface {
   cell(db: string, col: string, val: string): Promise<Object[] | null>;
   column(table: string, col: string): Promise<any[] | null>;
-  random(table: string): Promise<any[] | null>;
+  random(table: string): Promise<any | null>;
   variation(content: string, prompt: string, memory: any): Promise<string>;
 }
 

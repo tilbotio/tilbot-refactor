@@ -68,36 +68,40 @@ export class LocalProjectController<
         // Do nothing for now (simulator)
         // @TODO: make this work again, local projectmanager also used in server-based version!
       } else if (type == "variable") {
-        const var_name = event.var_name;
-        const var_value = event.var_value;
-        const client_vars = this._client_vars;
+        if (event.var_name !== undefined && event.var_value !== undefined) {
+          // @TODO: implement more complex combinations, e.g., other variable + 1
 
-        const regExp = /\[([^\]]+)\]/g;
-        const matches = regExp.exec(var_value);
+          if (event.var_value.type !== undefined) {
+            if (event.var_value.type == "variable") {
+              if (event.var_value.variable !== undefined) {
+                if (
+                  event.var_value.isRandomRow !== undefined &&
+                  event.var_value.isRandomRow
+                ) {
+                  this._client_vars[event.var_name] = await this._lookup.random(
+                    event.var_value.variable
+                  );
+                } else if (
+                  event.var_value.column !== undefined &&
+                  event.var_value.column !== ""
+                ) {
+                  this._client_vars[event.var_name] = await this._lookup.column(
+                    event.var_value.variable,
+                    event.var_value.column
+                  );
+                }
 
-        if (matches === null) {
-          if (var_value.startsWith("+") || var_value.startsWith("-")) {
-            const rawValue = parseInt(var_value.replaceAll(" ", ""));
-            client_vars[var_name] =
-              parseInt(client_vars[var_name] ?? "0") + rawValue;
-          } else {
-            client_vars[var_name] = var_value;
-          }
-        } else {
-          const bracketedText = matches[1];
-          // @TODO: support more elaborate DB look-ups, now hard-coded to do random line
-          if (bracketedText.toLowerCase().startsWith("random(")) {
-            const db = bracketedText.substring(7, bracketedText.indexOf(")"));
-            const res = await this._lookup.random(db);
-            if (res !== null) {
-              client_vars[var_name] = res;
+                // @TODO: add way to look up concrete cell + maybe generalise this kind of analysis in a function?
+              }
+            } else if (event.var_value.type == "text") {
+              this._client_vars[event.var_name] = event.var_value.text;
             }
-          } else if (bracketedText == "input") {
-            client_vars[var_name] = var_value.replace("[input]", input_str);
           }
         }
       }
     }
+
+    console.log(this._client_vars);
   }
 
   async send_message(
@@ -347,7 +351,7 @@ export class LocalProjectController<
 
     if (best.found) {
       this._current_block_id = best.connector.targets[0];
-      this.send_events(best, best.output.join(" "));
+      this.send_events(best.connector, best.output.join(" "));
       this._send_current_message(best.output.join(" "), str);
     }
   }

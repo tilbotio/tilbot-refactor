@@ -127,7 +127,7 @@ export class VariableDb {
     }
   }
 
-  public getRandomRow(tableName: string): any[] {
+  public getRandomRow(tableName: string): any {
     try {
       const q = `SELECT * FROM "${tableName}" ORDER BY RANDOM() LIMIT 1;`;
       const prep = this.db.prepare(q);
@@ -137,14 +137,17 @@ export class VariableDb {
       let colsArray: any[] = cols.map((c) => c.column);
       const res = prep.all();
 
-      if (colsArray !== null) {
-        res.unshift(colsArray);
-        return res;
-      } else {
-        return res;
+      let toReturn = {};
+
+      if (res.length > 0) {
+        for (let i = 0; i < colsArray.length; i++) {
+          toReturn[colsArray[i]] = res[0][i];
+        }
       }
+
+      return toReturn;
     } catch (e) {
-      return [];
+      return {};
     }
   }
 

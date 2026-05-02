@@ -17,7 +17,7 @@ export class ChatLookup implements ProjectControllerLookupInterface {
     });
   }
 
-  async random(table: string): Promise<any[] | null> {
+  async random(table: string): Promise<any | null> {
     return await this.windowAPI.invoke("get-data-table-random-row", {
       tableName: table,
     });
