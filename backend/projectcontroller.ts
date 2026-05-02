@@ -2,12 +2,14 @@
 // server.
 
 import type {
-    ProjectControllerLookupInterface,
-    ProjectControllerOutputInterface,
-} from '../common/projectcontroller/types';
+  ProjectControllerLookupInterface,
+  ProjectControllerOutputInterface,
+} from "../common/projectcontroller/types";
 import { VariableDb } from "../common/variabledb.ts";
 
-export class ServerControllerLookup implements ProjectControllerLookupInterface {
+export class ServerControllerLookup
+  implements ProjectControllerLookupInterface
+{
   private db: VariableDb;
   private llm: any;
 
@@ -16,14 +18,18 @@ export class ServerControllerLookup implements ProjectControllerLookupInterface 
     this.llm = llm;
   }
 
-  async cell(table: string, col: string, val: string): Promise<Object[] | null> {
+  async cell(
+    table: string,
+    col: string,
+    val: string
+  ): Promise<Object[] | null> {
     let res = this.db.getCell(table, col, val);
     return res;
   }
 
-  async random(db: string): Promise<Object | null> {
-    // @TODO: implement
-    return null;
+  async random(table: string): Promise<any[] | null> {
+    let res = this.db.getRandomRow(table);
+    return res;
   }
 
   async column(table: string, col: string): Promise<any[] | null> {
@@ -45,58 +51,65 @@ export class ServerControllerLookup implements ProjectControllerLookupInterface 
   }
 }
 
-export class ServerControllerOutput implements ProjectControllerOutputInterface {
-    private _socket: WebSocket | null = null;
-    private pending: any[] = [];
+export class ServerControllerOutput
+  implements ProjectControllerOutputInterface
+{
+  private _socket: WebSocket | null = null;
+  private pending: any[] = [];
 
-    emit(...message: any[]) {
-        this.pending.push(JSON.stringify(message));
-        this.flushSocket();
+  emit(...message: any[]) {
+    this.pending.push(JSON.stringify(message));
+    this.flushSocket();
+  }
+
+  flushSocket() {
+    const socket = this._socket;
+    if (socket != null) {
+      const pending = this.pending;
+      for (const p of this.pending) {
+        socket.send(p);
+      }
+      pending.length = 0;
+    }
+  }
+
+  get socket() {
+    return this._socket;
+  }
+
+  set socket(socket: WebSocket | null) {
+    this._socket = socket;
+    if (socket == null) {
+      return;
     }
 
-    flushSocket() {
-        const socket = this._socket;
-        if (socket != null) {
-            const pending = this.pending;
-            for (const p of this.pending) {
-                socket.send(p);
-            }
-            pending.length = 0;
-        }
-    }
+    this.flushSocket();
 
-    get socket() {
-        return this._socket;
-    }
+    socket.addEventListener("close", () => {
+      if (this._socket === socket) {
+        this._socket = null;
+      }
+    });
+  }
 
-    set socket(socket: WebSocket | null) {
-        this._socket = socket;
-        if (socket == null) {
-            return;
-        }
+  typingIndicator(): void {
+    this.emit("typing indicator");
+  }
 
-        this.flushSocket();
+  windowMessage(text: string): void {
+    this.emit("window message", { content: text });
+  }
 
-        socket.addEventListener('close', () => {
-            if (this._socket === socket) {
-                this._socket = null;
-            }
-        });
-    }
+  botMessage(block: {
+    type: string;
+    content: string;
+    params: any;
+    has_targets?: boolean;
+  }): void {
+    this.emit("bot message", block);
+  }
 
-    typingIndicator(): void {
-        this.emit('typing indicator');
-    }
-
-    windowMessage(text: string): void {
-        this.emit('window message', { content: text });
-    }
-
-    botMessage(block: { type: string, content: string, params: any; has_targets?: boolean; }): void {
-        this.emit('bot message', block);
-    }
-
-    settings(settings: any, path?: string): void {
-        this.emit('settings', settings, path);
-    }
+  settings(settings: any, path?: string): void {
+    this.emit("settings", settings, path);
+  }
 }

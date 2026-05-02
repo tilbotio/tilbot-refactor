@@ -147,6 +147,7 @@
       type: "variable",
       variable: variable,
       column: column,
+      isRandomRow: isRandomRow,
     });
     value.push({
       text: "",

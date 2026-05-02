@@ -7,7 +7,6 @@ import { rm, mkdir, copyFile, readFile, writeFile } from "fs/promises";
 import publicIp from "public-ip";
 import AdmZip from "adm-zip";
 import { readSheet } from "read-excel-file/node";
-import { CsvData } from "../common/csvdata.ts";
 import { VariableDb } from "../common/variabledb.ts";
 import { networkInterfaces } from "os";
 import {
@@ -20,7 +19,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let ps: ChildProcess | undefined;
 
-let csv_datas: { [key: string]: CsvData } = {};
 let db: VariableDb = new VariableDb(
   app.getPath("userData") + "/currentproject/variables.db"
 );
@@ -74,40 +72,10 @@ function createWindow() {
 
   ipcMain.on("load-project-db", (event, project) => {
     const p = app.getPath("userData");
-
-    csv_datas = {};
-
-    // Set up the data files
-    for (const variable of project.variables) {
-      if (variable.type == "csv") {
-        csv_datas[variable.name] = new CsvData(
-          variable.csvfile,
-          `${p}/currentproject`
-        );
-      }
-    }
   });
 
   ipcMain.handle("server-ip", async (event, params) => {
     return await serverIP;
-  });
-
-  ipcMain.handle("query-db", async (event, params) => {
-    const csv_data = csv_datas[params.db];
-    if (csv_data === undefined) {
-      return null;
-    }
-
-    return await csv_data.get(params.col, params.val);
-  });
-
-  ipcMain.handle("query-db-random", async (event, params) => {
-    const csv_data = csv_datas[params.db];
-    if (csv_data === undefined) {
-      return null;
-    }
-
-    return await csv_data.get_random_line();
   });
 
   ipcMain.handle(
@@ -210,20 +178,7 @@ function createWindow() {
       } else {
         const [load_file] = filePaths;
 
-        // @TODO: import into database and save
-
         return await readSheet(load_file);
-        /*const p = app.getPath("userData");
-
-        await mkdir(`${p}/currentproject/var`, { recursive: true });
-
-        const [load_file] = filePaths;
-        const filename = path.basename(load_file);
-        await copyFile(load_file, `${p}/currentproject/var/${filename}`);
-        const csv = await readFile(load_file, "utf8");
-        return { filename, csv };*/
-
-        // @TODO: load into csvdb for use
       }
     }
   );
@@ -246,17 +201,33 @@ function createWindow() {
     }
   );
 
-  ipcMain.handle("get-data-table-cols", async (event, tableName): Promise<string[]> => {
-    return db.getColNames(tableName);
-  });
+  ipcMain.handle(
+    "get-data-table-cols",
+    async (event, tableName): Promise<any[]> => {
+      return db.getColNames(tableName);
+    }
+  );
 
-  ipcMain.handle("get-data-table-column", async (event, params): Promise<string[]> => {
-    return db.getColumn(params.tableName, params.columnName);
-  });  
+  ipcMain.handle(
+    "get-data-table-column",
+    async (event, params): Promise<any[]> => {
+      return db.getColumn(params.tableName, params.columnName);
+    }
+  );
 
-  ipcMain.handle("get-data-table-cell", async (event, params): Promise<string[]> => {
-    return db.getCell(params.tableName, params.columnName, params.val);
-  });  
+  ipcMain.handle(
+    "get-data-table-cell",
+    async (event, params): Promise<any[]> => {
+      return db.getCell(params.tableName, params.columnName, params.val);
+    }
+  );
+
+  ipcMain.handle(
+    "get-data-table-random-row",
+    async (event, params): Promise<any[]> => {
+      return db.getRandomRow(params.tableName);
+    }
+  );
 
   ipcMain.handle(
     "load-settings",
@@ -317,15 +288,6 @@ function createWindow() {
       const zip = new AdmZip();
       zip.addFile("project.json", Buffer.from(JSON.stringify(project)));
       zip.addLocalFile(`${p}/currentproject/variables.db`);
-
-      for (const variable of project.variables) {
-        if (variable.type == "csv") {
-          zip.addLocalFile(
-            `${p}/currentproject/var/${variable.csvfile}`,
-            "var"
-          );
-        }
-      }
 
       if (project.settings?.avatar_file) {
         zip.addLocalFile(

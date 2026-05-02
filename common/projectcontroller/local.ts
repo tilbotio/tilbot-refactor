@@ -66,6 +66,7 @@ export class LocalProjectController<
       const type = event.type;
       if (type == "message") {
         // Do nothing for now (simulator)
+        // @TODO: make this work again, local projectmanager also used in server-based version!
       } else if (type == "variable") {
         const var_name = event.var_name;
         const var_value = event.var_value;
@@ -99,7 +100,11 @@ export class LocalProjectController<
     }
   }
 
-  async send_message(block: any, matchedConnector: string = "", input: string = "") {
+  async send_message(
+    block: any,
+    matchedConnector: string = "",
+    input: string = ""
+  ) {
     const params: any = {};
     const content = await this.check_variables(
       block.content,
@@ -117,14 +122,33 @@ export class LocalProjectController<
         for (const label_part of connector.label) {
           if (label_part.type == "text" && labelText.length == 0) {
             labelText.push(label_part.content);
-          }
-          else if (label_part.type == "variable" && label_part.variable !== undefined && labelText.length == 0) {
-            let options = await this._lookup.column(label_part.variable, label_part.column);
+          } else if (
+            label_part.type == "variable" &&
+            label_part.variable !== undefined &&
+            labelText.length == 0
+          ) {
+            let options: any[] | null = null;
+
+            // Check if we need to retrieve a column or random row
+            if (
+              label_part.isRandomRow !== undefined &&
+              label_part.isRandomRow
+            ) {
+              options = await this._lookup.random(label_part.variable);
+            } else if (
+              label_part.column !== undefined &&
+              label_part.column !== ""
+            ) {
+              options = await this._lookup.column(
+                label_part.variable,
+                label_part.column
+              );
+            }
 
             if (options !== null) {
               for (const o of options) {
                 labelText.push(o);
-              }  
+              }
             }
           }
         }
@@ -133,7 +157,6 @@ export class LocalProjectController<
           if (!params.options.includes(txt)) {
             params.options.push(txt);
           }
-  
         }
       }
 
@@ -191,8 +214,16 @@ export class LocalProjectController<
       } else if (c.type == "prevConnectorLabel") {
         txt += matchedConnector;
       } else if (c.type == "variable") {
-        if (c.variable !== undefined && c.column !== undefined) {
-          const res = await this._lookup.column(c.variable, c.column);
+        if (c.variable !== undefined) {
+          let res: any[] | null = null;
+
+          // Check if we need to retrieve a column or random row
+          if (c.isRandomRow !== undefined && c.isRandomRow) {
+            res = await this._lookup.random(c.variable);
+          } else if (c.column !== undefined && c.column !== "") {
+            res = await this._lookup.column(c.variable, c.column);
+          }
+
           if (res !== null) {
             txt += res.join(", ");
           }
@@ -203,15 +234,15 @@ export class LocalProjectController<
     return txt;
   }
 
-  async find_best_connector(
-    block: any,
-    userInput: string
-  ) {
+  async find_best_connector(block: any, userInput: string) {
     let else_connector = null;
 
     // Remove punctuation marks
-    let userInputStripped = userInput.replace("?", "").replace("!", "").replace(".", "").replace(",", "");
-
+    let userInputStripped = userInput
+      .replace("?", "")
+      .replace("!", "")
+      .replace(".", "")
+      .replace(",", "");
 
     for (const connector of block.connectors) {
       let meetsCriteria = true;
@@ -221,23 +252,25 @@ export class LocalProjectController<
         if (label_part.type == "else") {
           else_connector = connector;
           meetsCriteria = false;
-        }
-
-        else if (label_part.type == "text") {
-          if (userInput.toLowerCase().indexOf(label_part.content.toLowerCase()) == -1) {
+        } else if (label_part.type == "text") {
+          if (
+            userInput.toLowerCase().indexOf(label_part.content.toLowerCase()) ==
+            -1
+          ) {
             meetsCriteria = false;
-          }
-          else {
+          } else {
             found_output.push(label_part.content.toLowerCase());
           }
-        }
-
-        else if (label_part.type == "variable") {
+        } else if (label_part.type == "variable") {
           // For variables we do a word-by-word match since there can be complex entries in the dataset.
           let foundAWord = false;
           let words = userInputStripped.split(" ");
           for (const word of words) {
-            let lookup = await this._lookup.cell(label_part.variable, label_part.column, word.toLowerCase());
+            let lookup = await this._lookup.cell(
+              label_part.variable,
+              label_part.column,
+              word.toLowerCase()
+            );
             if (lookup !== null) {
               foundAWord = true;
               found_output.push(word.toLowerCase());
@@ -251,15 +284,29 @@ export class LocalProjectController<
       }
 
       if (meetsCriteria) {
-        return { found: true, connector: connector, output: found_output, isElseConnector: false };
+        return {
+          found: true,
+          connector: connector,
+          output: found_output,
+          isElseConnector: false,
+        };
       }
     }
 
     if (else_connector === null) {
-      return { found: false, connector: null, output: [], isElseConnector: false };
-    }
-    else {
-      return { found: true, connector: else_connector, output: [userInput], isElseConnector: true }
+      return {
+        found: false,
+        connector: null,
+        output: [],
+        isElseConnector: false,
+      };
+    } else {
+      return {
+        found: true,
+        connector: else_connector,
+        output: [userInput],
+        isElseConnector: true,
+      };
     }
   }
 
@@ -272,7 +319,7 @@ export class LocalProjectController<
       output: string[];
       isElseConnector: boolean;
     } = { found: false, connector: null, output: [], isElseConnector: false };
-    
+
     const blocks = this._project.blocks;
     if (this._current_block_id !== undefined && this._current_block_id !== -1) {
       const current_block = blocks[this._current_block_id.toString()];
@@ -285,7 +332,10 @@ export class LocalProjectController<
       // Check if we need to fire a trigger -- after checking responses to query by the bot!
       for (const block of Object.values(blocks) as any[]) {
         if (block.type === "Trigger") {
-          let best_trigger = await this.find_best_connector(block, str.toString());
+          let best_trigger = await this.find_best_connector(
+            block,
+            str.toString()
+          );
 
           if (best_trigger.found) {
             best = best_trigger;

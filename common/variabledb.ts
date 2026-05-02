@@ -79,13 +79,13 @@ export class VariableDb {
 
   public getColNames(tableName: string): string[] {
     try {
-        const q = `SELECT * FROM "${tableName}";`;
-        const prep = this.db.prepare(q);
-        prep.setReturnArrays(true);
+      const q = `SELECT * FROM "${tableName}";`;
+      const prep = this.db.prepare(q);
+      prep.setReturnArrays(true);
 
-        const cols = prep.columns();
-        let colsArray: any[] = cols.map((c) => c.column);
-        return colsArray;
+      const cols = prep.columns();
+      let colsArray: any[] = cols.map((c) => c.column);
+      return colsArray;
     } catch (e) {
       return [];
     }
@@ -124,11 +124,28 @@ export class VariableDb {
     } catch (e) {
       console.log(e);
       return null;
-    }    
+    }
   }
 
-  public getRandomRow(): any[] {
-    return [null];
+  public getRandomRow(tableName: string): any[] {
+    try {
+      const q = `SELECT * FROM "${tableName}" ORDER BY RANDOM() LIMIT 1;`;
+      const prep = this.db.prepare(q);
+      prep.setReturnArrays(true);
+
+      const cols = prep.columns();
+      let colsArray: any[] = cols.map((c) => c.column);
+      const res = prep.all();
+
+      if (colsArray !== null) {
+        res.unshift(colsArray);
+        return res;
+      } else {
+        return res;
+      }
+    } catch (e) {
+      return [];
+    }
   }
 
   public close() {

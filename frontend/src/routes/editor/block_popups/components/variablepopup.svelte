@@ -42,7 +42,7 @@
 <dialog id="modal_add_variable" class="modal" bind:this={variableModal}>
   <div class="modal-box">
     <h3 class="text-lg font-bold mb-4">Insert variable</h3>
-    {#if variables.length == 0}
+    {#if variables === undefined || variables.length == 0}
       No variables are defined in this project yet.
     {:else}
       <select

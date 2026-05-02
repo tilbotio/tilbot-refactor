@@ -5,17 +5,29 @@ export class ChatLookup implements ProjectControllerLookupInterface {
   private pendingResolver: ((value: string) => void) | null = null;
   private windowAPI: any = (window.parent as any)?.api;
 
-  async cell(table: string, col: string, val: string): Promise<Object[] | null> {
-    return await this.windowAPI.invoke("get-data-table-cell", {tableName: table, columnName: col, val: val});
+  async cell(
+    table: string,
+    col: string,
+    val: string
+  ): Promise<Object[] | null> {
+    return await this.windowAPI.invoke("get-data-table-cell", {
+      tableName: table,
+      columnName: col,
+      val: val,
+    });
   }
 
-  async random(db: string): Promise<Object | null> {
-    // Not used in the chatinterface
-    return null;
+  async random(table: string): Promise<any[] | null> {
+    return await this.windowAPI.invoke("get-data-table-random-row", {
+      tableName: table,
+    });
   }
 
   async column(table: string, col: string): Promise<any[] | null> {
-    return await this.windowAPI.invoke("get-data-table-column", {tableName: table, columnName: col});
+    return await this.windowAPI.invoke("get-data-table-column", {
+      tableName: table,
+      columnName: col,
+    });
   }
 
   async variation(
