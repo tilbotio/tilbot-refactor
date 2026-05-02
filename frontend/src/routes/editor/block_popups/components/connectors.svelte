@@ -26,7 +26,13 @@
     variablePopup.showModal();
   }
 
-  function setVariable(variable: string, column: string, isRandomRow: boolean) {
+  function setVariable(
+    type: string,
+    variable: string,
+    column: string,
+    isRandomRow: boolean
+  ) {
+    connectors[selectedConnector].label[selectedLabelPart].variableType = type;
     connectors[selectedConnector].label[selectedLabelPart].variable = variable;
     connectors[selectedConnector].label[selectedLabelPart].column = column;
   }

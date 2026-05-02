@@ -144,6 +144,47 @@
     project.canvas_height = screen.height * 1.5;
   });
 
+  function getVariables() {
+    let variables = _.cloneDeep(project.variables);
+
+    // Find session-specific variables from events where they are set.
+    for (const [key, block] of Object.entries(project.blocks)) {
+      if (block.connectors !== undefined) {
+        for (let connector of block.connectors) {
+          if (connector.events !== undefined) {
+            for (let event of connector.events) {
+              if (event.type !== undefined && event.type == "variable") {
+                if (event.var_name !== undefined) {
+                  let sessionVar = {
+                    name: event.var_name,
+                    type: "session",
+                    isObject: false,
+                    valueVariable: null,
+                  };
+
+                  if (
+                    event.var_value !== undefined &&
+                    event.var_value.type !== undefined &&
+                    event.var_value.type == "variable" &&
+                    event.var_value.isRandomRow
+                  ) {
+                    sessionVar.isObject = true;
+                    sessionVar.valueVariable = event.var_value.variable;
+                  }
+
+                  variables.push(sessionVar);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log(variables);
+    return variables;
+  }
+
   function newBlock(type: ProjectBlockType) {
     // @TODO: take into account current level / groupblock
     const connectors: ProjectConnector[] = [];
@@ -557,7 +598,7 @@
           blockPopupComponentTypes[editingBlock.type]}
         <BlockPopupComponent
           block={editingBlock}
-          variables={project.variables}
+          variables={getVariables()}
           save={saveBlock}
           cancel={cancelBlock}
         />

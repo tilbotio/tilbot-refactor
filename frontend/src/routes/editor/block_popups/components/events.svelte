@@ -66,9 +66,15 @@
     variablePopup.showModal();
   }
 
-  function setVariable(variable: string, column: string, isRandomRow: boolean) {
+  function setVariable(
+    type: string,
+    variable: string,
+    column: string,
+    isRandomRow: boolean
+  ) {
     eventsCopy[currentEditingId].var_value = {
       type: "variable",
+      variableType: type,
       variable: variable,
       column: column,
       isRandomRow: isRandomRow,

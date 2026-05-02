@@ -172,12 +172,12 @@ export class LocalProjectController<
     }
   }
 
-  message_sent_event(): void {
+  async message_sent_event() {
     const current_block =
       this._project.blocks[this._current_block_id.toString()];
     if (current_block.type === "Auto") {
       const connector = current_block.connectors[0];
-      this.send_events(connector, "");
+      await this.send_events(connector, "");
       this._current_block_id = connector.targets[0];
       this._send_current_message();
     }
@@ -219,17 +219,27 @@ export class LocalProjectController<
         txt += matchedConnector;
       } else if (c.type == "variable") {
         if (c.variable !== undefined) {
-          let res: any[] | null = null;
+          if (c.variableType !== undefined && c.variableType == "dataset") {
+            let res: any[] | null = null;
 
-          // Check if we need to retrieve a column or random row
-          if (c.isRandomRow !== undefined && c.isRandomRow) {
-            res = await this._lookup.random(c.variable);
-          } else if (c.column !== undefined && c.column !== "") {
-            res = await this._lookup.column(c.variable, c.column);
+            // Check if we need to retrieve a column or random row
+            if (c.isRandomRow !== undefined && c.isRandomRow) {
+              res = await this._lookup.random(c.variable);
+            } else if (c.column !== undefined && c.column !== "") {
+              res = await this._lookup.column(c.variable, c.column);
+            }
+  
+            if (res !== null) {
+              txt += res.join(", ");
+            }  
           }
-
-          if (res !== null) {
-            txt += res.join(", ");
+          else if (c.variableType !== undefined && c.variableType == "session") {
+            if (c.column !== undefined && c.column !== "") {
+              txt += this._client_vars[c.variable][c.column];
+            }
+            else {
+              txt += this._client_vars[c.variable];
+            }
           }
         }
       }
@@ -270,14 +280,30 @@ export class LocalProjectController<
           let foundAWord = false;
           let words = userInputStripped.split(" ");
           for (const word of words) {
-            let lookup = await this._lookup.cell(
-              label_part.variable,
-              label_part.column,
-              word.toLowerCase()
-            );
+            let lookup: any[] | null = null;
+            
+            if (label_part.variableType == "dataset") {
+              lookup = await this._lookup.cell(
+                label_part.variable,
+                label_part.column,
+                word.toLowerCase()
+              );  
+            }
+            else if (label_part.variableType == "session") {
+              let check = "";
+              if (label_part.column !== undefined && label_part.column != "") {
+                check = this._client_vars[label_part.variable][label_part.column];
+              }
+              else {
+                check = this._client_vars[label_part.variable];
+              }
+              if (word.toLowerCase() == check.toLowerCase() || new RegExp("\\b" + word.toLowerCase() + "\\b").test(check.toLowerCase())) {
+                lookup = [word];
+              }
+            }
             if (lookup !== null) {
               foundAWord = true;
-              found_output.push(word.toLowerCase());
+              found_output.push(word);
             }
           }
 
@@ -351,7 +377,7 @@ export class LocalProjectController<
 
     if (best.found) {
       this._current_block_id = best.connector.targets[0];
-      this.send_events(best.connector, best.output.join(" "));
+      await this.send_events(best.connector, best.output.join(" "));
       this._send_current_message(best.output.join(" "), str);
     }
   }

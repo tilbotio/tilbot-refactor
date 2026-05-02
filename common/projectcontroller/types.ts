@@ -2,7 +2,7 @@ export interface ProjectControllerInterface<
   ProjectControllerOutputType extends ProjectControllerOutputInterface
 > {
   readonly output: ProjectControllerOutputType;
-  message_sent_event(): void;
+  message_sent_event();
   receive_message(str: string): void;
   log(str: string): void;
   set_participant_id(pid: string): void;

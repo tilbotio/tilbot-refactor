@@ -27,10 +27,20 @@
   async function variableSelectChange() {
     if (variableSelect.selectedIndex !== 0) {
       saveButton.classList.remove("disabled");
-      colNames = await windowApi.invoke(
-        "get-data-table-cols",
-        variableSelect.value
-      );
+
+      let selectedVar = variables[variableSelect.selectedIndex - 1];
+
+      if (selectedVar.type == "dataset") {
+        colNames = await windowApi.invoke(
+          "get-data-table-cols",
+          variableSelect.value
+        );
+      } else if (selectedVar.type == "session" && selectedVar.isObject) {
+        colNames = await windowApi.invoke(
+          "get-data-table-cols",
+          selectedVar.valueVariable
+        );
+      }
     }
   }
 
@@ -64,7 +74,7 @@
           bind:value={variableElementSelected}
         >
           <option selected>Column from dataset</option>
-          <option selected>Random row</option>
+          <option>Random row</option>
         </select>
       {/if}
 
@@ -85,6 +95,7 @@
           bind:this={saveButton}
           onclick={() => {
             onSave(
+              variables[variableSelect.selectedIndex - 1].type,
               variableSelect.value,
               colSelect !== undefined ? colSelect.value : "",
               variableElementSelected == "Random row"

@@ -139,12 +139,14 @@
   }
 
   function insertVariable(
+    type: string,
     variable: string,
     column: string,
     isRandomRow: boolean
   ) {
     value.push({
       type: "variable",
+      variableType: type,
       variable: variable,
       column: column,
       isRandomRow: isRandomRow,
