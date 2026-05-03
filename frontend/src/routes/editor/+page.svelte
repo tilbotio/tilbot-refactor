@@ -17,10 +17,12 @@
   import Draggable from "./draggable.svelte";
   import Start from "./start.svelte";
   import AutoBlock from "./blocks/auto.svelte";
+  import ComputeBlock from "./blocks/compute.svelte";
   import MCBlock from "./blocks/mc.svelte";
   import TextBlock from "./blocks/text.svelte";
   import TriggerBlock from "./blocks/trigger.svelte";
   import AutoBlockPopup from "./block_popups/auto.svelte";
+  import ComputeBlockPopup from "./block_popups/compute.svelte";
   import MCBlockPopup from "./block_popups/mc.svelte";
   import TextBlockPopup from "./block_popups/text.svelte";
   import TriggerBlockPopup from "./block_popups/trigger.svelte";
@@ -38,6 +40,7 @@
     Folder,
     FolderArrowDown,
     CheckCircle,
+    Sparkles,
   } from "svelte-heros-v2";
 
   const blockComponentTypes = {
@@ -45,6 +48,7 @@
     MC: MCBlock,
     Text: TextBlock,
     Trigger: TriggerBlock,
+    Compute: ComputeBlock,
   };
 
   const blockPopupComponentTypes = {
@@ -52,6 +56,7 @@
     MC: MCBlockPopup,
     Text: TextBlockPopup,
     Trigger: TriggerBlockPopup,
+    Compute: ComputeBlockPopup,
   };
 
   let editorContainer: HTMLElement = $state(null) as any;
@@ -186,7 +191,6 @@
   }
 
   function newBlock(type: ProjectBlockType) {
-    // @TODO: take into account current level / groupblock
     const connectors: ProjectConnector[] = [];
     const currentBlockId = project.current_block_id;
     const currentBlock: ProjectBlock = (project.blocks[currentBlockId] = {
@@ -204,6 +208,16 @@
         targets: [] as number[],
       });
     } else if (type === "Text") {
+      connectors.push({
+        type: "Labeled",
+        label: [
+          {
+            type: "else",
+          },
+        ],
+        targets: [],
+      });
+    } else if (type === "Compute") {
       connectors.push({
         type: "Labeled",
         label: [
@@ -671,6 +685,7 @@
         </ul>
       </li>
       {@render blockMenuItem("Add trigger", BellAlert, "Trigger")}
+      {@render blockMenuItem("Add compute", Sparkles, "Compute")}
 
       <li>&nbsp;<br /><br /></li>
 

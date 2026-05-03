@@ -165,6 +165,10 @@ export class LocalProjectController<
       }
 
       this._output.botMessage({ type, content, params });
+    } else if (type == "Compute") {
+      // @TODO: implement option to delegate compute (in generating chatbot output or processing user input) to external APIs
+      this.message_sent_event();
+      this.receive_message(input);
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 

@@ -75,7 +75,7 @@ export type ProjectConnector = {
   method?: "contains";
 };
 
-export type ProjectBlockType = "Auto" | "MC" | "Text" | "Trigger";
+export type ProjectBlockType = "Auto" | "MC" | "Text" | "Trigger" | "Compute";
 
 export type ProjectBlock = {
   type: ProjectBlockType;
