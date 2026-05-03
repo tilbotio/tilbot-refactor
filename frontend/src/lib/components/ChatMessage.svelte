@@ -26,13 +26,15 @@
   const [background, alignment] = determineLayout(message.from);
 </script>
 
-<div class="chat {alignment}">
+<div class="chat ml-2 mr-2 {alignment}">
   {#if newBotMessageBlock}
     <div class="chat-image avatar">
       <div class="w-10">
         <Avatar avatarSource={settings.avatar_file_sm} />
       </div>
     </div>
+  {:else}
+    <div class="w-10"></div>
   {/if}
   <div class="chat-bubble {background}">{@html message.content}</div>
 </div>

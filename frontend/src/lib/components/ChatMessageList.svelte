@@ -30,13 +30,15 @@
   />
 {/each}
 {#if isTypingIndicatorActive}
-  <div class="chat chat-start">
+  <div class="chat chat-start ml-2">
     {#if showAvatarForTypingIndicator}
       <div class="chat-image avatar">
         <div class="w-10">
           <Avatar avatarSource={avatar_file_sm} />
         </div>
       </div>
+    {:else}
+      <div class="w-10"></div>
     {/if}
     <div class="chat-bubble bg-tilbot-secondary-purple">
       <span class="loading loading-dots loading-sm"></span>
