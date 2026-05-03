@@ -301,7 +301,7 @@ export class LocalProjectController<
               else {
                 check = this._client_vars[label_part.variable];
               }
-              if (word.toLowerCase() == check.toLowerCase() || new RegExp("\\b" + word.toLowerCase() + "\\b").test(check.toLowerCase())) {
+              if (check !== null && (word.toLowerCase() == check.toLowerCase() || new RegExp("\\b" + word.toLowerCase() + "\\b").test(check.toLowerCase()))) {
                 lookup = [word];
               }
             }
