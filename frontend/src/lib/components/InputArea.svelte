@@ -9,12 +9,11 @@
     currentMessageType: CurrentMessageType;
     mcOptions: McOption[];
     onSend: (InputText: string) => void;
-    onScanner: () => void;
   };
 
   let inputText: InputText = $state("");
 
-  const { currentMessageType, mcOptions, onSend, onScanner }: Props = $props();
+  const { currentMessageType, mcOptions, onSend }: Props = $props();
 
   function handleTextSubmit(): void {
     console.log("Text submitted");
@@ -25,10 +24,6 @@
 
   function handleMcSubmit(optionContent: string): void {
     onSend(optionContent);
-  }
-
-  function openBarcodeReader(): void {
-    onScanner();
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
@@ -60,18 +55,13 @@
       bind:value={inputText}
       onkeydown={handleKeyDown}
     ></textarea>
-    {#if inputText && inputText.trim().length > 0}
-      <button
-        class="btn btn-circle absolute bottom-4 right-4"
-        aria-label="Send message"
-        onclick={handleTextSubmit}><PaperAirplane class="h-6 w-6" /></button
-      >
-    {:else}
-      <button
-        class="btn btn-circle absolute bottom-4 right-4"
-        aria-label="Scan barcode"
-        onclick={openBarcodeReader}><QrCode class="h-6 w-6"></QrCode></button
-      >
-    {/if}
+    <button
+      class="btn btn-circle absolute bottom-4 right-4 {inputText.trim()
+        .length == 0
+        ? 'btn-disabled'
+        : ''}"
+      aria-label="Send message"
+      onclick={handleTextSubmit}><PaperAirplane class="h-6 w-6" /></button
+    >
   </div>
 {/if}

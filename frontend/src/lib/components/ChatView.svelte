@@ -1,16 +1,10 @@
 <script lang="ts">
   import ChatHeader from "./ChatHeader.svelte";
-  import BarcodeScanner from "./BarcodeScanner.svelte";
   import type { ProjectControllerInterface } from "../../../../common/projectcontroller/types";
   import type { ChatOutput } from "$lib/classes/ChatOutput.svelte";
   import type { RuntimeContext } from "$lib/types/RuntimeContext";
   import type { ProjectSettings } from "../../../../common/project/types";
-  import type {
-    McOption,
-    ShowBarcodeScanner,
-    Message,
-    CurrentMessageType,
-  } from "$lib/types/types";
+  import type { McOption, Message, CurrentMessageType } from "$lib/types/types";
   import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
   import InputArea from "./InputArea.svelte";
@@ -25,7 +19,6 @@
   const settingsContext: ProjectSettings = getContext("settingsContext");
   const messages: Message[] = getContext("messagesContext");
 
-  let showBarcodeScanner: ShowBarcodeScanner = $state(false);
   let currentMessageType: CurrentMessageType = $state("Auto");
   let mcOptions: McOption[] = $state([]);
 
@@ -63,28 +56,12 @@
     projectController.output.isTypingIndicatorActive
   );
 
-  function openBarcodeReader(): void {
-    showBarcodeScanner = true;
-  }
-
-  function closeBarcodeReader(): void {
-    showBarcodeScanner = false;
-  }
-
   function sendUserMessage(messageText: string): void {
     projectController.output.processMessage("user", messageText);
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
   }
-
-  function handleScannedCode(decoded: string): void {
-    sendUserMessage(`barcode: ${decoded}`);
-  }
 </script>
-
-{#if showBarcodeScanner}
-  <BarcodeScanner onClose={closeBarcodeReader} onScan={handleScannedCode} />
-{/if}
 
 <div class="flex flex-col w-full h-full">
   {#if runtimeContext.showHeader}
@@ -99,10 +76,5 @@
       avatar_file_sm={settingsContext.avatar_file_sm}
     />
   </div>
-  <InputArea
-    {currentMessageType}
-    {mcOptions}
-    onSend={sendUserMessage}
-    onScanner={openBarcodeReader}
-  />
+  <InputArea {currentMessageType} {mcOptions} onSend={sendUserMessage} />
 </div>
