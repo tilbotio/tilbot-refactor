@@ -29,7 +29,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
 
   windowMessage(text: string): void {
     if (window.self !== window.top) {
-      window.parent.postMessage(text);
+      window.parent.postMessage(text, "*");
     }
   }
 
@@ -53,7 +53,12 @@ export class ChatOutput implements ProjectControllerOutputInterface {
 
     setTimeout(() => {
       this.isTypingIndicatorActive = false;
-      this.processMessage("bot", block.content, block.params, block.type as CurrentMessageType);
+      this.processMessage(
+        "bot",
+        block.content,
+        block.params,
+        block.type as CurrentMessageType
+      );
     }, timeout);
   }
 
@@ -73,7 +78,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     from: Message["from"],
     content: Message["content"],
     params?: Message["params"],
-    type?: Message["type"],    
+    type?: Message["type"]
   ) {
     this.messages.push({ from, content, params, type });
     if (from == "bot") {

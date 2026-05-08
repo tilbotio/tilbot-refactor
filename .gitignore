@@ -41,3 +41,7 @@ app/build
 /tests/integration/.npm/
 /tests/integration/frontend/.npm/
 /backend/projects/
+
+# Some specific pages for projects
+frontend/src/routes/guesswho
+frontend/static/guesswho

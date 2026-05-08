@@ -65,8 +65,7 @@ export class LocalProjectController<
     for (const event of events) {
       const type = event.type;
       if (type == "message") {
-        // Do nothing for now (simulator)
-        // @TODO: make this work again, local projectmanager also used in server-based version!
+        this._output.windowMessage(event.content);
       } else if (type == "variable") {
         if (event.var_name !== undefined && event.var_value !== undefined) {
           // @TODO: implement more complex combinations, e.g., other variable + 1
@@ -214,7 +213,6 @@ export class LocalProjectController<
     let txt = "";
 
     for (let c of content) {
-      console.log(c);
       if (c.text !== undefined) {
         txt += c.text;
       } else if (c.type == "prevTurnText") {
@@ -232,16 +230,17 @@ export class LocalProjectController<
             } else if (c.column !== undefined && c.column !== "") {
               res = await this._lookup.column(c.variable, c.column);
             }
-  
+
             if (res !== null) {
               txt += res.join(", ");
-            }  
-          }
-          else if (c.variableType !== undefined && c.variableType == "session") {
+            }
+          } else if (
+            c.variableType !== undefined &&
+            c.variableType == "session"
+          ) {
             if (c.column !== undefined && c.column !== "") {
               txt += this._client_vars[c.variable][c.column];
-            }
-            else {
+            } else {
               txt += this._client_vars[c.variable];
             }
           }
@@ -255,64 +254,81 @@ export class LocalProjectController<
   async find_best_connector(block: any, userInput: string) {
     let else_connector = null;
 
+    let userInputStripped = userInput;
+
     // Remove punctuation marks
-    let userInputStripped = userInput
-      .replace("?", "")
-      .replace("!", "")
-      .replace(".", "")
-      .replace(",", "");
+    if (block.type !== "MC") {
+      userInputStripped = userInput
+        .replace("?", "")
+        .replace("!", "")
+        .replace(".", "")
+        .replace(",", "");
+    }
 
     for (const connector of block.connectors) {
       let meetsCriteria = true;
       let found_output: string[] = [];
 
-      for (const label_part of connector.label) {
-        if (label_part.type == "else") {
-          else_connector = connector;
-          meetsCriteria = false;
-        } else if (label_part.type == "text") {
-          if (
-            userInput.toLowerCase().indexOf(label_part.content.toLowerCase()) ==
-            -1
-          ) {
+      if (connector.targets.length == 0) {
+        meetsCriteria = false;
+      } else {
+        for (const label_part of connector.label) {
+          if (label_part.type == "else") {
+            else_connector = connector;
             meetsCriteria = false;
-          } else {
-            found_output.push(label_part.content.toLowerCase());
-          }
-        } else if (label_part.type == "variable") {
-          // For variables we do a word-by-word match since there can be complex entries in the dataset.
-          let foundAWord = false;
-          let words = userInputStripped.split(" ");
-          for (const word of words) {
-            let lookup: any[] | null = null;
-            
-            if (label_part.variableType == "dataset") {
-              lookup = await this._lookup.cell(
-                label_part.variable,
-                label_part.column,
-                word.toLowerCase()
-              );  
+          } else if (label_part.type == "text") {
+            if (
+              userInput
+                .toLowerCase()
+                .indexOf(label_part.content.toLowerCase()) == -1
+            ) {
+              meetsCriteria = false;
+            } else {
+              found_output.push(label_part.content.toLowerCase());
             }
-            else if (label_part.variableType == "session") {
-              let check = "";
-              if (label_part.column !== undefined && label_part.column != "") {
-                check = this._client_vars[label_part.variable][label_part.column];
-              }
-              else {
-                check = this._client_vars[label_part.variable];
-              }
-              if (check !== null && (word.toLowerCase() == check.toLowerCase() || new RegExp("\\b" + word.toLowerCase() + "\\b").test(check.toLowerCase()))) {
-                lookup = [word];
-              }
-            }
-            if (lookup !== null) {
-              foundAWord = true;
-              found_output.push(word);
-            }
-          }
+          } else if (label_part.type == "variable") {
+            // For variables we do a word-by-word match since there can be complex entries in the dataset.
+            let foundAWord = false;
+            let words = userInputStripped.split(" ");
+            for (const word of words) {
+              let lookup: any[] | null = null;
 
-          if (!foundAWord) {
-            meetsCriteria = false;
+              if (label_part.variableType == "dataset") {
+                lookup = await this._lookup.cell(
+                  label_part.variable,
+                  label_part.column,
+                  word.toLowerCase()
+                );
+              } else if (label_part.variableType == "session") {
+                let check = "";
+                if (
+                  label_part.column !== undefined &&
+                  label_part.column != ""
+                ) {
+                  check =
+                    this._client_vars[label_part.variable][label_part.column];
+                } else {
+                  check = this._client_vars[label_part.variable];
+                }
+                if (
+                  check !== null &&
+                  (word.toLowerCase() == check.toLowerCase() ||
+                    new RegExp("\\b" + word.toLowerCase() + "\\b").test(
+                      check.toLowerCase()
+                    ))
+                ) {
+                  lookup = [word];
+                }
+              }
+              if (lookup !== null) {
+                foundAWord = true;
+                found_output.push(word);
+              }
+            }
+
+            if (!foundAWord) {
+              meetsCriteria = false;
+            }
           }
         }
       }
@@ -344,6 +360,18 @@ export class LocalProjectController<
     }
   }
 
+  _checkTriggerRelatedToCurrent(trigger: any, currentBlockID: number) {
+    for (const connector of trigger.connectors) {
+      if (connector.targets.length > 0) {
+        if (connector.targets[0] == currentBlockID) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   async receive_message(str: string) {
     console.log("receive!" + str);
 
@@ -355,8 +383,13 @@ export class LocalProjectController<
     } = { found: false, connector: null, output: [], isElseConnector: false };
 
     const blocks = this._project.blocks;
+    let current_block = null;
+    let currentBlockExists = false;
+
     if (this._current_block_id !== undefined && this._current_block_id !== -1) {
-      const current_block = blocks[this._current_block_id.toString()];
+      currentBlockExists = true;
+
+      current_block = blocks[this._current_block_id.toString()];
       if (current_block.type !== "Auto") {
         best = await this.find_best_connector(current_block, str.toString());
       }
@@ -366,14 +399,21 @@ export class LocalProjectController<
       // Check if we need to fire a trigger -- after checking responses to query by the bot!
       for (const block of Object.values(blocks) as any[]) {
         if (block.type === "Trigger") {
-          let best_trigger = await this.find_best_connector(
-            block,
-            str.toString()
-          );
+          // Check if we're not in a compute block that just came from this trigger
+          if (
+            !currentBlockExists ||
+            current_block.type !== "Compute" ||
+            !this._checkTriggerRelatedToCurrent(block, this._current_block_id)
+          ) {
+            let best_trigger = await this.find_best_connector(
+              block,
+              str.toString()
+            );
 
-          if (best_trigger.found) {
-            best = best_trigger;
-            break;
+            if (best_trigger.found) {
+              best = best_trigger;
+              break;
+            }
           }
         }
       }

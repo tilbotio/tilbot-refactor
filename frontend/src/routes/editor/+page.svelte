@@ -207,7 +207,7 @@
         type: "Basic",
         targets: [] as number[],
       });
-    } else if (type === "Text") {
+    } else if (type === "Text" || type === "Compute" || type === "Trigger") {
       connectors.push({
         type: "Labeled",
         label: [
@@ -217,17 +217,8 @@
         ],
         targets: [],
       });
-    } else if (type === "Compute") {
-      connectors.push({
-        type: "Labeled",
-        label: [
-          {
-            type: "else",
-          },
-        ],
-        targets: [],
-      });
-    } else if (type === "Trigger") {
+    }
+    if (type === "Trigger") {
       currentBlock.name = `Trigger ${project.current_block_id}`;
     }
 
