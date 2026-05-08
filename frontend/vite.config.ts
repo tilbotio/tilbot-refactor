@@ -1,27 +1,38 @@
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { sveltekit } from "@sveltejs/kit/vite";
+import { defineConfig } from "vite";
+import fs from "fs";
 
-const API_URL = process.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = process.env.VITE_API_URL || "http://localhost:8000";
 
-export default defineConfig({
+let config = {
   plugins: [sveltekit()],
   build: { minify: false },
   server: {
     host: true,
     allowedHosts: true,
-    // port: 5173,
+    port: 5173,
     // strictPort: true,
     fs: {
-      allow: ['proj_pub']
+      allow: ["proj_pub"],
     },
     proxy: {
-      '/ws': API_URL.replace(/^http(s?):/, 'ws$1:'),
-      '/api': {
+      "/ws": API_URL.replace(/^http(s?):/, "ws$1:"),
+      "/api": {
         target: API_URL,
         changeOrigin: true,
         secure: false,
         // rewrite: (path) => path.replace(/^\/api/, '')
       },
-    }
-  }
-});
+    },
+  },
+};
+
+if (process.env.HTTPS) {
+  config.server.port = 443;
+  config.server.https = {
+    key: fs.readFileSync(process.env.HTTPS_KEY),
+    cert: fs.readFileSync(process.env.HTTPS_CERT),
+  };
+}
+
+export default defineConfig(config);
