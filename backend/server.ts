@@ -83,6 +83,17 @@ if (process.env.HTTPS) {
   });
 }
 
+let corsConfig = {
+  allowedHeaders: ["Content-Type"],
+  origin: "http://localhost:5173",
+  preflightContinue: true,
+  credentials: true,
+};
+
+if (process.env.HTTPS) {
+  corsConfig.origin = "https://localhost:443";
+}
+
 // Do initialization work in parallel (because why not):
 await Promise.all([
   mongoose.connect(dbPath),
@@ -114,12 +125,7 @@ await Promise.all([
   }),
 
   // For CORS
-  app.register(fastifyCORS, {
-    allowedHeaders: ["Content-Type"],
-    origin: "http://localhost:5173",
-    preflightContinue: true,
-    credentials: true,
-  }),
+  app.register(fastifyCORS, corsConfig),
 
   // parse application/x-www-form-urlencoded
   app.register(fastifyFormBody),
