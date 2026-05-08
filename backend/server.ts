@@ -1,6 +1,7 @@
+import fs from "fs";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
-import Fastify from "fastify";
+import Fastify, { FastifyInstance } from "fastify";
 import { fastifySession } from "@fastify/session";
 import { fastifyCookie } from "@fastify/cookie";
 import fastifyCORS from "@fastify/cors";
@@ -66,7 +67,21 @@ const dbPath = process.env.MONGO_USERNAME
     }`
   : process.env.MONGO_DB ?? "mongodb://127.0.0.1:27017/tilbot";
 
-const app = Fastify({ logger: true });
+let app: FastifyInstance | null = null;
+
+if (process.env.HTTPS) {
+  app = Fastify({
+    logger: true,
+    https: {
+      key: fs.readFileSync(process.env.HTTPS_KEY as string),
+      cert: fs.readFileSync(process.env.HTTPS_CERT as string),
+    },
+  });
+} else {
+  app = Fastify({
+    logger: true,
+  });
+}
 
 // Do initialization work in parallel (because why not):
 await Promise.all([
@@ -290,7 +305,8 @@ app.post("/api/set_project_status", async (req, res) => {
 app.post("/api/import_project", async (req, res) => {
   console.log("=== IMPORT PROJECT ===");
   const data = await req.file();
-  const project_id: string = (data?.fields.project_id as MultipartValue).value as string;
+  const project_id: string = (data?.fields.project_id as MultipartValue)
+    .value as string;
 
   // Be extra careful because we're going to do filesystem operations here!
   if (!/^[0-9a-f]{32}$/.test(project_id)) {
