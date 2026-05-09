@@ -67,8 +67,6 @@ const dbPath = process.env.MONGO_USERNAME
     }?authSource=admin`
   : process.env.MONGO_DB ?? "mongodb://127.0.0.1:27017/tilbot";
 
-console.log(dbPath);
-
 let app: FastifyInstance | null = null;
 
 if (process.env.HTTPS) {
