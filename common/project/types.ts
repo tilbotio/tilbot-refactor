@@ -1,17 +1,8 @@
 export type GeneralSettings = {
-  llm_setting: "chatgpt" | "";
-  llm_api_address: "";
-  chatgpt_api_key?: string;
-  chatgpt_version?: string;
-  chatgpt_sim_version?: string;
   user_id?: string;
 };
 
-export const defaultGeneralSettings: GeneralSettings = {
-  llm_setting: "chatgpt",
-  llm_api_address: "",
-  chatgpt_sim_version: "gpt-3.5-turbo",
-};
+export const defaultGeneralSettings: GeneralSettings = {};
 
 export type ProjectSettings = {
   name: string; // bot name
@@ -19,9 +10,6 @@ export type ProjectSettings = {
   typing_style: "fixed" | "variable";
   typing_time: number;
   typing_charpsec: number;
-  llm_prompt?: string;
-  llm_prompt_data?: string;
-  temperature?: number;
   show_avatar?: boolean;
   avatar_file?: string;
   show_avatar_sm?: boolean;
@@ -40,9 +28,6 @@ export const defaultProjectSettings: ProjectSettings = {
   typing_style: "fixed",
   typing_time: 2,
   typing_charpsec: 40,
-  llm_prompt: defaultPrompt,
-  llm_prompt_data: "",
-  temperature: 0.5,
   show_avatar: true,
   avatar_file: "",
   show_avatar_sm: false,

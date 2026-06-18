@@ -13,7 +13,6 @@
   import { setOrDelete } from "$lib/utils/functions";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
-  import ChatGPT from "./chatgpt.svelte";
   import Draggable from "./draggable.svelte";
   import Start from "./start.svelte";
   import AutoBlock from "./blocks/auto.svelte";
@@ -676,7 +675,7 @@
         </ul>
       </li>
       {@render blockMenuItem("Add trigger", BellAlert, "Trigger")}
-      {@render blockMenuItem("Add compute", Sparkles, "Compute")}
+      {@render blockMenuItem("Add processing", Sparkles, "Compute")}
 
       <li>&nbsp;<br /><br /></li>
 
@@ -837,16 +836,6 @@
           <Play class="w-6 h-6" />
           Run all
         </button>
-
-        <ChatGPT
-          isRunning={chatGPTrunning}
-          projectSettings={project.settings}
-          {generalSettings}
-          variables={project.variables}
-          runAll={chatGPTrunAll}
-          sendMessage={chatGPTsendMessage}
-          sendVariation={sendChatCPTvariation}
-        ></ChatGPT>
       </div>
 
       <div id="simulator" class="mockup-phone w-full my-1.5 h-full">
