@@ -12,11 +12,7 @@
     cancel = () => {},
   } = $props();
 
-  const defaultProjectBlock = {
-    chatgpt_variation: false,
-    variation_prompt:
-      "Please generate a variation of the message the user sends, while preserving its original meaning. Try to be somewhat concise.",
-  } as ProjectBlock;
+  const defaultProjectBlock = {} as ProjectBlock;
 
   function fixedBlock(): ProjectBlock {
     // Make sure we have exactly one connector and that this connector has an
@@ -58,27 +54,6 @@
   {#snippet children(blockCopy: ProjectBlock)}
     <p class="py-4">Text for the bot to say:</p>
     <RichTextEdit bind:value={blockCopy.content} {variables} />
-
-    <br />
-
-    <div class="form-control">
-      <label class="label cursor-pointer">
-        <span class="label-text">Use large language model to add variation</span
-        >
-        <input
-          type="checkbox"
-          class="toggle"
-          bind:checked={blockCopy.chatgpt_variation}
-        />
-      </label>
-
-      {#if blockCopy.chatgpt_variation}
-        <textarea
-          class="textarea textarea-bordered w-full"
-          bind:value={blockCopy.variation_prompt}
-        ></textarea>
-      {/if}
-    </div>
 
     <Events bind:events={blockCopy.connectors[0].events} />
   {/snippet}
