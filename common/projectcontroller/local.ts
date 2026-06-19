@@ -165,7 +165,6 @@ export class LocalProjectController<
 
       this._output.botMessage({ type, content, params });
     } else if (type == "Compute") {
-      // @TODO: implement option to delegate compute (in generating chatbot output or processing user input) to external APIs
       this.message_sent_event();
       this.receive_message(input);
     } else {
@@ -390,7 +389,32 @@ export class LocalProjectController<
       currentBlockExists = true;
 
       current_block = blocks[this._current_block_id.toString()];
-      if (current_block.type !== "Auto") {
+      if (current_block.type == "Compute" && current_block.use_external_link) {
+        let res = null;
+
+        let external_link = this._getExternalLinkFromName(
+          current_block.external_link
+        );
+
+        if (external_link !== null) {
+          if (external_link.send_user_input) {
+            console.log(current_block.external_link);
+            res = await this._lookup.apiCall(external_link, str);
+          }
+          // @TODO: implement option to also add connectors to the API call
+          else {
+            res = await this._lookup.apiCall(external_link);
+          }
+
+          if (res !== null) {
+            // @TODO: see if this is a good long-term solution
+            best = await this.find_best_connector(current_block, res.intent);
+            if (res.connector_label !== undefined) {
+              best.output = [res.connector_label];
+            }
+          }
+        }
+      } else if (current_block.type !== "Auto") {
         best = await this.find_best_connector(current_block, str.toString());
       }
     }
@@ -424,6 +448,16 @@ export class LocalProjectController<
       await this.send_events(best.connector, best.output.join(" "));
       this._send_current_message(best.output.join(" "), str);
     }
+  }
+
+  _getExternalLinkFromName(name: string) {
+    for (const link of this._project.settings.external_links) {
+      if (link.name == name) {
+        return link;
+      }
+    }
+
+    return null;
   }
 
   set_participant_id(pid: string) {

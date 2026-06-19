@@ -14,14 +14,16 @@ export type ProjectSettings = {
   avatar_file?: string;
   show_avatar_sm?: boolean;
   avatar_file_sm?: string;
+  external_links: ExternalLink[];
 };
 
-const defaultPrompt = `Act as a user of my chatbot. I will send you the output from the chatbot and then I would like you to provide responses that a user would create.
-You should keep talking to the chatbot until you feel like you have reached your goal, or feel like the conversation is not progressing anymore.
-
-Whenever my messages contain curly brackets {}, the phrases between the curly brackets are the options for your output, separated by a semicolon ; . In this case, you can *only* reply with one of these options, no other text.
-For example, if my message contains {Yes;No}, you can only reply with either Yes or No. Do not add any other words.
-You cannot provide answer options with curly brackets for the chatbot.`;
+export type ExternalLink = {
+  name: string;
+  url: string;
+  url_editor: string | null;
+  send_user_input: boolean;
+  send_connectors: boolean;
+};
 
 export const defaultProjectSettings: ProjectSettings = {
   project_name: "New project",
@@ -33,6 +35,7 @@ export const defaultProjectSettings: ProjectSettings = {
   show_avatar_sm: false,
   avatar_file_sm: "",
   name: "Tilbot",
+  external_links: [],
 };
 
 export type ProjectVariable = {
@@ -69,9 +72,11 @@ export type ProjectBlock = {
   x?: number;
   y?: number;
   connectors: ProjectConnector[];
-  chatgpt_variation?: boolean;
-  chatgpt_memory?: boolean;
-  variation_prompt?: string;
+};
+
+export type ProjectBlockCompute = ProjectBlock & {
+  use_external_link: boolean;
+  external_link: ExternalLink | null;
 };
 
 export type Project = {

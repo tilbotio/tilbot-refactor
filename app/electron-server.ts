@@ -60,7 +60,7 @@ app.get("/api/create_conversation", async (req, res) => {
   console.log(db);
 
   const projectController = new LocalProjectController(
-    new ServerControllerLookup(db),
+    new ServerControllerLookup(db, true),
     new ServerControllerOutput(),
     new Logger(p),
     project

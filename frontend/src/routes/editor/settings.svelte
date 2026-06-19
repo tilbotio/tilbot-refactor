@@ -6,7 +6,7 @@
     type GeneralSettings,
     type ProjectSettings,
   } from "../../../../common/project/types";
-  import { ArrowUpOnSquare, Trash } from "svelte-heros-v2";
+  import { ArrowUpOnSquare, Plus, Trash } from "svelte-heros-v2";
 
   let windowApi: any;
 
@@ -29,6 +29,16 @@
         Object.assign({}, defaultProjectSettings, projectSettings ?? {})
       )
     );
+  }
+
+  function addExternalLink(): void {
+    projectSettingsCopy.external_links.push({
+      name: "",
+      url: "",
+      url_editor: null,
+      send_user_input: true,
+      send_connectors: false,
+    });
   }
 
   let generalSettingsCopy: GeneralSettings = $state(copyGeneralSettings());
@@ -390,6 +400,117 @@
                     {/if}
                   </tbody>
                 </table>
+              </div>
+            </div>
+            <input
+              type="radio"
+              name="settings-tabs"
+              class="tab"
+              aria-label="External processing"
+            />
+            <div class="tab-content bg-base-100 border-base-300 p-6">
+              <div class="w-full text-xl text-center font-bold">
+                Links for external processing
+              </div>
+              <div class="p-8">
+                Below you can add links to external systems, for example for
+                more elaborate intent recognition or (LLM-based) processing.<br
+                />
+                See the Tilbot repository on Github for examples of such processing
+                systems. These can be used in "Processing" blocks (with the sparkle
+                icon).
+
+                {#each projectSettingsCopy.external_links.entries() as [id, external_link] (id)}
+                  <hr class="mt-8" />
+                  <table class="table w-full">
+                    <tbody>
+                      <tr>
+                        <td>
+                          Name for this external system, can be used throughout
+                          Tilbot to refer to it:
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            placeholder="ChatGPT interface"
+                            class="input input-bordered w-full max-w-xs"
+                            bind:value={external_link.name}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td> Address where the external system is running: </td>
+                        <td>
+                          <input
+                            type="text"
+                            placeholder="chatgpt:8081"
+                            class="input input-bordered w-full max-w-xs"
+                            bind:value={external_link.url}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          (Optional) If the above address is not accessible by
+                          the stand-alone version of Tilbot, please enter an
+                          alternative address here:
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            placeholder="localhost:8081"
+                            class="input input-bordered w-full max-w-xs"
+                            bind:value={external_link.url_editor}
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <label class="label cursor-pointer">
+                            <span class="label-text"
+                              >Send the user's input (response to previous
+                              block) to the external system</span
+                            >
+                            <input
+                              type="checkbox"
+                              class="toggle"
+                              bind:checked={external_link.send_user_input}
+                            />
+                          </label>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <label class="label cursor-pointer">
+                            <span class="label-text"
+                              >Send the connectors of the processing block to
+                              the external system</span
+                            >
+                            <input
+                              type="checkbox"
+                              class="toggle"
+                              bind:checked={external_link.send_connectors}
+                            />
+                          </label>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td> </td><td>
+                          <button
+                            class="btn btn-square btn-outline btn-sm"
+                            onclick={() => {
+                              projectSettingsCopy.external_links.splice(id, 1);
+                            }}><Trash class="w-6 h-6" /></button
+                          >
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                {/each}
+                <br /><br />
+                <button class="btn gap-2" onclick={addExternalLink}>
+                  <Plus class="w-6 h-6" />
+                </button>
               </div>
             </div>
           </div>

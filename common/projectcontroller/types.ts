@@ -1,8 +1,10 @@
+import { type ExternalLink } from "../project/types";
+
 export interface ProjectControllerInterface<
   ProjectControllerOutputType extends ProjectControllerOutputInterface
 > {
   readonly output: ProjectControllerOutputType;
-  message_sent_event();
+  message_sent_event(): void;
   receive_message(str: string): void;
   log(str: string): void;
   set_participant_id(pid: string): void;
@@ -12,6 +14,11 @@ export interface ProjectControllerLookupInterface {
   cell(db: string, col: string, val: string): Promise<Object[] | null>;
   column(table: string, col: string): Promise<any[] | null>;
   random(table: string): Promise<any | null>;
+  apiCall(
+    external_link: ExternalLink,
+    user_input: string,
+    connectors: string[]
+  ): Promise<any | null>;
 }
 
 export interface ProjectControllerLoggerInterface {
