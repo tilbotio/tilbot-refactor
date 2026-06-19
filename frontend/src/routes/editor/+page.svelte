@@ -555,28 +555,6 @@
       contentWindow.postMessage("chatgpt|" + msg, "*");
     }
   }
-
-  function sendChatCPTvariation(msg: string) {
-    const contentWindow = simulator.contentWindow;
-    if (contentWindow != null) {
-      contentWindow.postMessage("variation|" + msg, "*");
-    }
-  }
-
-  function runSelected() {
-    const contentWindow = simulator.contentWindow;
-    if (contentWindow != null) {
-      const projectCopy = JSON.parse(JSON.stringify(project));
-
-      if (selectedBlockId != null) {
-        projectCopy.starting_block_id = parseInt(selectedBlockId);
-      }
-
-      windowAPI.send("load-project-db", projectCopy);
-
-      contentWindow.postMessage(JSON.stringify(projectCopy), "*");
-    }
-  }
 </script>
 
 <div id="editor" class="overflow-hidden">
@@ -605,6 +583,7 @@
           variables={getVariables()}
           save={saveBlock}
           cancel={cancelBlock}
+          externalLinks={editingBlock.type == "Compute"?project.settings.external_links:undefined}
         />
       {/if}
     </div>

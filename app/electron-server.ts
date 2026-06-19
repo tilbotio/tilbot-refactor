@@ -5,7 +5,6 @@ import { randomBytes } from "crypto";
 import { dirname, join, resolve } from "path";
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
 import { fileURLToPath } from "url";
-import LLM from './llm.cjs';
 import { LocalProjectController } from "../common/projectcontroller/local.ts";
 import { Logger } from "./logger.ts";
 import {
@@ -19,23 +18,24 @@ console.log(__dirname);
 
 let p = process.argv[2].substring(3);
 
-let project_str = readFileSync(join(p, 'currentproject/electron-project.json'), 'utf8');
+let project_str = readFileSync(
+  join(p, "currentproject/electron-project.json"),
+  "utf8"
+);
 let project = JSON.parse(project_str);
 console.log(project);
 
 // Load settings
-let settings = { chatgpt_api_key: '' };
+let settings = { chatgpt_api_key: "" };
 try {
-  settings = JSON.parse(readFileSync(join(p, 'settings.json'), 'utf8'));
+  settings = JSON.parse(readFileSync(join(p, "settings.json"), "utf8"));
 } catch (err) {
-  if (err.code != 'ENOENT') {
+  if (err.code != "ENOENT") {
     throw err;
   }
 }
 
-const llm = LLM.fromSettings(settings);
-
-const app = Fastify({ });
+const app = Fastify({});
 
 await Promise.all([
   console.log("it workS!"),
@@ -43,39 +43,33 @@ await Promise.all([
   app.register(fastifyWebSocket),
 
   app.register(fastifyStatic, {
-    root: [
-      join(__dirname, '/build'),
-      join(p, 'currentproject'),
-    ],
+    root: [join(__dirname, "/build"), join(p, "currentproject")],
   }),
-
 ]);
 
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.status(200);
-  res.sendFile(join(__dirname, '/build/index.html'));
+  res.sendFile(join(__dirname, "/build/index.html"));
 });
 
 const projectControllers = new Map();
 
 // API call: create a new conversation for the project.
-app.get('/api/create_conversation', async (req, res) => {
-
-  const db: VariableDb = new VariableDb(join(p, 'currentproject/variables.db'));
+app.get("/api/create_conversation", async (req, res) => {
+  const db: VariableDb = new VariableDb(join(p, "currentproject/variables.db"));
   console.log(db);
 
   const projectController = new LocalProjectController(
-    new ServerControllerLookup(db, llm),
+    new ServerControllerLookup(db),
     new ServerControllerOutput(),
     new Logger(p),
     project
   );
 
-  const controllerId = randomBytes(16).toString('hex');
+  const controllerId = randomBytes(16).toString("hex");
   projectControllers.set(controllerId, projectController);
   return { conversation: controllerId, settings: project.settings };
 });
-
 
 app.get("/ws/chat", { websocket: true }, async (socket, req) => {
   console.log("==== socket");
@@ -136,7 +130,7 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
   });
 });
 
-app.listen({ port: 2801, host: '0.0.0.0' }, (err, addr) => {
+app.listen({ port: 2801, host: "0.0.0.0" }, (err, addr) => {
   if (err) {
     app.log.error(err);
     process.exit(1);

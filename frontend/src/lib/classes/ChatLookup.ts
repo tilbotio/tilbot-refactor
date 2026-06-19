@@ -29,29 +29,4 @@ export class ChatLookup implements ProjectControllerLookupInterface {
       columnName: col,
     });
   }
-
-  async variation(
-    content: string,
-    prompt: string,
-    memory: any
-  ): Promise<string> {
-    window.parent.postMessage({
-      msg: "variation",
-      content: content,
-      prompt: prompt,
-      memory: memory,
-    });
-
-    this.promise = new Promise((resolve) => {
-      this.pendingResolver = resolve;
-    });
-    return await this.promise;
-  }
-
-  resolveVariation(result: string) {
-    if (this.pendingResolver) {
-      this.pendingResolver(result);
-      this.pendingResolver = null;
-    }
-  }
 }

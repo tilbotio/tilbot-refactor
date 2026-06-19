@@ -35,7 +35,6 @@ import {
 } from "./projectcontroller.ts";
 import { Logger } from "./logger.ts";
 
-import LLM from "../app/llm.cjs";
 import { VariableDb } from "../common/variabledb.ts";
 
 // Generate a somewhat persistent token:
@@ -433,14 +432,12 @@ app.get("/api/create_conversation", async (req, res) => {
   });
   const settings = await SettingsModel.findOne({ user_id: project.user_id });
 
-  const llm: any = LLM.fromSettings(settings);
-
   const p = `${__dirname}/projects/${project.id}`;
 
   const db = new VariableDb(p + "/variables.db");
 
   const projectController = new LocalProjectController(
-    new ServerControllerLookup(db, llm),
+    new ServerControllerLookup(db),
     new ServerControllerOutput(),
     new Logger(projectId),
     project

@@ -11,11 +11,9 @@ export class ServerControllerLookup
   implements ProjectControllerLookupInterface
 {
   private db: VariableDb;
-  private llm: any;
 
-  constructor(db: VariableDb, llm: any) {
+  constructor(db: VariableDb) {
     this.db = db;
-    this.llm = llm;
   }
 
   async cell(
@@ -35,19 +33,6 @@ export class ServerControllerLookup
   async column(table: string, col: string): Promise<any[] | null> {
     let res = this.db.getColumn(table, col);
     return res;
-  }
-
-  async variation(
-    content: string,
-    prompt: string,
-    memory?: any
-  ): Promise<string> {
-    return await this.llm.get_variation(
-      content,
-      prompt,
-      memory != undefined,
-      memory
-    );
   }
 }
 

@@ -86,8 +86,6 @@
           "chatgpt",
           event.data.substring(8)
         );
-      } else if (event.data.startsWith("variation|")) {
-        variationMessage(event.data.substring(10));
       } else {
         projectController.output.processMessage("user", event.data);
       }
@@ -113,10 +111,6 @@
       msg: "reset_var_mem",
     };
     window.parent.postMessage(windowmsg);
-  }
-
-  function variationMessage(content: string): void {
-    chatLookup!.resolveVariation(content);
   }
 </script>
 
