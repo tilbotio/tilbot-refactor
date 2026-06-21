@@ -30,7 +30,12 @@
     eventsCopy.push({
       type: "message",
       content: "",
+      params: [],
     });
+  }
+
+  function addEventParameter(eventid: number): void {
+    eventsCopy[eventid].params?.push({ type: "text", text: "" });
   }
 
   function onChangeType(id: number) {
@@ -91,111 +96,161 @@
   class="modal-toggle"
   bind:this={eventsModal}
 />
-<div class="modal">
+<div class="modal absolute">
   <div class="modal-box max-w-3xl">
     <h3 class="font-bold text-lg">Events for connector</h3>
-
-    {#if eventsCopy.length > 0}
-      <table class="table table-zebra w-full mt-2">
-        <!-- head -->
-        <thead>
-          <tr>
-            <th>Event type</th>
-            <th>Content</th>
-            <th>&nbsp;</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each eventsCopy.entries() as [id, event] (id)}
+    <div
+      class="overflow-x-hidden overflow-y-auto"
+      style="max-height: calc(100vh - 16em)"
+    >
+      {#if eventsCopy.length > 0}
+        <table class="table table-zebra w-full mt-2">
+          <!-- head -->
+          <thead>
             <tr>
-              <td>
-                <select
-                  bind:value={event.type}
-                  onchange={() => {
-                    onChangeType(id);
-                  }}
-                  class="select select-bordered w-full max-w-xs"
-                >
-                  <option selected value="message"
-                    >Message to parent window</option
-                  >
-                  <option value="variable">Set variable</option>
-                </select>
-              </td>
-              {#if event.type == "message"}
-                <td
-                  ><input
-                    type="text"
-                    placeholder="Message to send to parent window"
-                    class="input input-bordered w-full max-w-xs"
-                    bind:value={event.content}
-                  /></td
-                >
-              {:else}
+              <th>Event type</th>
+              <th>Content</th>
+              <th>&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each eventsCopy.entries() as [id, event] (id)}
+              <tr>
                 <td>
-                  <input
-                    type="text"
-                    placeholder="Variable"
-                    class="input input-bordered max-w-xs"
-                    bind:value={event.var_name}
-                  />
-                  =
-                  {#if event.var_value !== undefined && event.var_value.type !== undefined}
-                    {#if event.var_value.type == "text"}
+                  <select
+                    bind:value={event.type}
+                    onchange={() => {
+                      onChangeType(id);
+                    }}
+                    class="select select-bordered w-full max-w-xs"
+                  >
+                    <option selected value="message"
+                      >Message to parent window</option
+                    >
+                    <option value="variable">Set variable</option>
+                  </select>
+                </td>
+                {#if event.type == "message"}
+                  <td>
+                    <input
+                      type="text"
+                      placeholder="Message to send to parent window"
+                      class="input input-bordered w-full max-w-xs"
+                      bind:value={event.content}
+                    />
+
+                    <br />
+                    Parameters: <br /><br />
+
+                    {#each event.params.entries() as [pid, param] (pid)}
                       <input
                         type="text"
-                        placeholder="Value"
-                        class="input input-bordered max-w-xs"
-                        bind:value={event.var_value.text}
+                        placeholder="Parameter name"
+                        class="input input-bordered w-full max-w-xs"
+                        bind:value={param.name}
                       />
-                    {:else if event.var_value.type == "variable"}
-                      {#if event.var_value.variable !== undefined}
-                        <div class="badge badge-info mx-2">
-                          <Variable class="w-3 h-3 mr-2" />
-                          {#if event.var_value.isRandomRow !== undefined && event.var_value.isRandomRow}
-                            random row
-                          {:else}
-                            {event.var_value.column}
-                          {/if}
-                          from {event.var_value.variable}
-                        </div>
+
+                      <select
+                        bind:value={param.type}
+                        class="select select-bordered w-full max-w-xs"
+                      >
+                        <option selected value="text">Text</option>
+                        <option value="connector"
+                          >Connector label from previous block</option
+                        >
+                      </select>
+
+                      {#if param.type == "text"}
+                        <input
+                          type="text"
+                          placeholder="Parameter value"
+                          class="input input-bordered w-full max-w-xs"
+                          bind:value={param.content}
+                        />
                       {/if}
-                    {/if}
-                  {/if}
-                  <div class="tooltip" data-tip="Insert variable">
+
+                      <button
+                        class="btn btn-square btn-outline btn-sm"
+                        onclick={() => {
+                          event.params.splice(pid, 1);
+                        }}><Trash class="w-6 h-6" /></button
+                      >
+                    {/each}
+                    <br /><br />
                     <button
-                      class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                      class="btn gap-2"
                       onclick={() => {
-                        openVariableWindow(id);
+                        addEventParameter(id);
                       }}
                     >
-                      <Variable class="w-4 h-4" />
+                      <Plus class="w-6 h-6" />
                     </button>
-                  </div>
-                </td>
-              {/if}
-              <td
-                ><button
-                  class="btn btn-square btn-outline btn-sm"
-                  onclick={() => {
-                    removeEvent(id);
-                  }}><Trash class="w-6 h-6" /></button
-                ></td
-              >
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    {/if}
+                  </td>
+                {:else}
+                  <td>
+                    <input
+                      type="text"
+                      placeholder="Variable"
+                      class="input input-bordered max-w-xs"
+                      bind:value={event.var_name}
+                    />
+                    =
+                    {#if event.var_value !== undefined && event.var_value.type !== undefined}
+                      {#if event.var_value.type == "text"}
+                        <input
+                          type="text"
+                          placeholder="Value"
+                          class="input input-bordered max-w-xs"
+                          bind:value={event.var_value.text}
+                        />
+                      {:else if event.var_value.type == "variable"}
+                        {#if event.var_value.variable !== undefined}
+                          <div class="badge badge-info mx-2">
+                            <Variable class="w-3 h-3 mr-2" />
+                            {#if event.var_value.isRandomRow !== undefined && event.var_value.isRandomRow}
+                              random row
+                            {:else}
+                              {event.var_value.column}
+                            {/if}
+                            from {event.var_value.variable}
+                          </div>
+                        {/if}
+                      {/if}
+                    {/if}
+                    <div class="tooltip" data-tip="Insert variable">
+                      <button
+                        class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                        onclick={() => {
+                          openVariableWindow(id);
+                        }}
+                      >
+                        <Variable class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                {/if}
+                <td
+                  ><button
+                    class="btn btn-square btn-outline btn-sm"
+                    onclick={() => {
+                      removeEvent(id);
+                    }}><Trash class="w-6 h-6" /></button
+                  ></td
+                >
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
 
-    <br /><br />
+      <br /><br />
 
-    <button class="btn gap-2" onclick={addEvent}>
-      <Plus class="w-6 h-6" />
+      <button class="btn gap-2" onclick={addEvent}>
+        <Plus class="w-6 h-6" />
 
-      Add event
-    </button>
-
+        Add event
+      </button>
+    </div>
     <div class="divider"></div>
     <div class="modal-action">
       <div

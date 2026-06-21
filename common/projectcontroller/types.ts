@@ -28,7 +28,7 @@ export interface ProjectControllerLoggerInterface {
 
 export interface ProjectControllerOutputInterface {
   typingIndicator(): void;
-  windowMessage(text: string): void;
+  windowMessage(text: string, params: []): void;
   botMessage(block: {
     type: string;
     content: string;

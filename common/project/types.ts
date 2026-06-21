@@ -51,6 +51,7 @@ export type ProjectEvent = {
   content?: string;
   var_name?: string;
   var_value?: any;
+  params?: any[];
 };
 
 export type ProjectConnectorType = "Basic" | "Labeled";

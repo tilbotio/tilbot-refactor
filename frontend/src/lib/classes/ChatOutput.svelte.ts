@@ -27,9 +27,9 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     this.isTypingIndicatorActive = true;
   }
 
-  windowMessage(text: string): void {
+  windowMessage(text: string, params: []): void {
     if (window.self !== window.top) {
-      window.parent.postMessage(text, "*");
+      window.parent.postMessage({ content: text, params: params }, "*");
     }
   }
 

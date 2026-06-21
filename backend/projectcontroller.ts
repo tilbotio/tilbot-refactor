@@ -150,8 +150,8 @@ export class ServerControllerOutput
     this.emit("typing indicator");
   }
 
-  windowMessage(text: string): void {
-    this.emit("window message", { content: text });
+  windowMessage(text: string, params: []): void {
+    this.emit("window message", text, params);
   }
 
   botMessage(block: {

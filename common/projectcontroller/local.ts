@@ -65,7 +65,17 @@ export class LocalProjectController<
     for (const event of events) {
       const type = event.type;
       if (type == "message") {
-        this._output.windowMessage(event.content);
+        // Convert parameters
+        let p = {};
+
+        for (let param of event.params) {
+          if (param.type == "text") {
+            p[param.name] = param.content;
+          } else if (param.type == "connector") {
+            p[param.name] = input_str;
+          }
+        }
+        this._output.windowMessage(event.content, p);
       } else if (type == "variable") {
         if (event.var_name !== undefined && event.var_value !== undefined) {
           // @TODO: implement more complex combinations, e.g., other variable + 1

@@ -549,12 +549,6 @@
     }
   }
 
-  function sendChatGPTmessage(msg: string) {
-    const contentWindow = simulator.contentWindow;
-    if (contentWindow != null) {
-      contentWindow.postMessage("chatgpt|" + msg, "*");
-    }
-  }
 </script>
 
 <div id="editor" class="overflow-hidden">
