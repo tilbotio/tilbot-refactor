@@ -34,8 +34,8 @@
   $effect(() => {
     if (importFile && importFile[0]) {
       const data = new FormData();
-      data.append("file", importFile[0], importFile[0].name);
       data.append("project_id", selectedProjectId);
+      data.append("file", importFile[0], importFile[0].name);
       const fetchInit = {
         method: "post",
         credentials: "include" as RequestCredentials,
