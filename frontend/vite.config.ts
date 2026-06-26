@@ -9,6 +9,9 @@ let config = {
   build: { minify: false },
   server: {
     host: true,
+    hmr: {
+      overlay: false,
+    },
     allowedHosts: true,
     port: 5173,
     // strictPort: true,
