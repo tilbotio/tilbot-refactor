@@ -35,6 +35,10 @@
   }
 
   function addEventParameter(eventid: number): void {
+    if (eventsCopy[eventid].params === undefined) {
+      eventsCopy[eventid].params = [];
+    }
+
     eventsCopy[eventid].params?.push({ type: "text", text: "" });
   }
 
@@ -142,40 +146,42 @@
                     <br />
                     Parameters: <br /><br />
 
-                    {#each event.params.entries() as [pid, param] (pid)}
-                      <input
-                        type="text"
-                        placeholder="Parameter name"
-                        class="input input-bordered w-full max-w-xs"
-                        bind:value={param.name}
-                      />
-
-                      <select
-                        bind:value={param.type}
-                        class="select select-bordered w-full max-w-xs"
-                      >
-                        <option selected value="text">Text</option>
-                        <option value="connector"
-                          >Connector label from previous block</option
-                        >
-                      </select>
-
-                      {#if param.type == "text"}
+                    {#if event.params !== undefined}
+                      {#each event.params.entries() as [pid, param] (pid)}
                         <input
                           type="text"
-                          placeholder="Parameter value"
+                          placeholder="Parameter name"
                           class="input input-bordered w-full max-w-xs"
-                          bind:value={param.content}
+                          bind:value={param.name}
                         />
-                      {/if}
 
-                      <button
-                        class="btn btn-square btn-outline btn-sm"
-                        onclick={() => {
-                          event.params.splice(pid, 1);
-                        }}><Trash class="w-6 h-6" /></button
-                      >
-                    {/each}
+                        <select
+                          bind:value={param.type}
+                          class="select select-bordered w-full max-w-xs"
+                        >
+                          <option selected value="text">Text</option>
+                          <option value="connector"
+                            >Connector label from previous block</option
+                          >
+                        </select>
+
+                        {#if param.type == "text"}
+                          <input
+                            type="text"
+                            placeholder="Parameter value"
+                            class="input input-bordered w-full max-w-xs"
+                            bind:value={param.content}
+                          />
+                        {/if}
+
+                        <button
+                          class="btn btn-square btn-outline btn-sm"
+                          onclick={() => {
+                            event.params.splice(pid, 1);
+                          }}><Trash class="w-6 h-6" /></button
+                        >
+                      {/each}
+                    {/if}
                     <br /><br />
                     <button
                       class="btn gap-2"
