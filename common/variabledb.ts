@@ -97,7 +97,7 @@ export class VariableDb {
 
   public getColumn(tableName: string, col: string): any[] {
     try {
-      const q = `SELECT "${col}" FROM "${tableName}";`;
+      const q = `SELECT DISTINCT "${col}" FROM "${tableName}";`;
       const prep = this.db.prepare(q);
       prep.setReturnArrays(true);
 

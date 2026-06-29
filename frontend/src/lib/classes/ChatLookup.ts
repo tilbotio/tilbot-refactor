@@ -53,17 +53,19 @@ export class ChatLookup implements ProjectControllerLookupInterface {
       fullUrl = "http://" + fullUrl;
     }
 
-    let params = {};
+    let params = new URLSearchParams();
 
     if (user_input !== "") {
-      params.user_input = user_input;
+      params.append("user_input", user_input);
     }
     if (connectors.length > 0) {
-      params.intent_options = connectors;
+      for (let conn of connectors) {
+        params.append("intent_options", conn);
+      }
     }
 
     if (user_input !== "" || connectors.length > 0) {
-      fullUrl += "?" + new URLSearchParams(params).toString();
+      fullUrl += "?" + params.toString();
     }
 
     // Create the request object, which will be a RequestInfo type.

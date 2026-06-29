@@ -409,10 +409,22 @@ export class LocalProjectController<
         if (external_link !== null) {
           if (external_link.send_user_input) {
             console.log(current_block.external_link);
-            res = await this._lookup.apiCall(external_link, str);
-          }
-          // @TODO: implement option to also add connectors to the API call
-          else {
+            if (external_link.send_connectors) {
+              res = await this._lookup.apiCall(
+                external_link,
+                str,
+                await this._getConnectors(current_block)
+              );
+            } else if (external_link.send_connectors) {
+              res = await this._lookup.apiCall(
+                external_link,
+                "",
+                await this._getConnectors(current_block)
+              );
+            } else {
+              res = await this._lookup.apiCall(external_link, str);
+            }
+          } else {
             res = await this._lookup.apiCall(external_link);
           }
 
@@ -468,6 +480,51 @@ export class LocalProjectController<
     }
 
     return null;
+  }
+
+  async _getConnectors(current_block: any) {
+    // @TODO: It might be possible to call this function from find_best_connector in the future to avoid duplicate code.
+    let connectors: string[] = [];
+
+    for (const connector of current_block.connectors) {
+      let connectorText = "";
+
+      for (const label_part of connector.label) {
+        // For now we ignore the "else" label, not sure if we should send it along
+        if (label_part.type == "text") {
+          connectorText += label_part.content;
+        } else if (label_part.type == "variable") {
+          // It is currently not possible to mix different types within one label, so we can
+          // directly add all entries of the dataset or the entire variable as a connector text.
+          if (label_part.variableType == "dataset") {
+            let lookup = await this._lookup.column(
+              label_part.variable,
+              label_part.column
+            );
+
+            if (lookup !== null) {
+              for (const colItem of lookup) {
+                connectors.push(colItem[0]);
+              }
+            }
+          } else if (label_part.variableType == "session") {
+            if (label_part.column !== undefined && label_part.column != "") {
+              connectors.push(
+                this._client_vars[label_part.variable][label_part.column]
+              );
+            } else {
+              connectors.push(this._client_vars[label_part.variable]);
+            }
+          }
+        }
+      }
+
+      if (connectorText !== "") {
+        connectors.push(connectorText);
+      }
+    }
+
+    return connectors;
   }
 
   set_participant_id(pid: string) {
