@@ -202,6 +202,13 @@
                     />
                     =
                     {#if event.var_value !== undefined && event.var_value.type !== undefined}
+                      <select class="select" bind:value={event.var_value.type}>
+                        <option value="text">Text</option>
+                        <option value="variable">Variable</option>
+                        <option value="connector"
+                          >Previous connector label</option
+                        >
+                      </select>
                       {#if event.var_value.type == "text"}
                         <input
                           type="text"
@@ -221,18 +228,18 @@
                             from {event.var_value.variable}
                           </div>
                         {/if}
+                        <div class="tooltip" data-tip="Insert variable">
+                          <button
+                            class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                            onclick={() => {
+                              openVariableWindow(id);
+                            }}
+                          >
+                            <Variable class="w-4 h-4" />
+                          </button>
+                        </div>
                       {/if}
                     {/if}
-                    <div class="tooltip" data-tip="Insert variable">
-                      <button
-                        class="btn btn-square btn-outline btn-sm mt-2 mb-2"
-                        onclick={() => {
-                          openVariableWindow(id);
-                        }}
-                      >
-                        <Variable class="w-4 h-4" />
-                      </button>
-                    </div>
                   </td>
                 {/if}
                 <td

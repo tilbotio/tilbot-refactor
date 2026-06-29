@@ -24,10 +24,17 @@ export class ChatLookup implements ProjectControllerLookupInterface {
     });
   }
 
-  async column(table: string, col: string): Promise<any[] | null> {
+  async column(
+    table: string,
+    col: string,
+    filterCol: string | null = null,
+    filterVal: string | null = null
+  ): Promise<any[] | null> {
     return await this.windowAPI.invoke("get-data-table-column", {
       tableName: table,
       columnName: col,
+      filterCol: filterCol,
+      filterVal: filterVal,
     });
   }
 

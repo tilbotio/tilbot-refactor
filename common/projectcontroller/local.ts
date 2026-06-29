@@ -56,7 +56,11 @@ export class LocalProjectController<
     return this._output;
   }
 
-  async send_events(connector: any, input_str: string) {
+  async send_events(
+    connector: any,
+    connector_output: string = "",
+    input_str: string = ""
+  ) {
     const events = connector.events;
     if (events == null) {
       return;
@@ -104,6 +108,8 @@ export class LocalProjectController<
               }
             } else if (event.var_value.type == "text") {
               this._client_vars[event.var_name] = event.var_value.text;
+            } else if (event.var_value.type == "connector") {
+              this._client_vars[event.var_name] = connector_output;
             }
           }
         }
@@ -237,7 +243,29 @@ export class LocalProjectController<
             if (c.isRandomRow !== undefined && c.isRandomRow) {
               res = await this._lookup.random(c.variable);
             } else if (c.column !== undefined && c.column !== "") {
-              res = await this._lookup.column(c.variable, c.column);
+              if (
+                c.filter !== undefined &&
+                c.filter.match !== undefined &&
+                c.filter.match.type !== undefined
+              ) {
+                if (c.filter.match.type == "text") {
+                  res = await this._lookup.column(
+                    c.variable,
+                    c.column,
+                    c.filter.colName,
+                    c.filter.match.text
+                  );
+                } else if (c.filter.match.type == "variable") {
+                  res = await this._lookup.column(
+                    c.variable,
+                    c.column,
+                    c.filter.colName,
+                    this._client_vars[c.filter.match.varName]
+                  );
+                }
+              } else {
+                res = await this._lookup.column(c.variable, c.column);
+              }
             }
 
             if (res !== null) {
@@ -467,7 +495,7 @@ export class LocalProjectController<
 
     if (best.found) {
       this._current_block_id = best.connector.targets[0];
-      await this.send_events(best.connector, best.output.join(" "));
+      await this.send_events(best.connector, best.output.join(" "), str);
       this._send_current_message(best.output.join(" "), str);
     }
   }
@@ -497,10 +525,36 @@ export class LocalProjectController<
           // It is currently not possible to mix different types within one label, so we can
           // directly add all entries of the dataset or the entire variable as a connector text.
           if (label_part.variableType == "dataset") {
-            let lookup = await this._lookup.column(
-              label_part.variable,
-              label_part.column
-            );
+            let lookup = null;
+
+            if (
+              label_part.filter !== undefined &&
+              label_part.filter.match !== undefined &&
+              label_part.filter.match.type !== undefined
+            ) {
+              if (label_part.filter.match.type == "variable") {
+                lookup = await this._lookup.column(
+                  label_part.variable,
+                  label_part.column,
+                  label_part.filter.colName,
+                  this._client_vars[label_part.filter.match.varName]
+                );
+              } else if (label_part.filter.match.type == "text") {
+                lookup = await this._lookup.column(
+                  label_part.variable,
+                  label_part.column,
+                  label_part.filter.colName,
+                  label_part.filter.text
+                );
+              }
+            } else {
+              lookup = await this._lookup.column(
+                label_part.variable,
+                label_part.column,
+                null,
+                null
+              );
+            }
 
             if (lookup !== null) {
               for (const colItem of lookup) {

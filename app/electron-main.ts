@@ -211,7 +211,12 @@ function createWindow() {
   ipcMain.handle(
     "get-data-table-column",
     async (event, params): Promise<any[]> => {
-      return db.getColumn(params.tableName, params.columnName);
+      return db.getColumn(
+        params.tableName,
+        params.columnName,
+        params.filterCol,
+        params.filterVal
+      );
     }
   );
 

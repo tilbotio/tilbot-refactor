@@ -30,11 +30,13 @@
     type: string,
     variable: string,
     column: string,
-    isRandomRow: boolean
+    isRandomRow: boolean,
+    filter: any
   ) {
     connectors[selectedConnector].label[selectedLabelPart].variableType = type;
     connectors[selectedConnector].label[selectedLabelPart].variable = variable;
     connectors[selectedConnector].label[selectedLabelPart].column = column;
+    connectors[selectedConnector].label[selectedLabelPart].filter = filter;
   }
 
   function addConnector() {

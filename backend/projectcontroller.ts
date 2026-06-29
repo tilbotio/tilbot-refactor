@@ -33,8 +33,13 @@ export class ServerControllerLookup
     return res;
   }
 
-  async column(table: string, col: string): Promise<any[] | null> {
-    let res = this.db.getColumn(table, col);
+  async column(
+    table: string,
+    col: string,
+    filterCol: string | null = null,
+    filterVal: string | null = null
+  ): Promise<any[] | null> {
+    let res = this.db.getColumn(table, col, filterCol, filterVal);
     return res;
   }
 
@@ -63,17 +68,19 @@ export class ServerControllerLookup
       fullUrl = "http://" + fullUrl;
     }
 
-    let params = {};
+    let params = new URLSearchParams();
 
     if (user_input !== "") {
-      params.user_input = user_input;
+      params.append("user_input", user_input);
     }
     if (connectors.length > 0) {
-      params.intent_options = connectors;
+      for (let conn of connectors) {
+        params.append("intent_options", conn);
+      }
     }
 
     if (user_input !== "" || connectors.length > 0) {
-      fullUrl += "?" + new URLSearchParams(params).toString();
+      fullUrl += "?" + params.toString();
     }
 
     console.log(external_link);

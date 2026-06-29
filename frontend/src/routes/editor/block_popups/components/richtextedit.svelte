@@ -142,7 +142,8 @@
     type: string,
     variable: string,
     column: string,
-    isRandomRow: boolean
+    isRandomRow: boolean,
+    filter: any
   ) {
     value.push({
       type: "variable",
@@ -150,6 +151,7 @@
       variable: variable,
       column: column,
       isRandomRow: isRandomRow,
+      filter: filter,
     });
     value.push({
       text: "",
@@ -213,7 +215,7 @@
         <Variable class="w-3 h-3 mr-2" />
         {#if v.isRandomRow !== undefined && v.isRandomRow}
           random row
-        {:else}
+        {:else if v.column !== undefined}
           {v.column}
         {/if}
         from {v.variable}

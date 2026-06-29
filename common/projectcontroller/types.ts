@@ -12,7 +12,12 @@ export interface ProjectControllerInterface<
 
 export interface ProjectControllerLookupInterface {
   cell(db: string, col: string, val: string): Promise<Object[] | null>;
-  column(table: string, col: string): Promise<any[] | null>;
+  column(
+    table: string,
+    col: string,
+    filterCol: string | null,
+    filterVal: string | null
+  ): Promise<any[] | null>;
   random(table: string): Promise<any | null>;
   apiCall(
     external_link: ExternalLink,

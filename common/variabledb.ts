@@ -95,9 +95,18 @@ export class VariableDb {
     return [[null]];
   }
 
-  public getColumn(tableName: string, col: string): any[] {
+  public getColumn(
+    tableName: string,
+    col: string,
+    filterCol: string | null = null,
+    filterVal: string | null = null
+  ): any[] {
     try {
-      const q = `SELECT DISTINCT "${col}" FROM "${tableName}";`;
+      let q = `SELECT DISTINCT "${col}" FROM "${tableName}";`;
+
+      if (filterCol !== null && filterVal !== null) {
+        q = `SELECT DISTINCT "${col}" FROM "${tableName}" WHERE "${filterCol}" = '${filterVal}';`;
+      }
       const prep = this.db.prepare(q);
       prep.setReturnArrays(true);
 
