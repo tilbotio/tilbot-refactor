@@ -72,13 +72,16 @@ export class LocalProjectController<
         // Convert parameters
         let p = {};
 
-        for (let param of event.params) {
-          if (param.type == "text") {
-            p[param.name] = param.content;
-          } else if (param.type == "connector") {
-            p[param.name] = input_str;
+        if (event.params !== undefined) {
+          for (let param of event.params) {
+            if (param.type == "text") {
+              p[param.name] = param.content;
+            } else if (param.type == "connector") {
+              p[param.name] = input_str;
+            }
           }
         }
+
         this._output.windowMessage(event.content, p);
       } else if (type == "variable") {
         if (event.var_name !== undefined && event.var_value !== undefined) {
@@ -191,13 +194,15 @@ export class LocalProjectController<
   }
 
   async message_sent_event() {
-    const current_block =
-      this._project.blocks[this._current_block_id.toString()];
-    if (current_block.type === "Auto") {
-      const connector = current_block.connectors[0];
-      await this.send_events(connector, "");
-      this._current_block_id = connector.targets[0];
-      this._send_current_message();
+    if (this._current_block_id !== undefined) {
+      const current_block =
+        this._project.blocks[this._current_block_id.toString()];
+      if (current_block.type === "Auto") {
+        const connector = current_block.connectors[0];
+        await this.send_events(connector, "");
+        this._current_block_id = connector.targets[0];
+        this._send_current_message();
+      }
     }
   }
 
