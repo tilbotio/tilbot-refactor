@@ -55,6 +55,6 @@
     <p class="py-4">Text for the bot to say:</p>
     <RichTextEdit bind:value={blockCopy.content} {variables} />
 
-    <Events bind:events={blockCopy.connectors[0].events} />
+    <Events bind:events={blockCopy.connectors[0].events} {variables} />
   {/snippet}
 </BaseBlockPopup>

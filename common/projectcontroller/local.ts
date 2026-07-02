@@ -78,6 +78,14 @@ export class LocalProjectController<
               p[param.name] = param.content;
             } else if (param.type == "connector") {
               p[param.name] = input_str;
+            } else if (
+              param.type == "variable" &&
+              param.variable !== undefined
+            ) {
+              p[param.name] = await this._getVariable(param.variable);
+              if (Array.isArray(p[param.name]) && p[param.name].length == 1) {
+                p[param.name] = p[param.name][0];
+              }
             }
           }
         }
@@ -90,23 +98,9 @@ export class LocalProjectController<
           if (event.var_value.type !== undefined) {
             if (event.var_value.type == "variable") {
               if (event.var_value.variable !== undefined) {
-                if (
-                  event.var_value.isRandomRow !== undefined &&
-                  event.var_value.isRandomRow
-                ) {
-                  this._client_vars[event.var_name] = await this._lookup.random(
-                    event.var_value.variable
-                  );
-                } else if (
-                  event.var_value.column !== undefined &&
-                  event.var_value.column !== ""
-                ) {
-                  this._client_vars[event.var_name] = await this._lookup.column(
-                    event.var_value.variable,
-                    event.var_value.column
-                  );
-                }
-
+                this._client_vars[event.var_name] = await this._getVariable(
+                  event.var_value
+                );
                 // @TODO: add way to look up concrete cell + maybe generalise this kind of analysis in a function?
               }
             } else if (event.var_value.type == "text") {
@@ -293,6 +287,23 @@ export class LocalProjectController<
     return txt;
   }
 
+  _findElseConnector(block: any, userInput: string) {
+    for (const connector of block.connectors) {
+      for (const label_part of connector.label) {
+        if (label_part.type == "else") {
+          return {
+            found: true,
+            connector: connector,
+            output: [userInput],
+            isElseConnector: true,
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
   async find_best_connector(block: any, userInput: string) {
     let else_connector = null;
 
@@ -461,11 +472,17 @@ export class LocalProjectController<
             res = await this._lookup.apiCall(external_link);
           }
 
-          if (res !== null) {
+          if (res !== undefined) {
             // @TODO: see if this is a good long-term solution
             best = await this.find_best_connector(current_block, res.intent);
             if (res.connector_label !== undefined) {
               best.output = [res.connector_label];
+            }
+          } else {
+            // Try to find the "else" connector to fall back on.
+            let potentialElse = this._findElseConnector(current_block, str);
+            if (potentialElse !== null) {
+              best = potentialElse;
             }
           }
         }
@@ -513,6 +530,43 @@ export class LocalProjectController<
     }
 
     return null;
+  }
+
+  async _getVariable(variable: any): Promise<any> {
+    // @TODO: support non-dataset variables!
+    // @TODO: Like _getConnectors, this function might also be useful throughout this class (like in _getConnectors, actually).
+    if (variable.isRandomRow !== undefined && variable.isRandomRow) {
+      return this._lookup.random(variable.variable);
+    } else if (variable.column !== undefined && variable.column !== "") {
+      if (
+        variable.filter !== undefined &&
+        variable.filter.match !== undefined &&
+        variable.filter.match.type !== undefined
+      ) {
+        if (variable.filter.match.type == "variable") {
+          return this._lookup.column(
+            variable.variable,
+            variable.column,
+            variable.filter.colName,
+            this._client_vars[variable.filter.match.varName]
+          );
+        } else if (variable.filter.match.type == "text") {
+          return this._lookup.column(
+            variable.variable,
+            variable.column,
+            variable.filter.colName,
+            variable.filter.text
+          );
+        }
+      } else {
+        return this._lookup.column(
+          variable.variable,
+          variable.column,
+          null,
+          null
+        );
+      }
+    }
   }
 
   async _getConnectors(current_block: any) {

@@ -43,10 +43,10 @@ app/build
 /backend/projects/
 
 # Ignore additional frontend files for projects by including the ones we need
-frontend/src/routes
+frontend/src/routes/*
 !frontend/src/routes/dashboard
 !frontend/src/routes/editor
 !frontend/src/routes/login
 
-frontend/static
+frontend/static/*
 !frontend/static/images

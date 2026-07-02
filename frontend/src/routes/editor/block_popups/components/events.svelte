@@ -14,9 +14,11 @@
   } = $props();
 
   let variablePopup: Variablepopup;
+  let variablePopupParam: Variablepopup;
   let eventsModal: HTMLInputElement;
   let eventsCopy: ProjectEvent[] = $state([]);
   let currentEditingId: number = -1;
+  let currentParamId: number = -1;
 
   $effect.pre(() => {
     eventsCopy = _.cloneDeep(events ?? []);
@@ -75,11 +77,18 @@
     variablePopup.showModal();
   }
 
+  function openVariableWindowParam(id: number, paramid: number) {
+    currentEditingId = id;
+    currentParamId = paramid;
+    variablePopupParam.showModal();
+  }
+
   function setVariable(
     type: string,
     variable: string,
     column: string,
-    isRandomRow: boolean
+    isRandomRow: boolean,
+    filter: any
   ) {
     eventsCopy[currentEditingId].var_value = {
       type: "variable",
@@ -87,11 +96,40 @@
       variable: variable,
       column: column,
       isRandomRow: isRandomRow,
+      filter: filter,
     };
+  }
+
+  function setVariableParam(
+    type: string,
+    variable: string,
+    column: string,
+    isRandomRow: boolean,
+    filter: any
+  ) {
+    if (
+      eventsCopy[currentEditingId].params !== undefined &&
+      currentParamId !== -1 &&
+      currentParamId < eventsCopy[currentEditingId].params.length
+    ) {
+      eventsCopy[currentEditingId].params[currentParamId].variable = {
+        variableType: type,
+        variable: variable,
+        column: column,
+        isRandomRow: isRandomRow,
+        filter: filter,
+      };
+    }
   }
 </script>
 
 <Variablepopup bind:this={variablePopup} {variables} onSave={setVariable}
+></Variablepopup>
+
+<Variablepopup
+  bind:this={variablePopupParam}
+  {variables}
+  onSave={setVariableParam}
 ></Variablepopup>
 
 <input
@@ -163,6 +201,7 @@
                           <option value="connector"
                             >Connector label from previous block</option
                           >
+                          <option value="variable">Variable</option>
                         </select>
 
                         {#if param.type == "text"}
@@ -172,6 +211,28 @@
                             class="input input-bordered w-full max-w-xs"
                             bind:value={param.content}
                           />
+                        {:else if param.type == "variable"}
+                          {#if param.variable !== undefined}
+                            <div class="badge badge-info mx-2">
+                              <Variable class="w-3 h-3 mr-2" />
+                              {#if param.isRandomRow !== undefined && param.isRandomRow}
+                                random row
+                              {:else}
+                                {param.column}
+                              {/if}
+                              from {param.variable}
+                            </div>
+                          {/if}
+                          <div class="tooltip" data-tip="Insert variable">
+                            <button
+                              class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                              onclick={() => {
+                                openVariableWindowParam(id, pid);
+                              }}
+                            >
+                              <Variable class="w-4 h-4" />
+                            </button>
+                          </div>
                         {/if}
 
                         <button

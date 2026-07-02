@@ -30,6 +30,8 @@ export class ChatOutput implements ProjectControllerOutputInterface {
   windowMessage(text: string, params: []): void {
     if (window.self !== window.top) {
       window.parent.postMessage({ content: text, params: params }, "*");
+    } else {
+      window.postMessage({ content: text, params: params }, "*");
     }
   }
 
