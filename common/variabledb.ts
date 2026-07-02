@@ -105,7 +105,10 @@ export class VariableDb {
       let q = `SELECT DISTINCT "${col}" FROM "${tableName}";`;
 
       if (filterCol !== null && filterVal !== null) {
-        q = `SELECT DISTINCT "${col}" FROM "${tableName}" WHERE "${filterCol}" = '${filterVal}';`;
+        q = `SELECT DISTINCT "${col}" FROM "${tableName}" WHERE "${filterCol}" = '${filterVal.replace(
+          "'",
+          "''"
+        )}';`;
       }
       const prep = this.db.prepare(q);
       prep.setReturnArrays(true);
@@ -119,7 +122,16 @@ export class VariableDb {
 
   public getCell(tableName: string, col: string, query: string): any {
     try {
-      const q = `SELECT "${col}" FROM "${tableName}" WHERE LOWER("${col}") LIKE '% ${query} %' OR LOWER("${col}") LIKE '% ${query}' OR LOWER("${col}") LIKE '${query} %' OR LOWER("${col}") = '${query}';`;
+      const q = `SELECT "${col}" FROM "${tableName}" WHERE LOWER("${col}") LIKE '% ${query.replace(
+        "'",
+        "''"
+      )} %' OR LOWER("${col}") LIKE '% ${query.replace(
+        "'",
+        "''"
+      )}' OR LOWER("${col}") LIKE '${query.replace(
+        "'",
+        "''"
+      )} %' OR LOWER("${col}") = '${query.replace("'", "''")}';`;
 
       const prep = this.db.prepare(q);
       prep.setReturnArrays(true);

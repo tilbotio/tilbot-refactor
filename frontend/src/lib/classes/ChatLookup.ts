@@ -63,11 +63,11 @@ export class ChatLookup implements ProjectControllerLookupInterface {
     let params = new URLSearchParams();
 
     if (user_input !== "") {
-      params.append("user_input", user_input);
+      params.append("user_input", encodeURIComponent(user_input));
     }
     if (connectors.length > 0) {
       for (let conn of connectors) {
-        params.append("intent_options", conn);
+        params.append("intent_options", encodeURIComponent(conn));
       }
     }
 
@@ -82,18 +82,19 @@ export class ChatLookup implements ProjectControllerLookupInterface {
       headers: headers,
     });
 
-    try {
-      // For our example, the data is stored on a static `users.json` file
-      return (
-        fetch(request)
-          // the JSON body is taken from the response
-          .then((res) => res.json())
-          .then((res) => {
-            return res;
-          })
-      );
-    } catch {
-      return null;
-    }
+    return fetch(request)
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        }
+
+        return Promise.reject(res);
+      })
+      .then((res) => {
+        return res;
+      })
+      .catch((res) => {
+        console.log(res.status, res.statusText);
+      });
   }
 }
