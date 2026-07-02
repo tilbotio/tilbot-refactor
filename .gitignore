@@ -42,6 +42,11 @@ app/build
 /tests/integration/frontend/.npm/
 /backend/projects/
 
-# Some specific pages for projects
-frontend/src/routes/guesswho
-frontend/static/guesswho
+# Ignore additional frontend files for projects by including the ones we need
+frontend/src/routes
+!frontend/src/routes/dashboard
+!frontend/src/routes/editor
+!frontend/src/routes/login
+
+frontend/static
+!frontend/static/images
