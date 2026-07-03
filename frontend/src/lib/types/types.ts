@@ -1,10 +1,10 @@
 export type CurrentMessageType = "Auto" | "MC" | "Text";
 
 export type Message = {
-  from: "bot" | "user" | "chatgpt";
+  from: "bot" | "user";
   content: string;
   params?: any;
-  type?: CurrentMessageType;  
+  type?: CurrentMessageType;
 };
 
 export type NewBotMessageBlock = boolean;

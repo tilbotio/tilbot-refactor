@@ -516,9 +516,11 @@ export class LocalProjectController<
     }
 
     if (best.found) {
-      this._current_block_id = best.connector.targets[0];
-      await this.send_events(best.connector, best.output.join(" "), str);
-      this._send_current_message(best.output.join(" "), str);
+      for (let i = 0; i < best.connector.targets.length; i++) {
+        this._current_block_id = best.connector.targets[i];
+        await this.send_events(best.connector, best.output.join(" "), str);
+        this._send_current_message(best.output.join(" "), str);
+      }
     }
   }
 
