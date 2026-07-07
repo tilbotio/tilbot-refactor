@@ -199,6 +199,7 @@
       x: editorContainer.scrollLeft + screen.width * 0.35,
       y: editorContainer.scrollTop + screen.height * 0.4,
       connectors,
+      delay: 0,
     });
 
     if (type === "Auto") {
