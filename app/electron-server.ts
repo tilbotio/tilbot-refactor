@@ -72,7 +72,6 @@ app.get("/api/create_conversation", async (req, res) => {
 });
 
 app.get("/ws/chat", { websocket: true }, async (socket, req) => {
-  console.log("==== socket");
   const query: any = req.query;
   const projectController = projectControllers.get(query.conversation);
 
