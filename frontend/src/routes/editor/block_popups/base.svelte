@@ -2,9 +2,9 @@
   import _ from "lodash";
 
   import type { Component } from "svelte";
-  import type {
-    ProjectBlock,
-    ProjectVariable,
+  import {
+    type ProjectBlock,
+    type ProjectVariable,
   } from "../../../../../common/project/types.ts";
 
   export type BlockPopupProps = {
@@ -32,7 +32,7 @@
   let blockCopy = $state() as ProjectBlock;
 
   $effect.pre(() => {
-    blockCopy = _.cloneDeep(Object.assign({}, defaultProjectBlock, block));
+    blockCopy = _.cloneDeep(Object.assign({}, {delay: 0}, defaultProjectBlock, block));
   });
 
   function ignoreEnterKey(e: KeyboardEvent) {
@@ -72,6 +72,11 @@
   style="max-height: calc(100vh - 16em)"
 >
   {@render children(blockCopy)}
+
+  <div class="flex mt-12 items-center">
+    <div>Delay (seconds)</div>
+    <div><input class="input input-bordered w-16 ml-8" type="number" min="0" bind:value={blockCopy.delay}></div>    
+  </div>
 </div>
 <div class="divider"></div>
 <p>

@@ -73,6 +73,7 @@ export type ProjectBlock = {
   x?: number;
   y?: number;
   connectors: ProjectConnector[];
+  delay: number;
 };
 
 export type ProjectBlockCompute = ProjectBlock & {
