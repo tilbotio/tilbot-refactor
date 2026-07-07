@@ -150,7 +150,7 @@
           onclick={() => {
             let filter = {};
 
-            if (filterSelect.value == "filter") {
+            if (filterSelect !== undefined && filterSelect.value == "filter") {
               filter.colName = filterColnameSelect.value;
               if (filterTypeSelect.value == "text") {
                 filter.match = {

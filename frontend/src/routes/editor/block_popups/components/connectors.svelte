@@ -33,9 +33,12 @@
     isRandomRow: boolean,
     filter: any
   ) {
+    alert(type + " " + variable);
     connectors[selectedConnector].label[selectedLabelPart].variableType = type;
     connectors[selectedConnector].label[selectedLabelPart].variable = variable;
-    connectors[selectedConnector].label[selectedLabelPart].column = column;
+    if (column !== "") {
+      connectors[selectedConnector].label[selectedLabelPart].column = column;
+    }
     connectors[selectedConnector].label[selectedLabelPart].filter = filter;
   }
 

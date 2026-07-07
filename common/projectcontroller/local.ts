@@ -119,7 +119,8 @@ export class LocalProjectController<
   async send_message(
     block: any,
     matchedConnector: string = "",
-    input: string = ""
+    input: string = "",
+    timeExpired: number = 0
   ) {
     const params: any = {};
     const content = await this.check_variables(
@@ -145,20 +146,27 @@ export class LocalProjectController<
           ) {
             let options: any[] | null = null;
 
-            // Check if we need to retrieve a column or random row
-            if (
-              label_part.isRandomRow !== undefined &&
-              label_part.isRandomRow
-            ) {
-              options = await this._lookup.random(label_part.variable);
-            } else if (
-              label_part.column !== undefined &&
-              label_part.column !== ""
-            ) {
-              options = await this._lookup.column(
-                label_part.variable,
-                label_part.column
-              );
+            if (this._client_vars[label_part.variable] !== null) {
+              let theVar = this._client_vars[label_part.variable];
+              if (Array.isArray(theVar)) {
+                options = theVar;
+              }
+            } else {
+              // Check if we need to retrieve a column or random row
+              if (
+                label_part.isRandomRow !== undefined &&
+                label_part.isRandomRow
+              ) {
+                options = await this._lookup.random(label_part.variable);
+              } else if (
+                label_part.column !== undefined &&
+                label_part.column !== ""
+              ) {
+                options = await this._lookup.column(
+                  label_part.variable,
+                  label_part.column
+                );
+              }
             }
 
             if (options !== null) {
@@ -183,7 +191,13 @@ export class LocalProjectController<
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 
-      this._output.botMessage({ type, content, params, has_targets });
+      this._output.botMessage({
+        type,
+        content,
+        params,
+        has_targets,
+        timeExpired,
+      });
     }
   }
 
@@ -202,7 +216,8 @@ export class LocalProjectController<
 
   _send_current_message(
     matchedConnector: string = "",
-    input: string = ""
+    input: string = "",
+    timeExpired: number = 0
   ): void {
     const current_block_id = this._current_block_id ?? -1;
     if (current_block_id == -1) {
@@ -215,7 +230,7 @@ export class LocalProjectController<
       console.log(
         `sending message '${input}' for block ${JSON.stringify(block)}`
       );
-      this.send_message(block, matchedConnector, input);
+      this.send_message(block, matchedConnector, input, timeExpired);
     }, (block.delay ?? 0) * 1000);
   }
 
@@ -363,14 +378,26 @@ export class LocalProjectController<
                 } else {
                   check = this._client_vars[label_part.variable];
                 }
-                if (
-                  check !== null &&
-                  (word.toLowerCase() == check.toLowerCase() ||
+                if (check !== null) {
+                  if (Array.isArray(check)) {
+                    for (let c of check) {
+                      if (
+                        word.toLowerCase() == c.toLowerCase() ||
+                        new RegExp("\\b" + word.toLowerCase() + "\\b").test(
+                          c.toLowerCase()
+                        )
+                      ) {
+                        lookup = [word];
+                      }
+                    }
+                  } else if (
+                    word.toLowerCase() == check.toLowerCase() ||
                     new RegExp("\\b" + word.toLowerCase() + "\\b").test(
                       check.toLowerCase()
-                    ))
-                ) {
-                  lookup = [word];
+                    )
+                  ) {
+                    lookup = [word];
+                  }
                 }
               }
               if (lookup !== null) {
@@ -435,6 +462,8 @@ export class LocalProjectController<
       isElseConnector: boolean;
     } = { found: false, connector: null, output: [], isElseConnector: false };
 
+    let timeExpired = 0;
+
     const blocks = this._project.blocks;
     let current_block = null;
     let currentBlockExists = false;
@@ -451,6 +480,8 @@ export class LocalProjectController<
         );
 
         if (external_link !== null) {
+          this._output.typingIndicator();
+          let startDateTime = new Date();
           if (external_link.send_user_input) {
             console.log(current_block.external_link);
             if (external_link.send_connectors) {
@@ -472,7 +503,7 @@ export class LocalProjectController<
             res = await this._lookup.apiCall(external_link);
           }
 
-          if (res !== undefined) {
+          if (res !== undefined && res !== null) {
             // @TODO: see if this is a good long-term solution
             best = await this.find_best_connector(current_block, res.intent);
             if (res.connector_label !== undefined) {
@@ -485,6 +516,8 @@ export class LocalProjectController<
               best = potentialElse;
             }
           }
+
+          timeExpired = new Date().getTime() - startDateTime.getTime();
         }
       } else if (current_block.type !== "Auto") {
         best = await this.find_best_connector(current_block, str.toString());
@@ -518,8 +551,17 @@ export class LocalProjectController<
     if (best.found) {
       for (let i = 0; i < best.connector.targets.length; i++) {
         this._current_block_id = best.connector.targets[i];
-        await this.send_events(best.connector, best.output.join(" "), str);
-        this._send_current_message(best.output.join(" "), str);
+        let output: any = best.output;
+
+        if (best.output.length > 0) {
+          if (Array.isArray(best.output[0])) {
+            output = best.output[0];
+          } else {
+            output = best.output.join(" ");
+          }
+        }
+        await this.send_events(best.connector, output, str);
+        this._send_current_message(output, str, timeExpired);
       }
     }
   }

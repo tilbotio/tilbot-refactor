@@ -40,8 +40,11 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     content: string;
     params?: any;
     has_targets?: boolean;
+    timeExpired?: number;
   }): void {
-    this.isTypingIndicatorActive = true;
+    if (block.content !== "") {
+      this.isTypingIndicatorActive = true;
+    }
 
     const currentSettings = this.settingsContext;
     const typingStyle = currentSettings.typing_style;
@@ -51,6 +54,10 @@ export class ChatOutput implements ProjectControllerOutputInterface {
       timeout = (block.content.length / currentSettings.typing_charpsec) * 1000;
     } else if (typingStyle === "fixed") {
       timeout = currentSettings.typing_time * 1000;
+    }
+
+    if (block.timeExpired !== undefined) {
+      timeout = Math.max(0, timeout - block.timeExpired);
     }
 
     setTimeout(() => {

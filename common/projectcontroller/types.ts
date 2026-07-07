@@ -39,6 +39,7 @@ export interface ProjectControllerOutputInterface {
     content: string;
     params: any;
     has_targets?: boolean;
+    timeExpired?: number;
   }): void;
   settings(settings: any, path?: string): void;
 }
