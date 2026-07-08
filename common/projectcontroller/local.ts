@@ -13,9 +13,8 @@ const regexEscape: (str: string) => string =
   };
 
 export class LocalProjectController<
-  ProjectControllerOutputType extends ProjectControllerOutputInterface
-> implements ProjectControllerInterface<ProjectControllerOutputType>
-{
+  ProjectControllerOutputType extends ProjectControllerOutputInterface,
+> implements ProjectControllerInterface<ProjectControllerOutputType> {
   private _lookup: ProjectControllerLookupInterface;
   private _output: ProjectControllerOutputType;
   private _logger: ProjectControllerLoggerInterface;
@@ -27,7 +26,7 @@ export class LocalProjectController<
     lookup: ProjectControllerLookupInterface,
     output: ProjectControllerOutputType,
     logger: ProjectControllerLoggerInterface,
-    project: any
+    project: any,
   ) {
     this._lookup = lookup;
     this._output = output;
@@ -43,7 +42,7 @@ export class LocalProjectController<
         typing_charpsec: 40,
         show_avatar: true,
         name: "Tilbot",
-      }
+      },
     );
 
     const starting_block_id = project.starting_block_id ?? -1;
@@ -59,7 +58,7 @@ export class LocalProjectController<
   async send_events(
     connector: any,
     connector_output: string = "",
-    input_str: string = ""
+    input_str: string = "",
   ) {
     const events = connector.events;
     if (events == null) {
@@ -99,7 +98,7 @@ export class LocalProjectController<
             if (event.var_value.type == "variable") {
               if (event.var_value.variable !== undefined) {
                 this._client_vars[event.var_name] = await this._getVariable(
-                  event.var_value
+                  event.var_value,
                 );
                 // @TODO: add way to look up concrete cell + maybe generalise this kind of analysis in a function?
               }
@@ -112,21 +111,19 @@ export class LocalProjectController<
         }
       }
     }
-
-    console.log(this._client_vars);
   }
 
   async send_message(
     block: any,
     matchedConnector: string = "",
     input: string = "",
-    timeExpired: number = 0
+    timeExpired: number = 0,
   ) {
     const params: any = {};
     const content = await this.check_variables(
       block.content,
       matchedConnector,
-      input
+      input,
     );
     const type = block.type;
 
@@ -164,7 +161,7 @@ export class LocalProjectController<
               ) {
                 options = await this._lookup.column(
                   label_part.variable,
-                  label_part.column
+                  label_part.column,
                 );
               }
             }
@@ -217,7 +214,7 @@ export class LocalProjectController<
   _send_current_message(
     matchedConnector: string = "",
     input: string = "",
-    timeExpired: number = 0
+    timeExpired: number = 0,
   ): void {
     const current_block_id = this._current_block_id ?? -1;
     if (current_block_id == -1) {
@@ -226,18 +223,21 @@ export class LocalProjectController<
 
     let block = this._project.blocks[current_block_id.toString()];
 
-    setTimeout(() => {
-      console.log(
-        `sending message '${input}' for block ${JSON.stringify(block)}`
-      );
-      this.send_message(block, matchedConnector, input, timeExpired);
-    }, (block.delay ?? 0) * 1000);
+    setTimeout(
+      () => {
+        console.log(
+          `sending message '${input}' for block ${JSON.stringify(block)}`,
+        );
+        this.send_message(block, matchedConnector, input, timeExpired);
+      },
+      (block.delay ?? 0) * 1000,
+    );
   }
 
   async check_variables(
     content: any[],
     matchedConnector: string = "",
-    input: string = ""
+    input: string = "",
   ): Promise<string> {
     let txt = "";
 
@@ -267,14 +267,14 @@ export class LocalProjectController<
                     c.variable,
                     c.column,
                     c.filter.colName,
-                    c.filter.match.text
+                    c.filter.match.text,
                   );
                 } else if (c.filter.match.type == "variable") {
                   res = await this._lookup.column(
                     c.variable,
                     c.column,
                     c.filter.colName,
-                    this._client_vars[c.filter.match.varName]
+                    this._client_vars[c.filter.match.varName],
                   );
                 }
               } else {
@@ -355,17 +355,69 @@ export class LocalProjectController<
               found_output.push(label_part.content.toLowerCase());
             }
           } else if (label_part.type == "variable") {
-            // For variables we do a word-by-word match since there can be complex entries in the dataset.
-            let foundAWord = false;
-            let words = userInputStripped.split(" ");
-            for (const word of words) {
-              let lookup: any[] | null = null;
+            if (block.type !== "MC") {
+              // For variables we do a word-by-word match since there can be complex entries in the dataset.
+              let foundAWord = false;
+              let words = userInputStripped.split(" ");
+              for (const word of words) {
+                let lookup: any[] | null = null;
 
+                if (label_part.variableType == "dataset") {
+                  lookup = await this._lookup.cell(
+                    label_part.variable,
+                    label_part.column,
+                    word.toLowerCase(),
+                  );
+                } else if (label_part.variableType == "session") {
+                  let check = "";
+                  if (
+                    label_part.column !== undefined &&
+                    label_part.column != ""
+                  ) {
+                    check =
+                      this._client_vars[label_part.variable][label_part.column];
+                  } else {
+                    check = this._client_vars[label_part.variable];
+                  }
+                  if (check !== null) {
+                    if (Array.isArray(check)) {
+                      for (let c of check) {
+                        if (
+                          word.toLowerCase() == c.toLowerCase() ||
+                          new RegExp("\\b" + word.toLowerCase() + "\\b").test(
+                            c.toLowerCase(),
+                          )
+                        ) {
+                          lookup = [word];
+                        }
+                      }
+                    } else if (
+                      word.toLowerCase() == check.toLowerCase() ||
+                      new RegExp("\\b" + word.toLowerCase() + "\\b").test(
+                        check.toLowerCase(),
+                      )
+                    ) {
+                      lookup = [word];
+                    }
+                  }
+                }
+                if (lookup !== null) {
+                  foundAWord = true;
+                  found_output.push(word);
+                }
+              }
+
+              if (!foundAWord) {
+                meetsCriteria = false;
+              }
+            } else {
+              // MC should have literal matches only
+              let lookup: any[] | null = null;
               if (label_part.variableType == "dataset") {
                 lookup = await this._lookup.cell(
                   label_part.variable,
                   label_part.column,
-                  word.toLowerCase()
+                  userInput.toLowerCase(),
                 );
               } else if (label_part.variableType == "session") {
                 let check = "";
@@ -382,32 +434,29 @@ export class LocalProjectController<
                   if (Array.isArray(check)) {
                     for (let c of check) {
                       if (
-                        word.toLowerCase() == c.toLowerCase() ||
-                        new RegExp("\\b" + word.toLowerCase() + "\\b").test(
-                          c.toLowerCase()
-                        )
+                        userInput.toLowerCase() == c.toLowerCase() ||
+                        new RegExp(
+                          "\\b" + userInput.toLowerCase() + "\\b",
+                        ).test(c.toLowerCase())
                       ) {
-                        lookup = [word];
+                        lookup = [userInput];
                       }
                     }
                   } else if (
-                    word.toLowerCase() == check.toLowerCase() ||
-                    new RegExp("\\b" + word.toLowerCase() + "\\b").test(
-                      check.toLowerCase()
+                    userInput.toLowerCase() == check.toLowerCase() ||
+                    new RegExp("\\b" + userInput.toLowerCase() + "\\b").test(
+                      check.toLowerCase(),
                     )
                   ) {
-                    lookup = [word];
+                    lookup = [userInput];
                   }
                 }
               }
               if (lookup !== null) {
-                foundAWord = true;
-                found_output.push(word);
+                found_output.push(userInput);
+              } else {
+                meetsCriteria = false;
               }
-            }
-
-            if (!foundAWord) {
-              meetsCriteria = false;
             }
           }
         }
@@ -476,25 +525,24 @@ export class LocalProjectController<
         let res = null;
 
         let external_link = this._getExternalLinkFromName(
-          current_block.external_link
+          current_block.external_link,
         );
 
         if (external_link !== null) {
           this._output.typingIndicator();
           let startDateTime = new Date();
           if (external_link.send_user_input) {
-            console.log(current_block.external_link);
             if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
                 str,
-                await this._getConnectors(current_block)
+                await this._getConnectors(current_block),
               );
             } else if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
                 "",
-                await this._getConnectors(current_block)
+                await this._getConnectors(current_block),
               );
             } else {
               res = await this._lookup.apiCall(external_link, str);
@@ -536,7 +584,7 @@ export class LocalProjectController<
           ) {
             let best_trigger = await this.find_best_connector(
               block,
-              str.toString()
+              str.toString(),
             );
 
             if (best_trigger.found) {
@@ -592,14 +640,14 @@ export class LocalProjectController<
             variable.variable,
             variable.column,
             variable.filter.colName,
-            this._client_vars[variable.filter.match.varName]
+            this._client_vars[variable.filter.match.varName],
           );
         } else if (variable.filter.match.type == "text") {
           return this._lookup.column(
             variable.variable,
             variable.column,
             variable.filter.colName,
-            variable.filter.text
+            variable.filter.text,
           );
         }
       } else {
@@ -607,7 +655,7 @@ export class LocalProjectController<
           variable.variable,
           variable.column,
           null,
-          null
+          null,
         );
       }
     }
@@ -640,14 +688,14 @@ export class LocalProjectController<
                   label_part.variable,
                   label_part.column,
                   label_part.filter.colName,
-                  this._client_vars[label_part.filter.match.varName]
+                  this._client_vars[label_part.filter.match.varName],
                 );
               } else if (label_part.filter.match.type == "text") {
                 lookup = await this._lookup.column(
                   label_part.variable,
                   label_part.column,
                   label_part.filter.colName,
-                  label_part.filter.text
+                  label_part.filter.text,
                 );
               }
             } else {
@@ -655,7 +703,7 @@ export class LocalProjectController<
                 label_part.variable,
                 label_part.column,
                 null,
-                null
+                null,
               );
             }
 
@@ -667,7 +715,7 @@ export class LocalProjectController<
           } else if (label_part.variableType == "session") {
             if (label_part.column !== undefined && label_part.column != "") {
               connectors.push(
-                this._client_vars[label_part.variable][label_part.column]
+                this._client_vars[label_part.variable][label_part.column],
               );
             } else {
               connectors.push(this._client_vars[label_part.variable]);
