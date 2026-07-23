@@ -17,6 +17,16 @@ Use the suggested credentials for the admin user.
 Create a new user. Log out, then log in using that new user.
 Create a project. Use the link icon to go to that project.
 
+
+Bare metal:
+
+```sh
+npm install -g corepack
+yarn policies set-version 4.13.0
+yarn install
+```
+
+
 ## Integration testing
 
 Note that the integration tests expect a clean environment (e.g., empty MongoDB).

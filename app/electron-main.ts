@@ -19,6 +19,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let ps: ChildProcess | undefined;
 
+// Check if the DB folder exists, otherwise create it.
+if (!fs.existsSync(app.getPath("userData") + "/currentproject")) {
+  fs.mkdirSync(app.getPath("userData") + "/currentproject");
+}
+
 let db: VariableDb = new VariableDb(
   app.getPath("userData") + "/currentproject/variables.db"
 );
