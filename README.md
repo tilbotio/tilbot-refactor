@@ -18,7 +18,7 @@ Create a new user. Log out, then log in using that new user.
 Create a project. Use the link icon to go to that project.
 
 
-Bare metal:
+Bare metal and standalone app for editing project files:
 
 ```sh
 npm install -g corepack
@@ -26,6 +26,8 @@ yarn policies set-version 4.13.0
 yarn install
 ```
 
+Note that there are currently some issues with the latest version of node (26.x) and Electron.
+Downgrading to a version (I tried 22.22.3) fixes any "Electron failed to install correctly" errors.
 
 ## Integration testing
 
