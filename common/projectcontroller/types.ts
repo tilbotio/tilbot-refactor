@@ -6,6 +6,7 @@ export interface ProjectControllerInterface<
   readonly output: ProjectControllerOutputType;
   message_sent_event(): void;
   receive_message(str: string): void;
+  receive_audio_message(audioBlob: Blob): void;
   log(str: string): void;
   set_participant_id(pid: string): void;
 }
@@ -15,14 +16,14 @@ export interface ProjectControllerLookupInterface {
   column(
     table: string,
     col: string,
-    filterCol: string | null,
-    filterVal: string | null
+    filterCol?: string | null,
+    filterVal?: string | null
   ): Promise<any[] | null>;
   random(table: string): Promise<any | null>;
   apiCall(
     external_link: ExternalLink,
-    user_input: string,
-    connectors: string[]
+    user_input?: string,
+    connectors?: string[]
   ): Promise<any | null>;
 }
 
@@ -33,7 +34,7 @@ export interface ProjectControllerLoggerInterface {
 
 export interface ProjectControllerOutputInterface {
   typingIndicator(): void;
-  windowMessage(text: string, params: []): void;
+  windowMessage(text: string, params: {}): void;
   botMessage(block: {
     type: string;
     content: string;

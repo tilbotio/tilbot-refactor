@@ -61,6 +61,12 @@
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
   }
+  
+  function sendUserAudioMessage(audioBlob: Blob): void {
+    projectController.output.processMessage("user", "", null, "Text", audioBlob);
+    // Reset currentMessageType to text by default
+    currentMessageType = "Text";
+  }
 </script>
 
 <div class="flex flex-col w-full h-full">
@@ -76,5 +82,5 @@
       avatar_file_sm={settingsContext.avatar_file_sm}
     />
   </div>
-  <InputArea {currentMessageType} {mcOptions} onSend={sendUserMessage} />
+  <InputArea {currentMessageType} {mcOptions} onSend={sendUserMessage} onSendAudio={sendUserAudioMessage} />
 </div>

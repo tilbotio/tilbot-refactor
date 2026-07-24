@@ -1,6 +1,13 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { Microphone, PaperAirplane, Play, Stop } from "svelte-heros-v2";
+    import { playingTimeToMinSecString } from "$lib/utils/functions";
+
+    type Props = {
+        onSendAudio: (audioBlob: Blob) => void;
+    };
+
+    const { onSendAudio }: Props = $props();
 
     let isSupported = $state(true);
     let isRecording: boolean = $state(false);
@@ -13,6 +20,9 @@
     let player: HTMLAudioElement;
 
     function startRecording(): void {
+        // In case there is a playback ongoing.
+        stop();
+
         chunks = [];
         lastRecording = null;
         recorder.start();
@@ -26,7 +36,7 @@
             timeDisplay = playingTimeToMinSecString((Date.now() - startRecordingTime) / 1000.0);
             setTimeout(updateTime, 1000);
         }        
-        else if (isPlaying) {
+        else if (isPlaying && player !== null) {
             timeDisplay = playingTimeToMinSecString(player.currentTime);
             setTimeout(updateTime, 1000);
         }
@@ -64,23 +74,6 @@
         updateTime();
     }
 
-    function playingTimeToMinSecString(recordingTime: number): string {
-        let fullSeconds = Math.round(recordingTime);
-
-        let mins = Math.floor(fullSeconds / 60);
-        let remainingSeconds = fullSeconds - mins * 60;
-
-        let minsStr = mins.toString();
-        if (minsStr.length == 1) {
-            minsStr = "0" + minsStr;
-        }
-        let secsStr = remainingSeconds.toString();
-        if (secsStr.length == 1) {
-            secsStr = "0" + secsStr;
-        }
-
-        return minsStr + ":" + secsStr;
-    }    
 
     onMount(() => {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -127,7 +120,7 @@
     </button>  
     {#if lastRecording == null || isPlaying || isRecording}
     <button
-      class="btn btn-circle mr-4 bg-gray-500 border-gray-500 hover:bg-gray-600 hover:border-gray-600 {(lastRecording !== null || isRecording)?'':'btn-disabled'}"
+      class="btn btn-circle mr-4 bg-gray-400 border-gray-400 hover:bg-gray-500 hover:border-gray-500 {(lastRecording !== null || isRecording)?'':'btn-disabled'}"
       aria-label="Stop recording/playing audio"
       onclick={stop}><Stop variation="solid" class="ml-[1px] h-6 w-6 {(lastRecording !== null || isRecording)?'text-white':''}" />
     </button> 
@@ -142,7 +135,7 @@
     <button
       class="btn btn-circle absolute bottom-4 right-4 {lastRecording === null?'btn-disabled': ''}"
       aria-label="Send message"
-      onclick={() => { return true; }}><PaperAirplane class="h-6 w-6" /></button>    
+      onclick={() => { if (lastRecording !== null) { onSendAudio(lastRecording); }}}><PaperAirplane class="h-6 w-6" /></button>    
     <span class="{isRecording?'text-red-700':''}">
         {timeDisplay}
     </span>

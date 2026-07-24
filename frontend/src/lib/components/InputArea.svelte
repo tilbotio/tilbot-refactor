@@ -10,11 +10,12 @@
     currentMessageType: CurrentMessageType;
     mcOptions: McOption[];
     onSend: (InputText: string) => void;
+    onSendAudio: (audioBlob: Blob) => void;
   };
 
   let inputText: InputText = $state("");
 
-  const { currentMessageType, mcOptions, onSend }: Props = $props();
+  const { currentMessageType, mcOptions, onSend, onSendAudio }: Props = $props();
 
   function handleTextSubmit(): void {
     console.log("Text submitted");
@@ -48,7 +49,9 @@
       >
     {/each}
   </div>
-{:else if currentMessageType === "Text"}
+{:else if currentMessageType === "Audio"}
+  <SpeechInput onSendAudio={onSendAudio} />
+{:else}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md">
     <textarea
       class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]"
@@ -65,7 +68,4 @@
       onclick={handleTextSubmit}><PaperAirplane class="h-6 w-6" /></button
     >
   </div>
-{:else}
-  <!-- Temporary: else should be text input, but for testing purposes this is convenient -->
-  <SpeechInput />
 {/if}

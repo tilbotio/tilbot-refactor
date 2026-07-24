@@ -69,7 +69,7 @@ export class LocalProjectController<
       const type = event.type;
       if (type == "message") {
         // Convert parameters
-        let p = {};
+        let p: Record<string, any> = {};
 
         if (event.params !== undefined) {
           for (let param of event.params) {
@@ -499,6 +499,10 @@ export class LocalProjectController<
     }
 
     return false;
+  }
+
+  receive_audio_message(audioBlob: Blob): void {
+    console.log("receive audio message!");
   }
 
   async receive_message(str: string) {

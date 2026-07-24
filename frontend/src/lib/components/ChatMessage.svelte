@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AudioMessage from "./AudioMessage.svelte";
   import Avatar from "./Avatar.svelte";
   import { getContext } from "svelte";
   import type { Message, NewBotMessageBlock } from "$lib/types/types";
@@ -26,7 +27,9 @@
   const [background, alignment] = determineLayout(message.from);
 </script>
 
-{#if message.content !== ""}
+{#if message.audio !== undefined}
+  <AudioMessage message={message} />
+{:else if message.content !== ""}
   <div class="chat ml-2 mr-2 {alignment}">
     {#if newBotMessageBlock}
       <div class="chat-image avatar">

@@ -61,7 +61,7 @@ class RemoteProjectController<
           break;
 
         case "window message":
-          this._output.windowMessage(...(args as [any]));
+          this._output.windowMessage(args[0], args[1] as {});
           break;
 
         case "settings":
@@ -81,6 +81,11 @@ class RemoteProjectController<
 
   receive_message(str: string) {
     this._socket.send(JSON.stringify(["user_message", str]));
+  }
+
+  receive_audio_message(audioBlob: Blob) {
+    //this._socket.send();
+    console.log("Audio message!");
   }
 
   log(str: string) {

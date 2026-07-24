@@ -1,10 +1,11 @@
-export type CurrentMessageType = "Auto" | "MC" | "Text";
+export type CurrentMessageType = "Auto" | "MC" | "Text" | "Audio";
 
 export type Message = {
   from: "bot" | "user";
   content: string;
   params?: any;
   type?: CurrentMessageType;
+  audio?: Blob;
 };
 
 export type NewBotMessageBlock = boolean;

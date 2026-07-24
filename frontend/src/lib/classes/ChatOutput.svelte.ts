@@ -87,13 +87,19 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     from: Message["from"],
     content: Message["content"],
     params?: Message["params"],
-    type?: Message["type"]
+    type?: Message["type"],
+    audio?: Message["audio"]
   ) {
-    this.messages.push({ from, content, params, type });
+    this.messages.push({ from, content, params, type, audio });
     if (from == "bot") {
       this.projectController?.message_sent_event();
     } else {
-      this.projectController?.receive_message(content);
+      if (audio !== undefined) {
+        this.projectController?.receive_audio_message(audio);
+      }
+      else {
+        this.projectController?.receive_message(content);
+      }
     }
   }
 }

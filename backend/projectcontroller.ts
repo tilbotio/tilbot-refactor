@@ -158,7 +158,7 @@ export class ServerControllerOutput
     this.emit("typing indicator");
   }
 
-  windowMessage(text: string, params: []): void {
+  windowMessage(text: string, params: {}): void {
     this.emit("window message", text, params);
   }
 
