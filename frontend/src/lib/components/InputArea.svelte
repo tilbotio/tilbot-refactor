@@ -1,10 +1,11 @@
 <script lang="ts">
+  import SpeechInput from "$lib/components/SpeechInput.svelte"
   import type {
     InputText,
     CurrentMessageType,
     McOption,
   } from "$lib/types/types";
-  import { PaperAirplane, QrCode } from "svelte-heros-v2";
+  import { PaperAirplane } from "svelte-heros-v2";
   type Props = {
     currentMessageType: CurrentMessageType;
     mcOptions: McOption[];
@@ -47,7 +48,7 @@
       >
     {/each}
   </div>
-{:else}
+{:else if currentMessageType === "Text"}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md">
     <textarea
       class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]"
@@ -64,4 +65,7 @@
       onclick={handleTextSubmit}><PaperAirplane class="h-6 w-6" /></button
     >
   </div>
+{:else}
+  <!-- Temporary: else should be text input, but for testing purposes this is convenient -->
+  <SpeechInput />
 {/if}
