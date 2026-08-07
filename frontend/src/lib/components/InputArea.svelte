@@ -8,6 +8,8 @@
   import { PaperAirplane } from "svelte-heros-v2";
   type Props = {
     currentMessageType: CurrentMessageType;
+    allowAudioReply?: boolean;
+    forceAudioReply?: boolean;
     mcOptions: McOption[];
     onSend: (InputText: string) => void;
     onSendAudio: (audioBlob: Blob) => void;
@@ -15,7 +17,7 @@
 
   let inputText: InputText = $state("");
 
-  const { currentMessageType, mcOptions, onSend, onSendAudio }: Props = $props();
+  const { currentMessageType, allowAudioReply, forceAudioReply, mcOptions, onSend, onSendAudio }: Props = $props();
 
   function handleTextSubmit(): void {
     console.log("Text submitted");
@@ -49,7 +51,7 @@
       >
     {/each}
   </div>
-{:else if currentMessageType === "Audio"}
+{:else if forceAudioReply}
   <SpeechInput onSendAudio={onSendAudio} />
 {:else}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md">

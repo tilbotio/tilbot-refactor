@@ -1,6 +1,7 @@
 import type {
   ProjectControllerInterface,
   ProjectControllerOutputInterface,
+  ReceivedMessage
 } from "./types";
 
 class RemoteProjectController<
@@ -13,6 +14,15 @@ class RemoteProjectController<
 
   constructor(output: ProjectControllerOutputType) {
     this._output = output;
+  }
+
+  blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   emit(...message: any[]) {
@@ -79,13 +89,13 @@ class RemoteProjectController<
     this._socket.send(JSON.stringify(["message sent"]));
   }
 
-  receive_message(str: string) {
-    this._socket.send(JSON.stringify(["user_message", str]));
-  }
-
-  receive_audio_message(audioBlob: Blob) {
-    //this._socket.send();
-    console.log("Audio message!");
+  async receive_message(message: ReceivedMessage) {
+    console.log("receive message! " + message.type + " " + message.content.toString());
+    if (message.type === "audio") {
+      let base64audio = await this.blobToBase64(message.content as Blob);
+      message.content = base64audio;
+    }
+    this._socket.send(JSON.stringify(["user_message", message]));
   }
 
   log(str: string) {

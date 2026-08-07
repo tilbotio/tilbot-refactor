@@ -5,8 +5,7 @@ export interface ProjectControllerInterface<
 > {
   readonly output: ProjectControllerOutputType;
   message_sent_event(): void;
-  receive_message(str: string): void;
-  receive_audio_message(audioBlob: Blob): void;
+  receive_message(message: ReceivedMessage): void;
   log(str: string): void;
   set_participant_id(pid: string): void;
 }
@@ -25,6 +24,10 @@ export interface ProjectControllerLookupInterface {
     user_input?: string,
     connectors?: string[]
   ): Promise<any | null>;
+  apiCallPOST(
+    external_link: ExternalLink,
+    audioBlob: Blob
+  ): Promise<any | null>;  
 }
 
 export interface ProjectControllerLoggerInterface {
@@ -44,3 +47,11 @@ export interface ProjectControllerOutputInterface {
   }): void;
   settings(settings: any, path?: string): void;
 }
+
+export type ReceivedMessageType = "audio" | "text";
+
+export type ReceivedMessage = {
+  type: ReceivedMessageType;
+  content: string | Blob;
+}
+  

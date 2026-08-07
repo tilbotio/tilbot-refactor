@@ -3,6 +3,7 @@ import type {
   ProjectControllerOutputInterface,
   ProjectControllerLookupInterface,
   ProjectControllerLoggerInterface,
+  ReceivedMessage,
 } from "./types";
 
 // RegExp.escape() is a bit new
@@ -184,9 +185,16 @@ export class LocalProjectController<
       this._output.botMessage({ type, content, params });
     } else if (type == "Compute") {
       this.message_sent_event();
-      this.receive_message(input);
+      this.receive_message({type: "text", content: input});
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
+
+      if (block.allow_audio_reply !== undefined) {
+        params.allowAudioReply = block.allow_audio_reply;
+      }
+      if (block.force_audio_reply !== undefined) { 
+        params.forceAudioReply = block.force_audio_reply;
+      }
 
       this._output.botMessage({
         type,
@@ -501,12 +509,7 @@ export class LocalProjectController<
     return false;
   }
 
-  receive_audio_message(audioBlob: Blob): void {
-    console.log("receive audio message!");
-  }
-
-  async receive_message(str: string) {
-    console.log("receive!" + str);
+  async receive_message(message: ReceivedMessage): Promise<void> {
 
     let best: {
       found: boolean;
@@ -525,6 +528,7 @@ export class LocalProjectController<
       currentBlockExists = true;
 
       current_block = blocks[this._current_block_id.toString()];
+
       if (current_block.type == "Compute" && current_block.use_external_link) {
         let res = null;
 
@@ -535,22 +539,30 @@ export class LocalProjectController<
         if (external_link !== null) {
           this._output.typingIndicator();
           let startDateTime = new Date();
-          if (external_link.send_user_input) {
+
+          if (message.type == "audio") {
+            res = await this._lookup.apiCallPOST(
+              external_link,
+              message.content as Blob
+            );
+          }
+
+          else if (external_link.send_user_input) {
             if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
-                str,
+                message.content as string,
                 await this._getConnectors(current_block),
               );
-            } else if (external_link.send_connectors) {
+            } else {
+              res = await this._lookup.apiCall(external_link, message.content as string);
+            }
+          } else if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
                 "",
                 await this._getConnectors(current_block),
               );
-            } else {
-              res = await this._lookup.apiCall(external_link, str);
-            }
           } else {
             res = await this._lookup.apiCall(external_link);
           }
@@ -563,7 +575,7 @@ export class LocalProjectController<
             }
           } else {
             // Try to find the "else" connector to fall back on.
-            let potentialElse = this._findElseConnector(current_block, str);
+            let potentialElse = this._findElseConnector(current_block, message.content as string);
             if (potentialElse !== null) {
               best = potentialElse;
             }
@@ -571,8 +583,22 @@ export class LocalProjectController<
 
           timeExpired = new Date().getTime() - startDateTime.getTime();
         }
-      } else if (current_block.type !== "Auto") {
-        best = await this.find_best_connector(current_block, str.toString());
+      } else if (message.type == "audio") {
+        for (const connector of current_block.connectors) {
+          for (const label_part of connector.label) {
+            if (label_part.type == "audio") {
+              for (let i = 0; i < connector.targets.length; i++) {
+                this._current_block_id = connector.targets[i];
+                await this.send_events(connector);
+                this.message_sent_event();
+                this.receive_message(message);
+                return;
+              }
+            }
+          }
+        }                
+      } else if (message.type == "text" && current_block.type !== "Auto") {
+        best = await this.find_best_connector(current_block, message.content.toString());
       }
     }
 
@@ -588,7 +614,7 @@ export class LocalProjectController<
           ) {
             let best_trigger = await this.find_best_connector(
               block,
-              str.toString(),
+              message.content as string,
             );
 
             if (best_trigger.found) {
@@ -612,8 +638,15 @@ export class LocalProjectController<
             output = best.output.join(" ");
           }
         }
-        await this.send_events(best.connector, output, str);
-        this._send_current_message(output, str, timeExpired);
+
+        let themessage = message.content as string;
+
+        if (message.type == "audio" && best.output.length > 0) {
+          themessage = best.output[0];
+        }
+
+        await this.send_events(best.connector, output, themessage);
+        this._send_current_message(output, themessage, timeExpired);
       }
     }
   }

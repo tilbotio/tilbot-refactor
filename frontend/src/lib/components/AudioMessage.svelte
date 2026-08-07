@@ -42,6 +42,7 @@
                     duration = player?.duration;
                 }
                 player.addEventListener("ended", function() {
+                    currentTime = duration;
                     player.currentTime = 0;
                     isPlaying = false;
                 });                

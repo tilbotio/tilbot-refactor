@@ -6,6 +6,20 @@ export class ChatLookup implements ProjectControllerLookupInterface {
   private pendingResolver: ((value: string) => void) | null = null;
   private windowAPI: any = (window.parent as any)?.api;
 
+  private getAudioUploadFilename(audioBlob: Blob): string {
+    const mimeType = audioBlob.type.toLowerCase();
+
+    if (mimeType.includes("ogg")) {
+      return "audio.ogg";
+    }
+
+    if (mimeType.includes("webm")) {
+      return "audio.webm";
+    }
+
+    return "audio.bin";
+  }
+
   async cell(
     table: string,
     col: string,
@@ -97,4 +111,54 @@ export class ChatLookup implements ProjectControllerLookupInterface {
         console.log(res.status, res.statusText);
       });
   }
+
+// Temporary, might have to replace all API calls with POST?
+  async apiCallPOST(
+    external_link: ExternalLink,
+    audioBlob: Blob
+  ): Promise<any | null> {
+    // We can use the `Headers` constructor to create headers
+    // and assign it as the type of the `headers` variable
+    const headers: Headers = new Headers();
+    // Add a few headers
+    //headers.set("Content-Type", "application/json");
+    headers.set("Accept", "application/json");
+
+    let fullUrl = external_link.url;
+
+    if (external_link.url_editor !== null) {
+      fullUrl = external_link.url_editor;
+    }
+
+    if (fullUrl.indexOf("http://") == -1 && fullUrl.indexOf("https://") == -1) {
+      fullUrl = "http://" + fullUrl;
+    }
+
+    let formData = new FormData();
+    formData.append("audio", audioBlob, this.getAudioUploadFilename(audioBlob));
+
+    // Create the request object, which will be a RequestInfo type.
+    // Here, we will pass in the URL as well as the options object as parameters.
+    const request: RequestInfo = new Request(fullUrl, {
+      method: "POST",
+      headers: headers,
+      body: formData
+    });
+
+    return fetch(request)
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        }
+
+        return Promise.reject(res);
+      })
+      .then((res) => {
+        return res;
+      })
+      .catch((res) => {
+        console.log(res.status, res.statusText);
+      });
+  }  
 }
+

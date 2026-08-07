@@ -81,6 +81,11 @@ export type ProjectBlockCompute = ProjectBlock & {
   external_link: ExternalLink | null;
 };
 
+export type ProjectBlockText = ProjectBlock & {
+  allow_audio_reply: boolean;
+  force_audio_reply: boolean;
+};
+
 export type Project = {
   name?: string;
   current_block_id: number;

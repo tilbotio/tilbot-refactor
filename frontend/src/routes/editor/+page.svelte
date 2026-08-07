@@ -4,6 +4,7 @@
   import type {
     Project,
     ProjectBlock,
+    ProjectBlockText,
     ProjectBlockType,
     ProjectConnector,
     ProjectSettings,
@@ -320,18 +321,81 @@
     windowAPI.send("save-settings", $state.snapshot(generalSettings));
   }
 
-  function chatGPTrunAll() {
-    runAll();
-    chatGPTrunning = true;
-  }
-
-  function chatGPTsendMessage(message: string) {
-    setTimeout(function () {
-      sendChatGPTmessage(message);
-    }, 500);
-  }
-
   function saveBlock(block: ProjectBlock) {
+    if (block.type == "Text") {
+      let blockText = block as ProjectBlockText;
+
+      // Add connector for audio if setting enabled
+      if (blockText.allow_audio_reply && !(project.blocks[selectedBlockId!] as ProjectBlockText).allow_audio_reply) {
+        let hasAudioConnector = false;
+        for (let i = 0; i < blockText.connectors.length; i++) {
+          let connector = blockText.connectors[i];
+          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "audio") {
+            hasAudioConnector = true;
+            break;
+          }
+        }
+
+        if (!hasAudioConnector) {
+          blockText.connectors.push({
+            type: "Labeled",
+            label: [
+              {
+                type: "audio",
+              },
+            ],
+            targets: [],
+          });
+        }
+      }
+
+      // Remove connector for audio if setting disabled
+      else if (!blockText.allow_audio_reply && (project.blocks[selectedBlockId!] as ProjectBlockText).allow_audio_reply) {
+        for (let i = 0; i < blockText.connectors.length; i++) {
+          const connector = blockText.connectors[i];
+          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "audio") {
+            blockText.connectors.splice(i, 1);
+            break;
+          }
+        }
+      }
+
+      // Remove the [else] connector if the audio message is forced.
+      if (blockText.allow_audio_reply && blockText.force_audio_reply && !(project.blocks[selectedBlockId!] as ProjectBlockText).force_audio_reply) {
+        for (let i = 0; i < blockText.connectors.length; i++) {
+          const connector = blockText.connectors[i];
+          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "else") {
+            blockText.connectors.splice(i, 1);
+            break;
+          }
+        }
+      }
+
+      // Re-add the [else] connector if we unforce the audio message.
+      if (!blockText.allow_audio_reply && !blockText.force_audio_reply && (project.blocks[selectedBlockId!] as ProjectBlockText).force_audio_reply) {
+        let hasElseConnector = false;
+        for (let i = 0; i < blockText.connectors.length; i++) {
+          const connector = blockText.connectors[i];
+          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "else") {
+            hasElseConnector = true;
+            break;
+          }
+        }
+
+        if (!hasElseConnector) {
+          blockText.connectors.push({
+            type: "Labeled",
+            label: [
+              {
+                type: "else",
+              },
+            ],
+            targets: [],
+          });
+        }
+      }
+    }
+
     project.blocks[selectedBlockId!] = block;
     editingBlock = null;
     editModal.click();

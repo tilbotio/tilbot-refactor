@@ -54,6 +54,17 @@ function getOrCreateToken(tokenPath: string): string {
   }
 }
 
+
+function convertBase64ToBlob(base64: string): Blob {
+  const byteCharacters = atob(base64.split(",")[1]);
+  const byteArrays = [];
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArrays.push(byteCharacters.charCodeAt(i));
+  }
+  return new Blob([new Uint8Array(byteArrays)], { type: "application/octet-stream" });
+}
+
+
 // const __dirname = dirname(__filename);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -489,7 +500,11 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
           break;
 
         case "user_message":
-          projectController.receive_message(...(args as [string]));
+          if (args[0].type === "audio") {
+            let base64audio = args[0].content;
+            args[0].content = convertBase64ToBlob(base64audio);
+          }
+          projectController.receive_message(args[0] as any);
           break;
 
         case "log":

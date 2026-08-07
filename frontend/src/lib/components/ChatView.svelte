@@ -20,6 +20,8 @@
   const messages: Message[] = getContext("messagesContext");
 
   let currentMessageType: CurrentMessageType = $state("Auto");
+  let allowAudioReply: boolean = $state(false);
+  let forceAudioReply: boolean = $state(false);
   let mcOptions: McOption[] = $state([]);
 
   let scrollContainer: HTMLDivElement;
@@ -38,6 +40,8 @@
 
       if (latest.from == "bot") {
         currentMessageType = latest.type || "Auto";
+        allowAudioReply = latest.params.allowAudioReply || false;
+        forceAudioReply = latest.params.forceAudioReply || false;
         const newMcOptions = [];
 
         if (currentMessageType === "MC") {
@@ -66,6 +70,8 @@
     projectController.output.processMessage("user", "", null, "Text", audioBlob);
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
+    allowAudioReply = false;
+    forceAudioReply = false;
   }
 </script>
 
@@ -82,5 +88,5 @@
       avatar_file_sm={settingsContext.avatar_file_sm}
     />
   </div>
-  <InputArea {currentMessageType} {mcOptions} onSend={sendUserMessage} onSendAudio={sendUserAudioMessage} />
+  <InputArea {currentMessageType} {mcOptions} {allowAudioReply} {forceAudioReply} onSend={sendUserMessage} onSendAudio={sendUserAudioMessage} />
 </div>

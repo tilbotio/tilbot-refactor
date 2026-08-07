@@ -95,10 +95,10 @@ export class ChatOutput implements ProjectControllerOutputInterface {
       this.projectController?.message_sent_event();
     } else {
       if (audio !== undefined) {
-        this.projectController?.receive_audio_message(audio);
+        this.projectController?.receive_message({ type: "audio", content: audio });
       }
       else {
-        this.projectController?.receive_message(content);
+        this.projectController?.receive_message({ type: "text", content: content });
       }
     }
   }

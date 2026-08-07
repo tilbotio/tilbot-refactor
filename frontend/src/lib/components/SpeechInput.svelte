@@ -3,6 +3,13 @@
     import { Microphone, PaperAirplane, Play, Stop } from "svelte-heros-v2";
     import { playingTimeToMinSecString } from "$lib/utils/functions";
 
+    const recorderMimeCandidates = [
+        "audio/webm;codecs=opus",
+        "audio/ogg;codecs=opus",
+        "audio/webm",
+        "audio/ogg"
+    ];
+
     type Props = {
         onSendAudio: (audioBlob: Blob) => void;
     };
@@ -16,8 +23,23 @@
     let timeDisplay: string = $state("00:00");
     let chunks: Blob[] = $state([]);
     let lastRecording: Blob | null = $state(null);
+    let recordingMimeType: string = $state("");
     let recorder: MediaRecorder;
     let player: HTMLAudioElement;
+
+    function getSupportedRecorderMimeType(): string | null {
+        if (typeof MediaRecorder === "undefined") {
+            return null;
+        }
+
+        for (const mimeType of recorderMimeCandidates) {
+            if (MediaRecorder.isTypeSupported(mimeType)) {
+                return mimeType;
+            }
+        }
+
+        return null;
+    }
 
     function startRecording(): void {
         // In case there is a playback ongoing.
@@ -57,7 +79,7 @@
             isRecording = false;
             await stopRecording();
 
-            lastRecording = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+            lastRecording = new Blob(chunks, { type: recordingMimeType || recorder.mimeType || chunks[0]?.type || "audio/webm" });
             const audioURL = window.URL.createObjectURL(lastRecording);
             player.src = audioURL;
         }
@@ -88,9 +110,20 @@
 
                 // Success callback
                 .then((stream) => {
-                    recorder = new MediaRecorder(stream);
+                    const mimeType = getSupportedRecorderMimeType();
+                    if (mimeType !== null) {
+                        recorder = new MediaRecorder(stream, { mimeType });
+                        recordingMimeType = mimeType;
+                    }
+                    else {
+                        recorder = new MediaRecorder(stream);
+                        recordingMimeType = recorder.mimeType;
+                    }
+
                     recorder.ondataavailable = (e) => {
-                        chunks.push(e.data);
+                        if (e.data.size > 0) {
+                            chunks.push(e.data);
+                        }
                     };
                 })
 

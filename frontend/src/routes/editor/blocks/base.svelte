@@ -149,7 +149,11 @@
                   <div class="badge badge-warning mx-2">
                     <BarsArrowDown class="w-3 h-3 mr-2" /> else
                   </div>
-                {/if}
+                {:else if label.type == "audio"}
+                  <div class="badge badge-error mx-2">
+                    <BarsArrowDown class="w-3 h-3 mr-2" /> audio
+                  </div>
+                {/if}                
               {/each}
             {/if}
           </div>

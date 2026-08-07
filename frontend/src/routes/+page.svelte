@@ -81,11 +81,6 @@
     } else {
       if (event.data.startsWith("log:")) {
         projectController.log(event.data.substring(5));
-      } else if (event.data.startsWith("chatgpt|")) {
-        projectController.output.processMessage(
-          "chatgpt",
-          event.data.substring(8)
-        );
       } else {
         projectController.output.processMessage("user", event.data);
       }
