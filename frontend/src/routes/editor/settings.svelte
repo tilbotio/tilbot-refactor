@@ -158,6 +158,27 @@
                     </tr>
                   </tbody>
                 </table>
+
+                <table class="table w-full">
+                  <thead>
+                    <tr>
+                      <th>Chatbot language</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <select
+                          class="select"
+                          bind:value={projectSettingsCopy.language}
+                        >
+                          <option value="nl">Dutch</option>
+                          <option value="en">English</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             <input
@@ -511,6 +532,43 @@
                 <button class="btn gap-2" onclick={addExternalLink}>
                   <Plus class="w-6 h-6" />
                 </button>
+              </div>
+            </div>
+
+            <input
+              type="radio"
+              name="settings-tabs"
+              class="tab"
+              aria-label="Text to speech settings"
+            />
+            <div class="tab-content bg-base-100 border-base-300 p-6">
+              <div class="w-full text-xl text-center font-bold">
+                Text to speech settings
+              </div>
+              <div class="p-8">
+                <label class="label cursor-pointer">
+                  <span class="label-text">
+                    Provide an option for each message to be read aloud by the
+                    built-in text-to-speech feature of the user's browser
+                  </span>
+                  <input
+                    type="checkbox"
+                    class="toggle"
+                    bind:checked={projectSettingsCopy.tts_enabled}
+                  />
+                </label><br /><br />
+                {#if projectSettingsCopy.tts_enabled}
+                  <label class="label cursor-pointer">
+                    <span class="label-text">
+                      Automatically read messages aloud as they are displayed
+                    </span>
+                    <input
+                      type="checkbox"
+                      class="toggle"
+                      bind:checked={projectSettingsCopy.tts_automatic}
+                    />
+                  </label>
+                {/if}
               </div>
             </div>
           </div>

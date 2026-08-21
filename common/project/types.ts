@@ -7,6 +7,7 @@ export const defaultGeneralSettings: GeneralSettings = {};
 export type ProjectSettings = {
   name: string; // bot name
   project_name: string;
+  language: string;
   typing_style: "fixed" | "variable";
   typing_time: number;
   typing_charpsec: number;
@@ -15,6 +16,8 @@ export type ProjectSettings = {
   show_avatar_sm?: boolean;
   avatar_file_sm?: string;
   external_links: ExternalLink[];
+  tts_enabled: boolean;
+  tts_automatic: boolean;
 };
 
 export type ExternalLink = {
@@ -27,6 +30,7 @@ export type ExternalLink = {
 
 export const defaultProjectSettings: ProjectSettings = {
   project_name: "New project",
+  language: "en",
   typing_style: "fixed",
   typing_time: 2,
   typing_charpsec: 40,
@@ -36,6 +40,8 @@ export const defaultProjectSettings: ProjectSettings = {
   avatar_file_sm: "",
   name: "Tilbot",
   external_links: [],
+  tts_enabled: false,
+  tts_automatic: false
 };
 
 export type ProjectVariable = {
