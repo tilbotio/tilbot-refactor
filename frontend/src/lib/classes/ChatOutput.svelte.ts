@@ -71,6 +71,10 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     }, timeout);
   }
 
+  updateMessage(content: string): void {
+    this.processMessage("user", content, {}, "Update");
+  }
+
   settings(settings: ProjectSettings, path?: RuntimeContext["path"]): void {
     Object.assign(this.settingsContext, settings);
     for (const key in this.settingsContext) {
@@ -90,15 +94,19 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     type?: Message["type"],
     audio?: Message["audio"]
   ) {
-    this.messages.push({ from, content, params, type, audio });
-    if (from == "bot") {
-      this.projectController?.message_sent_event();
+    if (type === "Update") {
+      this.messages[this.messages.length-1].content = content;
     } else {
-      if (audio !== undefined) {
-        this.projectController?.receive_message({ type: "audio", content: audio });
-      }
-      else {
-        this.projectController?.receive_message({ type: "text", content: content });
+      this.messages.push({ from, content, params, type, audio });
+      if (from == "bot") {
+        this.projectController?.message_sent_event();
+      } else {
+        if (audio !== undefined) {
+          this.projectController?.receive_message({ type: "audio", content: audio });
+        }
+        else {
+          this.projectController?.receive_message({ type: "text", content: content });
+        }
       }
     }
   }

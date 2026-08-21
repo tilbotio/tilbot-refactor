@@ -568,6 +568,10 @@ export class LocalProjectController<
           }
 
           if (res !== undefined && res !== null) {
+            if (message.type == "audio") {
+              // Send the transcription to the client.
+              this._output.updateMessage(res.intent);
+            }
             // @TODO: see if this is a good long-term solution
             best = await this.find_best_connector(current_block, res.intent);
             if (res.connector_label !== undefined) {

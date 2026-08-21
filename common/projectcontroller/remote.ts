@@ -78,6 +78,10 @@ class RemoteProjectController<
           this._output.settings(...(args as [any, string]));
           break;
 
+        case "update message":
+          this._output.updateMessage(args[0]);
+          break;
+
         case "typing indicator":
           this._output.typingIndicator();
           break;

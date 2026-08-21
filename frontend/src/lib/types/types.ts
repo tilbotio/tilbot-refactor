@@ -1,4 +1,4 @@
-export type CurrentMessageType = "Auto" | "MC" | "Text";
+export type CurrentMessageType = "Auto" | "MC" | "Text" | "Update";
 
 export type Message = {
   from: "bot" | "user";

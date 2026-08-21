@@ -235,6 +235,10 @@ export class ServerControllerOutput
     this.emit("bot message", block);
   }
 
+  updateMessage(content: string): void {
+    this.emit("update message", content);
+  }
+
   settings(settings: any, path?: string): void {
     this.emit("settings", settings, path);
   }
