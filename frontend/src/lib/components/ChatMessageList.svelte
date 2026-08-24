@@ -6,11 +6,13 @@
   import { getContext } from "svelte";
 
   type Props = {
+    ttsCompleteEvent: Function;
     isTypingIndicatorActive: boolean;
     avatar_file_sm: ProjectSettings["avatar_file_sm"];
   };
 
-  let { isTypingIndicatorActive, avatar_file_sm }: Props = $props();
+  let { ttsCompleteEvent, isTypingIndicatorActive, avatar_file_sm }: Props =
+    $props();
 
   const messages: Message[] = getContext("messagesContext");
 
@@ -25,6 +27,7 @@
 
 {#each messages as message, index}
   <ChatMessage
+    {ttsCompleteEvent}
     {message}
     newBotMessageBlock={isNewBotMessageBlock(index) && message.from == "bot"}
   />

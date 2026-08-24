@@ -65,13 +65,23 @@
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
   }
-  
+
   function sendUserAudioMessage(audioBlob: Blob): void {
-    projectController.output.processMessage("user", "", null, "Text", audioBlob);
+    projectController.output.processMessage(
+      "user",
+      "",
+      null,
+      "Text",
+      audioBlob
+    );
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
     allowAudioReply = false;
     forceAudioReply = false;
+  }
+
+  function ttsComplete(): void {
+    projectController.output.projectController?.message_sent_event();
   }
 </script>
 
@@ -85,8 +95,16 @@
   >
     <MessageList
       {isTypingIndicatorActive}
+      ttsCompleteEvent={ttsComplete}
       avatar_file_sm={settingsContext.avatar_file_sm}
     />
   </div>
-  <InputArea {currentMessageType} {mcOptions} {allowAudioReply} {forceAudioReply} onSend={sendUserMessage} onSendAudio={sendUserAudioMessage} />
+  <InputArea
+    {currentMessageType}
+    {mcOptions}
+    {allowAudioReply}
+    {forceAudioReply}
+    onSend={sendUserMessage}
+    onSendAudio={sendUserAudioMessage}
+  />
 </div>

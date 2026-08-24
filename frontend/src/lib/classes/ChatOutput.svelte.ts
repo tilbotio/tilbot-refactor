@@ -99,7 +99,9 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     } else {
       this.messages.push({ from, content, params, type, audio });
       if (from == "bot") {
-        this.projectController?.message_sent_event();
+        if (!this.settingsContext.tts_automatic) {
+          this.projectController?.message_sent_event();
+        }
       } else {
         if (audio !== undefined) {
           this.projectController?.receive_message({ type: "audio", content: audio });

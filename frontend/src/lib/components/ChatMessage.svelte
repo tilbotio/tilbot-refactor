@@ -8,11 +8,12 @@
   const settings: ProjectSettings = getContext("settingsContext");
 
   type Props = {
+    ttsCompleteEvent: Function;
     message: Message;
     newBotMessageBlock: NewBotMessageBlock;
   };
 
-  let { message, newBotMessageBlock }: Props = $props();
+  let { ttsCompleteEvent, message, newBotMessageBlock }: Props = $props();
 
   let playingTTS: boolean = $state(false);
 
@@ -41,6 +42,7 @@
       playingTTS = true;
       utterance.onend = (event) => {
         playingTTS = false;
+        ttsCompleteEvent();
       };
     } else {
       setTimeout(trySpeak, 250);
@@ -51,6 +53,7 @@
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.pause();
       window.speechSynthesis.cancel();
+      ttsCompleteEvent();
     }
     playingTTS = false;
   }

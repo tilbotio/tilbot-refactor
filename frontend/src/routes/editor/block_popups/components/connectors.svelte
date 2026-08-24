@@ -33,7 +33,6 @@
     isRandomRow: boolean,
     filter: any
   ) {
-    alert(type + " " + variable);
     connectors[selectedConnector].label[selectedLabelPart].variableType = type;
     connectors[selectedConnector].label[selectedLabelPart].variable = variable;
     if (column !== "") {
