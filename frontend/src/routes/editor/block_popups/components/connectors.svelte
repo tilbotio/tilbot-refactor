@@ -3,7 +3,6 @@
   import Events from "./events.svelte";
   import type { ProjectConnector } from "../../../../../../common/project/types.ts";
   import Variablepopup from "./variablepopup.svelte";
-  import { ChatCompletionResponseMessageRoleEnum } from "openai";
 
   const {
     connectors,

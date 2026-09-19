@@ -11,7 +11,7 @@ export default {
   kit: {
     adapter:
       process.env.TILBOT_ENV === "app"
-        ? adapterStatic({ pages: "../app/build" })
+        ? adapterStatic({ pages: "../app/build", fallback: '200.html' })
         : adapterNode(),
     prerender: { handleHttpError: "warn" },
   },

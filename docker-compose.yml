@@ -2,7 +2,7 @@ version: "3.8"
 services:
   yarn-install:
     build: .
-    command: ["yarn", "install", "--frozen-lockfile"]
+    command: ["yarn", "install", "--immutable"]
     volumes:
       - .:/home/node
 
@@ -21,7 +21,7 @@ services:
       - VITE_API_URL=http://backend:8000
       - MONGO_DB=mongodb://mongo/tilbot
     healthcheck:
-      test: curl -f localhost:5173 || exit 1
+      test: curl -f localhost:5173/healthcheck || exit 1
       interval: 10s
       timeout: 2s
       retries: 20
@@ -44,7 +44,7 @@ services:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
     healthcheck:
-      test: curl -f localhost:8000/api/admin_account_exists || exit 1
+      test: curl -f localhost:8000/api/healthcheck || exit 1
       interval: 10s
       timeout: 2s
       retries: 20

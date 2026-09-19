@@ -167,6 +167,11 @@ app.post("/api/login", async (req, res) => {
   session.save();
 });
 
+// Health check for Docker
+app.get("/api/healthcheck", async (req, res) => {
+  return {"response": "OK"};
+});
+
 app.get("/api/admin_account_exists", async (req, res) => {
   if (await UserModel.adminAccountExists()) {
     return "EXISTS";

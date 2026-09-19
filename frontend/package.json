@@ -32,7 +32,6 @@
     "crypto-js": "^4.1.1",
     "daisyui": "^4.12.21",
     "lodash": "^4.17.21",
-    "openai": "^3.3.0",
     "svelte-heros-v2": "^2.0.1"
   }
 }

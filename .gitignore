@@ -47,6 +47,7 @@ frontend/src/routes/*
 !frontend/src/routes/dashboard
 !frontend/src/routes/editor
 !frontend/src/routes/login
+!frontend/src/routes/healthcheck
 
 frontend/static/*
 !frontend/static/images
