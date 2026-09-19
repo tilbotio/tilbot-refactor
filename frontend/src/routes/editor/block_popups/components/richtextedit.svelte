@@ -222,7 +222,7 @@
       </div>
     {:else}
       <div
-        class="inline-flex"
+        class="inline-flex outline-none"
         contenteditable="plaintext-only"
         bind:innerHTML={v.text}
         onkeydown={checkDelBadges}

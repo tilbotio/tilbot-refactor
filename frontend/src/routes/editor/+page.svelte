@@ -462,8 +462,8 @@
     const top = rect.top + rect.height / 2 + editorContainer.scrollTop - 28;
 
     const style = document.getElementById("btn_del_line")!.style;
-    style.setProperty("left", `${left} px`);
-    style.setProperty("top", `${top} px`);
+    style.setProperty("left", `${left}px`);
+    style.setProperty("top", `${top}px`);
     isLineDeleteButtonVisible = true;
   }
 
@@ -702,16 +702,9 @@
     {/snippet}
 
     <ul class="menu p-2 rounded-box bg-slate-200 ml-2 mt-2 shadow-md">
-      <li>
-        <a class="active:bg-tilbot-secondary-hardpink" id="add-block"
-          ><SquaresPlus class="w-6 h-6" /></a
-        >
-        <ul class="bg-slate-100">
-          {@render blockMenuItem("Automatically proceed", Clock, "Auto")}
-          {@render blockMenuItem("Multiple choice", ListBullet, "MC")}
-          {@render blockMenuItem("Text", Language, "Text")}
-        </ul>
-      </li>
+      {@render blockMenuItem("Automatically proceed", Clock, "Auto")}
+      {@render blockMenuItem("Multiple choice", ListBullet, "MC")}
+      {@render blockMenuItem("Text", Language, "Text")}
       {@render blockMenuItem("Add trigger", BellAlert, "Trigger")}
       {@render blockMenuItem("Add processing", Sparkles, "Compute")}
 
@@ -819,7 +812,7 @@
               ]}
             {#if connector}
               <line
-                class="z-50"
+                class="z-50 outline-hidden"
                 x1={connector.x}
                 y1={connector.y}
                 x2={draggingConnector.mouseX}
