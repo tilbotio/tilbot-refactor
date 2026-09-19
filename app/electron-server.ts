@@ -38,7 +38,7 @@ console.log(project);
 let settings = { chatgpt_api_key: "" };
 try {
   settings = JSON.parse(readFileSync(join(p, "settings.json"), "utf8"));
-} catch (err) {
+} catch (err: any) {
   if (err.code != "ENOENT") {
     throw err;
   }
