@@ -16,7 +16,8 @@
 
   // Set to $state to allow for future functionality
   let runtimeContext: RuntimeContext = $derived(loadResult.runtimeContext);
-  let settingsContext: ProjectSettings = $derived(loadResult.settings);
+  // $state (not $derived) so in-place mutations from ChatOutput.settings() stay reactive across components
+  let settingsContext: ProjectSettings = $state(loadResult.settings);
 
   const messages = $state<Message[]>([]);
   setContext("messagesContext", messages);
