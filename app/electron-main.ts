@@ -15,6 +15,8 @@ import {
   type Project,
 } from "../common/project/types.ts";
 
+app.setName("Tilbot");
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let ps: ChildProcess | undefined;
