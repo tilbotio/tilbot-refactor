@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:26.7.0-slim
 
 RUN npm install --global yarn
 
