@@ -547,6 +547,7 @@ async function stop_bot(projectId: string) {
 // FIXME: also serve the compiled Svelte files.
 await app.register(fastifyStatic, {
   root: resolve(__dirname, "proj_pub"),
+  prefix: "/proj_pub/",
 });
 
 // Implement the default response for successful requests

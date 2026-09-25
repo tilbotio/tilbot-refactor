@@ -23,7 +23,6 @@ function convertBase64ToBlob(base64: string): Blob {
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-console.log(__dirname);
 
 let p = process.argv[2].substring(3);
 

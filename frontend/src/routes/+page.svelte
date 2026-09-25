@@ -89,24 +89,29 @@
   }
 
   function projectReceived(data: any): void {
-    // To prevent this error: https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
-    messages.length = 0;
-    chatLookup = new ChatLookup();
-    const chatLogger = new ChatLogger();
-    let highestTimeoutId = setTimeout(";");
-    for (let i = 0; i < highestTimeoutId; i++) {
-      clearTimeout(i);
+    if (runtimeContext.isTilbotEditor) {
+      // To prevent this error: https://svelte.dev/docs/svelte/compiler-warnings#state_referenced_locally
+      messages.length = 0;
+      if (data.path) {
+        runtimeContext.path = `file:///${data.path.replace(/\\/g, "/")}`;
+      }
+      chatLookup = new ChatLookup();
+      const chatLogger = new ChatLogger();
+      let highestTimeoutId = setTimeout(";");
+      for (let i = 0; i < highestTimeoutId; i++) {
+        clearTimeout(i);
+      }
+      projectController = new LocalProjectController(
+        chatLookup,
+        chatOutput,
+        chatLogger,
+        JSON.parse(data.project)
+      );
+      let windowmsg = {
+        msg: "reset_var_mem",
+      };
+      window.parent.postMessage(windowmsg);
     }
-    projectController = new LocalProjectController(
-      chatLookup,
-      chatOutput,
-      chatLogger,
-      JSON.parse(data.project)
-    );
-    let windowmsg = {
-      msg: "reset_var_mem",
-    };
-    window.parent.postMessage(windowmsg);
   }
 </script>
 

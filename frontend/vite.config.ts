@@ -26,6 +26,11 @@ let config = {
         secure: false,
         // rewrite: (path) => path.replace(/^\/api/, '')
       },
+      "/proj_pub": {
+        target: API_URL,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 };

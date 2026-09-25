@@ -35,10 +35,13 @@ export const load: PageLoad = ({ url, fetch }) => {
   if (runtimeContext.projectId || !runtimeContext.isTilbotEditor) {
     const id = runtimeContext.projectId;
     (async () => {
-      runtimeContext.path = `/proj_pub/${id}`;
+      // If id is null, we're running a local server and the avatar is located at /avatar instead of /proj_pub/[projectId]/avatar.
+      if (id !== null) {
+        runtimeContext.path = `/proj_pub/${id}`;
+      }
       try {
         const response = await fetch(
-          `/api/create_conversation?id=${encodeURIComponent(id)}`
+          `/api/create_conversation?id=${encodeURIComponent(id ?? "")}`
         );
 
         if (response.ok) {
