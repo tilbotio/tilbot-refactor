@@ -203,7 +203,7 @@
                           name="radio-1"
                           class="radio"
                           bind:group={projectSettingsCopy.show_avatar}
-                          value="yes"
+                          value="{true}"
                         /></td
                       >
                     </tr>
@@ -215,7 +215,7 @@
                           name="radio-1"
                           class="radio"
                           bind:group={projectSettingsCopy.show_avatar}
-                          value="no"
+                          value="{false}"
                         /></td
                       >
                     </tr>
@@ -264,7 +264,7 @@
                           name="radio-2"
                           class="radio"
                           bind:group={projectSettingsCopy.show_avatar_sm}
-                          value="yes"
+                          value="{true}"
                         /></td
                       >
                     </tr>
@@ -276,7 +276,7 @@
                           name="radio-2"
                           class="radio"
                           bind:group={projectSettingsCopy.show_avatar_sm}
-                          value="no"
+                          value="{false}"
                         /></td
                       >
                     </tr>
