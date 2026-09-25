@@ -12,6 +12,7 @@ import {
   ServerControllerOutput,
 } from "../backend/projectcontroller.ts";
 import { VariableDb } from "../common/variabledb.ts";
+import { NonLogger } from "../common/projectcontroller/nonlogger.ts";
 
 function convertBase64ToBlob(base64: string): Blob {
   const byteCharacters = atob(base64.split(",")[1]);
@@ -70,7 +71,7 @@ app.get("/api/create_conversation", async (req, res) => {
   const projectController = new LocalProjectController(
     new ServerControllerLookup(db, true),
     new ServerControllerOutput(),
-    new Logger(p),
+    (project.settings.logging_enabled) ? new Logger(p) : new NonLogger(),
     project
   );
 
@@ -106,6 +107,8 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
   });
 
   socket.addEventListener("close", () => {
+    projectController.log("session_end");
+
     if (output.socket === socket) {
       output.socket = null;
     }

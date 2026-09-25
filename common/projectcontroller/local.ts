@@ -203,6 +203,8 @@ export class LocalProjectController<
         has_targets,
         timeExpired,
       });
+
+      this._logger.log("message_bot", content);
     }
   }
 
@@ -513,6 +515,10 @@ export class LocalProjectController<
 
   async receive_message(message: ReceivedMessage): Promise<void> {
 
+    if (message.type == "text") {
+      this._logger.log("message_user", message.content as string);
+    }
+
     let best: {
       found: boolean;
       connector: any;
@@ -779,7 +785,7 @@ export class LocalProjectController<
     this._logger.set_participant_id(pid);
   }
 
-  log(message: string) {
-    this._logger.log("projectcontroller", message);
+  log(event: string, details: string) {
+    this._logger.log(event, details);
   }
 }

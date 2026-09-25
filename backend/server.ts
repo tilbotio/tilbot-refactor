@@ -36,6 +36,7 @@ import {
 import { Logger } from "./logger.ts";
 
 import { VariableDb } from "../common/variabledb.ts";
+import { NonLogger } from "../common/projectcontroller/nonlogger.ts";
 
 // Generate a somewhat persistent token:
 function getOrCreateToken(tokenPath: string): string {
@@ -266,6 +267,27 @@ app.post("/api/create_project", async (req, res) => {
 });
 
 /**
+ * API call: set logging for a project (on/off)
+ */
+app.post("/api/set_project_logging", async (req, res) => {
+  console.log("Change logging! " + JSON.stringify(req.body));
+  const session: any = req.session;
+  const user = await UserModel.getByUsername(session.username);
+  if (user.role != 1) {
+    throw new TilBotUserIsAdminError(session.username);
+  }
+
+  const body: any = req.body;
+  const project = await ProjectModel.getById(body.projectid, {
+    user_id: session.username,
+    active: true,
+  });
+  project.settings.logging_enabled = body.logging_enabled;
+  project.markModified("settings"); // Mixed type fields need explicit dirty-marking for nested mutations
+  await project.save();
+});
+
+/**
  * API call: change a project's status (active/inactive)
  */
 app.post("/api/set_project_active", async (req, res) => {
@@ -455,7 +477,7 @@ app.get("/api/create_conversation", async (req, res) => {
   const projectController = new LocalProjectController(
     new ServerControllerLookup(db),
     new ServerControllerOutput(),
-    new Logger(projectId),
+    (project.settings.logging_enabled) ? new Logger(projectId) : new NonLogger(),
     project
   );
 
@@ -491,6 +513,7 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
   });
 
   socket.addEventListener("close", () => {
+    projectController.log("session_end");
     if (output.socket === socket) {
       output.socket = null;
     }

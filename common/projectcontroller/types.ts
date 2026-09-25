@@ -6,7 +6,7 @@ export interface ProjectControllerInterface<
   readonly output: ProjectControllerOutputType;
   message_sent_event(): void;
   receive_message(message: ReceivedMessage): void;
-  log(str: string): void;
+  log(event: string, details?: string): void;
   set_participant_id(pid: string): void;
 }
 
@@ -31,7 +31,7 @@ export interface ProjectControllerLookupInterface {
 }
 
 export interface ProjectControllerLoggerInterface {
-  log(event: string, detail: string): void;
+  log(event: string, detail?: string): void;
   set_participant_id(pid: string): void;
 }
 

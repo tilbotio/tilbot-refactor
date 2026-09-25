@@ -159,7 +159,31 @@
                   </tbody>
                 </table>
 
-                <table class="table w-full">
+                <table class="table w-full mt-8">
+                  <thead>
+                    <tr>
+                      <th>Logging</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <label class="label cursor-pointer">
+                          <span class="label-text">
+                            Enable logging 
+                          </span>
+                          <input
+                            type="checkbox"
+                            class="toggle"
+                            bind:checked={projectSettingsCopy.logging_enabled}
+                          />
+                        </label>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <table class="table w-full mt-8">
                   <thead>
                     <tr>
                       <th>Chatbot language</th>

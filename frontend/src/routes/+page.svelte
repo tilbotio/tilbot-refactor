@@ -4,7 +4,7 @@
   import { setContext, onMount } from "svelte";
   import { ChatOutput } from "$lib/classes/ChatOutput.svelte";
   import { ChatLookup } from "$lib/classes/ChatLookup";
-  import { ChatLogger } from "$lib/classes/ChatLogger";
+  import { NonLogger } from "../../../common/projectcontroller/nonlogger";
   import { RemoteProjectController } from "../../../common/projectcontroller/remote";
   import { LocalProjectController } from "../../../common/projectcontroller/local";
   import type { ProjectControllerInterface } from "../../../common/projectcontroller/types";
@@ -39,6 +39,19 @@
   onMount(async () => {
     window.addEventListener("message", messageReceived, false);
     create_websocket();
+
+    if (runtimeContext.participantId) {
+      function setParticipantIdIfSocketReady() {
+        if (projectController instanceof RemoteProjectController && projectController.socket.readyState === WebSocket.OPEN) {
+          projectController.set_participant_id(runtimeContext.participantId);
+        }
+        else {
+          setTimeout(setParticipantIdIfSocketReady, 1000);
+        }
+      }
+
+      setTimeout(setParticipantIdIfSocketReady, 1000);
+    }
   });
 
   function create_websocket() {
@@ -96,7 +109,7 @@
         runtimeContext.path = `file:///${data.path.replace(/\\/g, "/")}`;
       }
       chatLookup = new ChatLookup();
-      const chatLogger = new ChatLogger();
+      const nonLogger = new NonLogger();
       let highestTimeoutId = setTimeout(";");
       for (let i = 0; i < highestTimeoutId; i++) {
         clearTimeout(i);
@@ -104,7 +117,7 @@
       projectController = new LocalProjectController(
         chatLookup,
         chatOutput,
-        chatLogger,
+        nonLogger,
         JSON.parse(data.project)
       );
       let windowmsg = {

@@ -241,6 +241,64 @@
     }
   }
 
+  function deleteLogs(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+    const dataset = target.dataset;
+    // confirm() is reactive and therefore can't be inside an async context
+    if (
+      confirm(`Are you sure you wish to delete the logs for project "${dataset.name}?`)
+    ) {
+      (async () => {
+        try {
+          const response = await fetch("/api/delete_logs", {
+            method: "post",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              projectid: dataset.id,
+            }),
+          });
+          const text = await response.text();
+          if (!response.ok) {
+            throw new Error(text);
+          }
+          console.log(text);
+          loadData();
+        } catch (err) {
+          console.log(err);
+        }
+      })();
+    }
+  }
+
+  function saveLogging(projectId: string) {
+    return async function (e: Event) {
+      try {
+        const target = e.target as HTMLInputElement;
+        const response = await fetch("/api/set_project_logging", {
+          method: "post",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            projectid: projectId,
+            logging_enabled: target.checked,
+          }),
+        });
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(text);
+        }
+        console.log(text);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+  }
+
   function importProject(e: Event) {
     const target = e.target as HTMLElement;
     selectedProjectId = target.dataset.id!;
@@ -475,7 +533,9 @@
                   <th class="text-center">View</th>
                   <th class="text-center">Running</th>
                   <th class="text-center">Import</th>
-                  <th class="text-center">Logs</th>
+                  <th class="text-center">Logging enabled?</th>
+                  <th class="text-center">Download logs</th>
+                  <th class="text-center">Delete logs</th>
                   <!--<th>Edit</th>-->
                   <th class="text-center">Delete</th>
                 </tr>
@@ -519,10 +579,21 @@
                       />
                     </td>
                     <td class="text-center">
+                      <input type="checkbox" class="toggle" bind:checked={p.logging_enabled} onclick={saveLogging(p.id)} />
+                    </td>
+                    <td class="text-center">
                       <DocumentArrowDown
                         onclick={() => {
                           getLogs(p.id);
                         }}
+                        class="w-6 h-6 inline-block cursor-pointer"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <Trash
+                        onclick={deleteLogs}
+                        data-id={p.id}
+                        data-name={p.name}
                         class="w-6 h-6 inline-block cursor-pointer"
                       />
                     </td>

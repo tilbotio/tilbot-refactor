@@ -8,6 +8,7 @@ export type ProjectSettings = {
   name: string; // bot name
   project_name: string;
   language: string;
+  logging_enabled: boolean;
   typing_style: "fixed" | "variable";
   typing_time: number;
   typing_charpsec: number;
@@ -31,6 +32,7 @@ export type ExternalLink = {
 export const defaultProjectSettings: ProjectSettings = {
   project_name: "New project",
   language: "en",
+  logging_enabled: false,
   typing_style: "fixed",
   typing_time: 2,
   typing_charpsec: 40,

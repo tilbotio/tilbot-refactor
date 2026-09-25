@@ -57,7 +57,6 @@ export class Logger {
     }
 
     set_participant_id(pid) {
-      // Should theoretically never be used...
       let timestamp = new Date().toLogString();
       this.stream.write(timestamp + ';participant_id;' + pid + "\r\n");
     }

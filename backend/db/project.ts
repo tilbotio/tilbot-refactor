@@ -45,7 +45,7 @@ export const ProjectSchema = new Schema<ProjectSchemaInterface>(
     variables: { type: [Schema.Types.Mixed], default: [] },
     settings: {
       type: Schema.Types.Mixed,
-      default: { project_name: "New project" },
+      default: { project_name: "New project", logging_enabled: false },
     },
     user_id: { type: String, required: true },
     socket: { type: Number },
@@ -97,6 +97,7 @@ export const ProjectSchema = new Schema<ProjectSchemaInterface>(
           id: project.id,
           name: project.settings.project_name,
           status: project.status,
+          logging_enabled: project.settings.logging_enabled,
         }));
         summaries.sort((a, b) => (a.name < b.name ? -1 : 1));
         return summaries;
