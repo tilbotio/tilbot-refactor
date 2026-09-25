@@ -362,6 +362,8 @@ export class LocalProjectController<
             } else {
               found_output.push(label_part.content.toLowerCase());
             }
+          } else if (label_part.type == "audio") {
+            meetsCriteria = false;
           } else if (label_part.type == "variable") {
             if (block.type !== "MC") {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
@@ -587,7 +589,7 @@ export class LocalProjectController<
 
           timeExpired = new Date().getTime() - startDateTime.getTime();
         }
-      } else if (message.type == "audio") {
+      } else if (message.type == "audio" && current_block.type !== "Auto") {
         for (const connector of current_block.connectors) {
           for (const label_part of connector.label) {
             if (label_part.type == "audio") {

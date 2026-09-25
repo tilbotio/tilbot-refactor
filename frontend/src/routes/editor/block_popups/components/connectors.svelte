@@ -74,6 +74,7 @@
     </thead>
     <tbody>
       {#each connectors.entries() as [id, connector] (id)}
+      {#if connector.label && (connector.label.length > 1 || (connector.label[0].type !== "else" && connector.label[0].type !== "audio"))}
         <tr>
           {#if methodSelector}
             <td>
@@ -88,41 +89,39 @@
           {/if}
           <td>
             {#each connector.label?.entries() as [labelid, label_part] (labelid)}
-              {#if label_part.type !== "else"}
-                <!-- @TODO on change of select remove previously set variables etc. from the label -->
-                <select
-                  bind:value={label_part.type}
-                  class="select select-bordered w-full max-w-xs"
-                >
-                  <option selected value="text">Contains text</option>
-                  <option value="variable">Match variable</option>
-                </select>
-                {#if label_part.type == "text"}
-                  <input
-                    type="text"
-                    placeholder="Type here"
-                    class="input input-bordered w-full max-w-xs"
-                    bind:value={label_part.content}
-                  />
-                {:else if label_part.type == "variable"}
-                  {#if label_part.variable !== undefined}
-                    <div class="badge badge-info mx-2">
-                      <Variable class="w-3 h-3 mr-2" />
-                      {label_part.column} from {label_part.variable}
-                    </div>
-                  {/if}
-
-                  <div class="tooltip" data-tip="Insert variable">
-                    <button
-                      class="btn btn-square btn-outline btn-sm mt-2 mb-2"
-                      onclick={() => {
-                        openVariableWindow(id, labelid);
-                      }}
-                    >
-                      <Variable class="w-4 h-4" />
-                    </button>
+              <!-- @TODO on change of select remove previously set variables etc. from the label -->
+              <select
+                bind:value={label_part.type}
+                class="select select-bordered w-full max-w-xs"
+              >
+                <option selected value="text">Contains text</option>
+                <option value="variable">Match variable</option>
+              </select>
+              {#if label_part.type == "text"}
+                <input
+                  type="text"
+                  placeholder="Type here"
+                  class="input input-bordered w-full max-w-xs"
+                  bind:value={label_part.content}
+                />
+              {:else if label_part.type == "variable"}
+                {#if label_part.variable !== undefined}
+                  <div class="badge badge-info mx-2">
+                    <Variable class="w-3 h-3 mr-2" />
+                    {label_part.column} from {label_part.variable}
                   </div>
                 {/if}
+
+                <div class="tooltip" data-tip="Insert variable">
+                  <button
+                    class="btn btn-square btn-outline btn-sm mt-2 mb-2"
+                    onclick={() => {
+                      openVariableWindow(id, labelid);
+                    }}
+                  >
+                    <Variable class="w-4 h-4" />
+                  </button>
+                </div>
               {/if}
             {/each}
           </td>
@@ -136,6 +135,7 @@
             ></td
           >
         </tr>
+      {/if}
       {/each}
     </tbody>
   </table>

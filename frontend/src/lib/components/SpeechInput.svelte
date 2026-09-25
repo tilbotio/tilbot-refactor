@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Microphone, PaperAirplane, Play, Stop } from "svelte-heros-v2";
+    import { Bars3BottomLeft, Microphone, PaperAirplane, Play, Stop } from "svelte-heros-v2";
     import { playingTimeToMinSecString } from "$lib/utils/functions";
 
     const recorderMimeCandidates = [
@@ -12,9 +12,10 @@
 
     type Props = {
         onSendAudio: (audioBlob: Blob) => void;
+        onSwitchSpeechMode: (() => void) | null;
     };
 
-    const { onSendAudio }: Props = $props();
+    const { onSendAudio, onSwitchSpeechMode }: Props = $props();
 
     let isSupported = $state(true);
     let isRecording: boolean = $state(false);
@@ -145,36 +146,45 @@
 </script>
 
   <div class="bg-gray-100 w-full h-20 drop-shadow-md flex justify-center items-center">
-    {#if isSupported}
+    <div class="w-[calc(100%-8rem)] flex justify-center items-center">
+        {#if isSupported}
+        <button
+        class="btn btn-circle mr-4 bg-red-400 border-red-400 hover:bg-red-500 hover:border-red-500 {isRecording?'btn-disabled':''}"
+        aria-label="Record audio message"
+        onclick={startRecording}><Microphone variation="solid" class="ml-[0.5px] h-6 w-6 text-white" />
+        </button>  
+        {#if lastRecording == null || isPlaying || isRecording}
+        <button
+        class="btn btn-circle mr-4 bg-gray-400 border-gray-400 hover:bg-gray-500 hover:border-gray-500 {(lastRecording !== null || isRecording)?'':'btn-disabled'}"
+        aria-label="Stop recording/playing audio"
+        onclick={stop}><Stop variation="solid" class="ml-[1px] h-6 w-6 {(lastRecording !== null || isRecording)?'text-white':''}" />
+        </button> 
+        {/if}
+        {#if lastRecording !== null && !isPlaying}
+        <button
+        class="btn btn-circle mr-4 bg-green-400 border-green-400 hover:bg-green-500 hover:border-green-500"
+        aria-label="Play audio"
+        onclick={play}><Play variation="solid" class="ml-[3px] h-6 w-6 text-white" />
+        </button>        
+        {/if}
+        <span class="{isRecording?'text-red-700':''}">
+            {timeDisplay}
+        </span>
+        {:else}
+            Unfortunately, audio recording is not supported on your device.
+        {/if}
+    </div>
+    {#if !isRecording && !isPlaying && onSwitchSpeechMode !== null}
     <button
-      class="btn btn-circle mr-4 bg-red-400 border-red-400 hover:bg-red-500 hover:border-red-500 {isRecording?'btn-disabled':''}"
-      aria-label="Record audio message"
-      onclick={startRecording}><Microphone variation="solid" class="ml-[0.5px] h-6 w-6 text-white" />
-    </button>  
-    {#if lastRecording == null || isPlaying || isRecording}
-    <button
-      class="btn btn-circle mr-4 bg-gray-400 border-gray-400 hover:bg-gray-500 hover:border-gray-500 {(lastRecording !== null || isRecording)?'':'btn-disabled'}"
-      aria-label="Stop recording/playing audio"
-      onclick={stop}><Stop variation="solid" class="ml-[1px] h-6 w-6 {(lastRecording !== null || isRecording)?'text-white':''}" />
-    </button> 
+    class="btn btn-sm btn-circle bg-white mr-8 ml-4"
+    aria-label="Send message"
+    onclick={onSwitchSpeechMode}><Bars3BottomLeft class="h-5 w-5" /></button
+    >      
     {/if}
-    {#if lastRecording !== null && !isPlaying}
     <button
-      class="btn btn-circle mr-4 bg-green-400 border-green-400 hover:bg-green-500 hover:border-green-500"
-      aria-label="Play audio"
-      onclick={play}><Play variation="solid" class="ml-[3px] h-6 w-6 text-white" />
-    </button>        
-    {/if}
-    <button
-      class="btn btn-circle absolute bottom-4 right-4 {lastRecording === null?'btn-disabled': ''}"
-      aria-label="Send message"
-      onclick={() => { if (lastRecording !== null) { onSendAudio(lastRecording); }}}><PaperAirplane class="h-6 w-6" /></button>    
-    <span class="{isRecording?'text-red-700':''}">
-        {timeDisplay}
-    </span>
-    {:else}
-        Unfortunately, audio recording is not supported on your device.
-    {/if}
+    class="btn btn-circle mr-4 {lastRecording === null?'btn-disabled': ''}"
+    aria-label="Send message"
+    onclick={() => { if (lastRecording !== null) { onSendAudio(lastRecording); }}}><PaperAirplane class="h-6 w-6" /></button>    
   </div>
 
   <!-- The audio player for replaying recordings -->

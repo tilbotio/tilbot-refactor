@@ -5,7 +5,7 @@
     CurrentMessageType,
     McOption,
   } from "$lib/types/types";
-  import { PaperAirplane } from "svelte-heros-v2";
+  import { Microphone, PaperAirplane } from "svelte-heros-v2";
   type Props = {
     currentMessageType: CurrentMessageType;
     allowAudioReply?: boolean;
@@ -16,6 +16,7 @@
   };
 
   let inputText: InputText = $state("");
+  let speechMode: boolean = $state(false);
 
   const { currentMessageType, allowAudioReply, forceAudioReply, mcOptions, onSend, onSendAudio }: Props = $props();
 
@@ -40,6 +41,10 @@
       }
     }
   }
+
+  function switchSpeechMode(): void {
+    speechMode = !speechMode;
+  }
 </script>
 
 {#if currentMessageType === "MC"}
@@ -51,8 +56,8 @@
       >
     {/each}
   </div>
-{:else if forceAudioReply}
-  <SpeechInput onSendAudio={onSendAudio} />
+{:else if forceAudioReply || speechMode}
+  <SpeechInput onSendAudio={onSendAudio} onSwitchSpeechMode={forceAudioReply ? null : switchSpeechMode} />
 {:else}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md">
     <textarea
@@ -60,7 +65,18 @@
       placeholder=""
       bind:value={inputText}
       onkeydown={handleKeyDown}
-    ></textarea>
+    >   
+    </textarea>
+    {#if allowAudioReply || true}
+    <button
+      class="relative bottom-[14px] right-8 {inputText.trim()
+        .length == 0
+        ? ''
+        : 'invisible'}"
+      aria-label="Send message"
+      onclick={switchSpeechMode}><Microphone class="h-5 w-5" /></button
+    >        
+    {/if} 
     <button
       class="btn btn-circle absolute bottom-4 right-4 {inputText.trim()
         .length == 0
