@@ -21,13 +21,9 @@ export interface ProjectControllerLookupInterface {
   random(table: string): Promise<any | null>;
   apiCall(
     external_link: ExternalLink,
-    user_input?: string,
+    user_input?: string | Blob,
     connectors?: string[]
   ): Promise<any | null>;
-  apiCallPOST(
-    external_link: ExternalLink,
-    audioBlob: Blob
-  ): Promise<any | null>;  
 }
 
 export interface ProjectControllerLoggerInterface {

@@ -59,89 +59,15 @@ export class ServerControllerLookup
 
   async apiCall(
     external_link: ExternalLink,
-    user_input: string = "",
+    user_input: string | Blob = "",
     connectors: string[] = []
-  ): Promise<any> {
-    // Code is almost identical to the simulator version in ChatLookup.ts
-    // @TODO: see if this can be merged...
-
-    // We can use the `Headers` constructor to create headers
-    // and assign it as the type of the `headers` variable
-    const headers: Headers = new Headers();
-    // Add a few headers
-    headers.set("Content-Type", "application/json");
-    headers.set("Accept", "application/json");
-
-    let fullUrl = external_link.url;
-
-    if (external_link.url_editor !== null && this.isElectron) {
-      fullUrl = external_link.url_editor;
-    }
-
-    if (fullUrl.indexOf("http://") == -1 && fullUrl.indexOf("https://") == -1) {
-      fullUrl = "http://" + fullUrl;
-    }
-
-    let params = new URLSearchParams();
-
-    if (user_input !== "") {
-      params.append("user_input", encodeURIComponent(user_input));
-    }
-    if (connectors.length > 0) {
-      for (let conn of connectors) {
-        params.append("intent_options", encodeURIComponent(conn));
-      }
-    }
-
-    if (user_input !== "" || connectors.length > 0) {
-      fullUrl += "?" + params.toString();
-    }
-
-    console.log(external_link);
-    console.log(user_input);
-    console.log(connectors);
-
-    console.log(fullUrl);
-
-    // Create the request object, which will be a RequestInfo type.
-    // Here, we will pass in the URL as well as the options object as parameters.
-    const request: RequestInfo = new Request(fullUrl, {
-      method: "GET",
-      headers: headers,
-    });
-
-    return fetch(request)
-      .then((res) => {
-        if (res.ok) {
-          return res.json();
-        }
-
-        return Promise.reject(res);
-      })
-      .then((res) => {
-        return res;
-      })
-      .catch((res) => {
-        console.log(res.status, res.statusText);
-      });
-  }
-
-async apiCallPOST(
-    external_link: ExternalLink,
-    audioBlob: Blob
   ): Promise<any | null> {
-    // Code is almost identical to the simulator version in ChatLookup.ts
-    // @TODO: see if this can be merged...
-
-    // We can use the `Headers` constructor to create headers
-    // and assign it as the type of the `headers` variable
     const headers: Headers = new Headers();
-
     headers.set("Accept", "application/json");
 
     let fullUrl = external_link.url;
 
-    if (external_link.url_editor !== null && this.isElectron) {
+    if (external_link.url_editor !== null) {
       fullUrl = external_link.url_editor;
     }
 
@@ -149,15 +75,24 @@ async apiCallPOST(
       fullUrl = "http://" + fullUrl;
     }
 
-    let formData = new FormData();
-    formData.append("audio", audioBlob, this.getAudioUploadFilename(audioBlob));
+    let data: BodyInit;
 
-    // Create the request object, which will be a RequestInfo type.
-    // Here, we will pass in the URL as well as the options object as parameters.
+    if (user_input instanceof Blob) {
+      data = new FormData();
+      data.append("audio", user_input, this.getAudioUploadFilename(user_input));
+    }
+    else {
+      headers.set("Content-Type", "application/json");
+      data = JSON.stringify({
+        user_input,
+        intent_options: connectors,
+      });
+    }
+
     const request: RequestInfo = new Request(fullUrl, {
       method: "POST",
       headers: headers,
-      body: formData
+      body: data,
     });
 
     return fetch(request)

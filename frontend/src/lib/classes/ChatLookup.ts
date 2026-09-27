@@ -54,14 +54,10 @@ export class ChatLookup implements ProjectControllerLookupInterface {
 
   async apiCall(
     external_link: ExternalLink,
-    user_input: string = "",
+    user_input: string | Blob = "",
     connectors: string[] = []
   ): Promise<any | null> {
-    // We can use the `Headers` constructor to create headers
-    // and assign it as the type of the `headers` variable
     const headers: Headers = new Headers();
-    // Add a few headers
-    headers.set("Content-Type", "application/json");
     headers.set("Accept", "application/json");
 
     let fullUrl = external_link.url;
@@ -74,26 +70,24 @@ export class ChatLookup implements ProjectControllerLookupInterface {
       fullUrl = "http://" + fullUrl;
     }
 
-    let params = new URLSearchParams();
+    let data: BodyInit;
 
-    if (user_input !== "") {
-      params.append("user_input", encodeURIComponent(user_input));
+    if (user_input instanceof Blob) {
+      data = new FormData();
+      data.append("audio", user_input, this.getAudioUploadFilename(user_input));
     }
-    if (connectors.length > 0) {
-      for (let conn of connectors) {
-        params.append("intent_options", encodeURIComponent(conn));
-      }
+    else {
+      headers.set("Content-Type", "application/json");
+      data = JSON.stringify({
+        user_input,
+        intent_options: connectors,
+      });
     }
 
-    if (user_input !== "" || connectors.length > 0) {
-      fullUrl += "?" + params.toString();
-    }
-
-    // Create the request object, which will be a RequestInfo type.
-    // Here, we will pass in the URL as well as the options object as parameters.
     const request: RequestInfo = new Request(fullUrl, {
-      method: "GET",
+      method: "POST",
       headers: headers,
+      body: data,
     });
 
     return fetch(request)
@@ -111,54 +105,4 @@ export class ChatLookup implements ProjectControllerLookupInterface {
         console.log(res.status, res.statusText);
       });
   }
-
-// Temporary, might have to replace all API calls with POST?
-  async apiCallPOST(
-    external_link: ExternalLink,
-    audioBlob: Blob
-  ): Promise<any | null> {
-    // We can use the `Headers` constructor to create headers
-    // and assign it as the type of the `headers` variable
-    const headers: Headers = new Headers();
-    // Add a few headers
-    //headers.set("Content-Type", "application/json");
-    headers.set("Accept", "application/json");
-
-    let fullUrl = external_link.url;
-
-    if (external_link.url_editor !== null) {
-      fullUrl = external_link.url_editor;
-    }
-
-    if (fullUrl.indexOf("http://") == -1 && fullUrl.indexOf("https://") == -1) {
-      fullUrl = "http://" + fullUrl;
-    }
-
-    let formData = new FormData();
-    formData.append("audio", audioBlob, this.getAudioUploadFilename(audioBlob));
-
-    // Create the request object, which will be a RequestInfo type.
-    // Here, we will pass in the URL as well as the options object as parameters.
-    const request: RequestInfo = new Request(fullUrl, {
-      method: "POST",
-      headers: headers,
-      body: formData
-    });
-
-    return fetch(request)
-      .then((res) => {
-        if (res.ok) {
-          return res.json();
-        }
-
-        return Promise.reject(res);
-      })
-      .then((res) => {
-        return res;
-      })
-      .catch((res) => {
-        console.log(res.status, res.statusText);
-      });
-  }  
 }
-

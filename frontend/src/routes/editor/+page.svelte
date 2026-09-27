@@ -173,6 +173,8 @@
           externalLinkStatus[result.url] = { ok: result.ok, isEditor: result.isEditor };
         }
 
+        externalLinksUp = true;
+
         // Check if all external links are up, either non-editor or editor (if provided).
         for (const link of project.settings.external_links) {
           if (link.url_editor && link.url_editor !== "" && !externalLinkStatus[link.url_editor]?.ok) {

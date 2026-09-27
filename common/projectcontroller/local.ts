@@ -549,7 +549,7 @@ export class LocalProjectController<
           let startDateTime = new Date();
 
           if (message.type == "audio") {
-            res = await this._lookup.apiCallPOST(
+            res = await this._lookup.apiCall(
               external_link,
               message.content as Blob
             );
