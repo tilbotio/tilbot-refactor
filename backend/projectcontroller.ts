@@ -60,7 +60,8 @@ export class ServerControllerLookup
   async apiCall(
     external_link: ExternalLink,
     user_input: string | Blob = "",
-    connectors: string[] = []
+    connectors: string[] = [],
+    extraParams: Record<string, string> = {}
   ): Promise<any | null> {
     const headers: Headers = new Headers();
     headers.set("Accept", "application/json");
@@ -80,12 +81,17 @@ export class ServerControllerLookup
     if (user_input instanceof Blob) {
       data = new FormData();
       data.append("audio", user_input, this.getAudioUploadFilename(user_input));
+
+      for (const [key, value] of Object.entries(extraParams)) {
+        data.append(key, value);
+      }
     }
     else {
       headers.set("Content-Type", "application/json");
       data = JSON.stringify({
         user_input,
         intent_options: connectors,
+        ...extraParams,
       });
     }
 

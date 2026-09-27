@@ -22,7 +22,8 @@ export interface ProjectControllerLookupInterface {
   apiCall(
     external_link: ExternalLink,
     user_input?: string | Blob,
-    connectors?: string[]
+    connectors?: string[],
+    extraParams?: Record<string, string>
   ): Promise<any | null>;
 }
 

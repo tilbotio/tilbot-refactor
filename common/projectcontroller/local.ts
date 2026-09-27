@@ -548,10 +548,19 @@ export class LocalProjectController<
           this._output.typingIndicator();
           let startDateTime = new Date();
 
+          const extraParams: Record<string, string> = {};
+          for (const param of current_block.parameters ?? []) {
+            if (param.key.trim() !== "") {
+              extraParams[param.key] = param.value;
+            }
+          }
+
           if (message.type == "audio") {
             res = await this._lookup.apiCall(
               external_link,
-              message.content as Blob
+              message.content as Blob,
+              [],
+              extraParams
             );
           }
 
@@ -561,18 +570,20 @@ export class LocalProjectController<
                 external_link,
                 message.content as string,
                 await this._getConnectors(current_block),
+                extraParams
               );
             } else {
-              res = await this._lookup.apiCall(external_link, message.content as string);
+              res = await this._lookup.apiCall(external_link, message.content as string, [], extraParams);
             }
           } else if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
                 "",
                 await this._getConnectors(current_block),
+                extraParams
               );
           } else {
-            res = await this._lookup.apiCall(external_link);
+            res = await this._lookup.apiCall(external_link, "", [], extraParams);
           }
 
           if (res !== undefined && res !== null) {

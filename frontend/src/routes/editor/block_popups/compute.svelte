@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { ExternalLink, ProjectBlockCompute } from "../../../../../common/project/types.ts";
+  import type { ExternalLink, ExternalLinkParameter, ProjectBlockCompute } from "../../../../../common/project/types.ts";
   import BaseBlockPopup from "./base.svelte";
   import Connectors from "./components/connectors.svelte";
-  import { Sparkles } from "svelte-heros-v2";
+  import { Plus, Sparkles, Trash } from "svelte-heros-v2";
 
   const {
     block,
@@ -12,7 +12,17 @@
     cancel = () => {},
   } = $props();
 
-  const defaultProjectBlock = {use_external_link: false} as ProjectBlockCompute;
+  const defaultProjectBlock = {
+    use_external_link: false,
+    parameters: [] as ExternalLinkParameter[],
+  } as ProjectBlockCompute;
+
+  function addParameter(blockCopy: ProjectBlockCompute): void {
+    if (blockCopy.parameters === undefined) {
+      blockCopy.parameters = [];
+    }
+    blockCopy.parameters.push({ key: "", value: "" });
+  }
 </script>
 
 <BaseBlockPopup Icon={Sparkles} {defaultProjectBlock} {block} {variables} {save} {cancel}>
@@ -39,6 +49,35 @@
       {/each}
     </select>   
     <br /> 
+
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Value</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each blockCopy.parameters ?? [] as param, index}
+          <tr>
+            <td><input type="text" class="input input-bordered" bind:value={param.key} /></td>
+            <td><input type="text" class="input input-bordered" bind:value={param.value} /></td>
+            <td>
+              <button
+                class="btn btn-square btn-outline btn-sm"
+                onclick={() => { blockCopy.parameters?.splice(index, 1); }}
+                ><Trash class="w-6 h-6" /></button
+              >
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+    <br />
+    <button class="btn gap-2" onclick={() => addParameter(blockCopy)}>
+      <Plus class="w-6 h-6" />
+    </button>
   {/if}
 
     <br /><br />

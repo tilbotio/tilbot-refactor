@@ -84,9 +84,15 @@ export type ProjectBlock = {
   delay: number;
 };
 
+export type ExternalLinkParameter = {
+  key: string;
+  value: string;
+};
+
 export type ProjectBlockCompute = ProjectBlock & {
   use_external_link: boolean;
   external_link: ExternalLink | null;
+  parameters?: ExternalLinkParameter[];
 };
 
 export type ProjectBlockText = ProjectBlock & {
