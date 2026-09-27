@@ -28,3 +28,27 @@ export function playingTimeToMinSecString(recordingTime: number): string {
 
     return minsStr + ":" + secsStr;
 }  
+
+export function testConnection(url: string, isEditor: boolean = false): Promise<{url: string, ok: boolean, isEditor: boolean}> {
+  let linkfull = url;
+  
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    linkfull = "http://" + url;
+  }
+  
+  return fetch(linkfull + "/healthcheck", { method: "GET" })
+      .then((response) => {
+        if (!response.ok) {
+          console.log(
+            `External link health check failed for ${url}: ${response.status} ${response.statusText}`
+          );
+        }
+        return { url, ok: response.ok, isEditor };
+      })
+      .catch((error) => {
+        console.log(
+          `External link health check failed for ${url}: ${error}`
+        );
+        return { url, ok: false, isEditor };
+      });
+}

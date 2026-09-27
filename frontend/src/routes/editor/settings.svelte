@@ -6,12 +6,13 @@
     type GeneralSettings,
     type ProjectSettings,
   } from "../../../../common/project/types";
+  import { testConnection } from "$lib/utils/functions";
   import { ArrowUpOnSquare, Plus, Trash } from "svelte-heros-v2";
 
   let windowApi: any;
 
   let toggle = $state() as HTMLElement;
-  let { projectSettings, settings, path, save: onSave } = $props();
+  let { projectSettings, settings, path, save: onSave, externalLinkStatus } = $props();
 
   export function show() {
     toggle.click();
@@ -107,6 +108,12 @@
   function save() {
     onSave(generalSettingsCopy, projectSettingsCopy);
     toggle.click();
+  }
+
+  function testConnectionSettings(url: string, isEditor: boolean) {
+    testConnection(url, isEditor).then((result: {url: string, ok: boolean, isEditor: boolean}) => {
+      externalLinkStatus[url] = result;
+    });
   }
 </script>
 
@@ -491,7 +498,17 @@
                             placeholder="chatgpt:8081"
                             class="input input-bordered w-full max-w-xs"
                             bind:value={external_link.url}
-                          />
+                          /><br />
+                          {#if external_link.url?.trim() !== ""}
+                            <button class="btn btn-outline mt-4" onclick={() => { testConnectionSettings(external_link.url, false) }}>Test connection</button>
+                            {#if externalLinkStatus[external_link.url]}
+                              {#if externalLinkStatus[external_link.url].ok === true}
+                                <span class="text-success">Connection successful</span>
+                              {:else}
+                                <span class="text-error">Connection failed</span>
+                              {/if}
+                            {/if}
+                          {/if}                          
                         </td>
                       </tr>
                       <tr>
@@ -506,7 +523,17 @@
                             placeholder="localhost:8081"
                             class="input input-bordered w-full max-w-xs"
                             bind:value={external_link.url_editor}
-                          />
+                          /><br />
+                          {#if external_link.url_editor !== null && external_link.url_editor?.trim() !== ""}
+                            <button class="btn btn-outline mt-4" onclick={() => { testConnectionSettings(external_link.url_editor as string, true) }}>Test connection</button>
+                            {#if externalLinkStatus[external_link.url_editor]}
+                              {#if externalLinkStatus[external_link.url_editor].ok === true}
+                                <span class="text-success">Connection successful</span>
+                              {:else}
+                                <span class="text-error">Connection failed</span>
+                              {/if}
+                            {/if}     
+                          {/if}                            
                         </td>
                       </tr>
                       <tr>
@@ -540,7 +567,8 @@
                         </td>
                       </tr>
                       <tr>
-                        <td> </td><td>
+                        <td> </td>
+                        <td>
                           <button
                             class="btn btn-square btn-outline btn-sm"
                             onclick={() => {

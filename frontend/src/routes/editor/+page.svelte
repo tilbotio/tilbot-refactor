@@ -11,7 +11,7 @@
     GeneralSettings,
   } from "../../../../common/project/types";
   import { defaultProject } from "../../../../common/project/types";
-  import { setOrDelete } from "$lib/utils/functions";
+  import { setOrDelete, testConnection } from "$lib/utils/functions";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import Draggable from "./draggable.svelte";
@@ -72,6 +72,9 @@
 
   let selectedBlockId: string | null = $state(null);
   let editingBlock: ProjectBlock | null = $state(null);
+
+  let externalLinkStatus: any = $state({});
+  let externalLinksUp: boolean = $state(true);
 
   // I think the only way to have accurate and up-to-date lines is to create a sort of look-up table.
   const lineLocations: {
@@ -147,7 +150,43 @@
 
     project.canvas_width = screen.width * 1.5;
     project.canvas_height = screen.height * 1.5;
+
+    setInterval(externalLinksHealthcheck, 5000);
   });
+
+  function externalLinksHealthcheck() {
+    const checks: Promise<Awaited<ReturnType<typeof testConnection>>>[] = [];
+
+    if (project.settings.external_links) {
+      for (const link of project.settings.external_links) {
+        if (link.url_editor && link.url_editor !== "") {
+          checks.push(testConnection(link.url_editor));
+        }
+        else if (link.url) {
+          checks.push(testConnection(link.url));
+        }
+      }
+
+      // Wait for all health checks to settle before evaluating overall status.
+      Promise.all(checks).then((results) => {
+        for (const result of results) {
+          externalLinkStatus[result.url] = { ok: result.ok, isEditor: result.isEditor };
+        }
+
+        // Check if all external links are up, either non-editor or editor (if provided).
+        for (const link of project.settings.external_links) {
+          if (link.url_editor && link.url_editor !== "" && !externalLinkStatus[link.url_editor]?.ok) {
+            externalLinksUp = false;
+            return;
+          }
+          else if (link.url && !externalLinkStatus[link.url]?.ok) {
+            externalLinksUp = false;
+            return;
+          }
+        }
+      });      
+    }
+  }
 
   function getVariables() {
     let variables = _.cloneDeep(project.variables);
@@ -319,6 +358,13 @@
   ) {
     project.settings = projectSettings;
     windowAPI.send("save-settings", $state.snapshot(generalSettings));
+
+    // Remove any external links that are no longer present in the project settings.
+    for (const url in externalLinkStatus) {
+      if (!project.settings.external_links?.some(link => link.url_editor === url || link.url === url)) {
+        delete externalLinkStatus[url];
+      }
+    }    
   }
 
   function saveBlock(block: ProjectBlock) {
@@ -629,6 +675,7 @@
     settings={generalSettings}
     path="{path}/avatar"
     save={saveSettings}
+    externalLinkStatus={externalLinkStatus}
   />
 
   <input type="checkbox" bind:this={editModal} class="modal-toggle" />
@@ -681,15 +728,19 @@
     {#snippet menuItem(tip: string, Icon: Component, action: any)}
       <div class="tooltip tooltip-right" data-tip={tip}>
         <li>
+          <div class="indicator">
           <!-- svelte-ignore a11y_missing_attribute -->
+           {#if tip == "Settings" && Object.keys(externalLinkStatus).length > 0}
+            <div class="indicator-item badge badge-xs top-[10px] right-[14px] { externalLinksUp ? 'badge-success' : 'badge-error' }"></div>
+          {/if}
           <a
-            class="active:bg-tilbot-secondary-hardpink"
+            class=""
             onclick={action}
             onkeyup={() => {}}
             role="button"
             tabindex="0"
-            aria-label={tip}><Icon class="w-6 h-6" /></a
-          >
+            aria-label={tip}><Icon class="w-6 h-6" />
+          </a>
         </li>
       </div>
     {/snippet}
