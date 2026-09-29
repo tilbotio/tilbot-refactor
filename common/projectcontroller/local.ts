@@ -119,6 +119,7 @@ export class LocalProjectController<
     matchedConnector: string = "",
     input: string = "",
     timeExpired: number = 0,
+    image?: Blob
   ) {
     const params: any = {};
     const content = await this.check_variables(
@@ -185,7 +186,7 @@ export class LocalProjectController<
       this._output.botMessage({ type, content, params });
     } else if (type == "Compute") {
       this.message_sent_event();
-      this.receive_message({type: "text", content: input});
+      this.receive_message({type: "text", content: input, image: image});
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 
@@ -225,6 +226,7 @@ export class LocalProjectController<
     matchedConnector: string = "",
     input: string = "",
     timeExpired: number = 0,
+    image?: Blob
   ): void {
     const current_block_id = this._current_block_id ?? -1;
     if (current_block_id == -1) {
@@ -238,7 +240,7 @@ export class LocalProjectController<
         console.log(
           `sending message '${input}' for block ${JSON.stringify(block)}`,
         );
-        this.send_message(block, matchedConnector, input, timeExpired);
+        this.send_message(block, matchedConnector, input, timeExpired, image);
       },
       (block.delay ?? 0) * 1000,
     );
@@ -426,7 +428,7 @@ export class LocalProjectController<
                 }
                 if (lookup !== null) {
                   foundAWord = true;
-                  found_output.push(word);
+                  found_output.push(word.toLowerCase());
                 }
               }
 
@@ -585,7 +587,7 @@ export class LocalProjectController<
                 message.image
               );
             } else {
-              res = await this._lookup.apiCall(external_link, message.content as string, [], extraParams);
+              res = await this._lookup.apiCall(external_link, message.content as string, [], extraParams, message.image);
             }
           } else if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
@@ -698,7 +700,7 @@ export class LocalProjectController<
         }
 
         await this.send_events(best.connector, output, themessage);
-        this._send_current_message(output, themessage, timeExpired);
+        this._send_current_message(output, themessage, timeExpired, message.image);
       }
     }
   }

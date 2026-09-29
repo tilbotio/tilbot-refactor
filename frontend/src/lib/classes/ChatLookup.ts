@@ -20,6 +20,20 @@ export class ChatLookup implements ProjectControllerLookupInterface {
     return "audio.bin";
   }
 
+  private getImageUploadFilename(imageBlob: Blob): string {
+    const mimeType = imageBlob.type.toLowerCase();
+
+    if (mimeType.includes("png")) {
+      return "image.png";
+    }
+
+    if (mimeType.includes("jpeg") || mimeType.includes("jpg")) {
+      return "image.jpg";
+    }
+
+    return "image.bin";
+  }
+
   async cell(
     table: string,
     col: string,
@@ -56,7 +70,8 @@ export class ChatLookup implements ProjectControllerLookupInterface {
     external_link: ExternalLink,
     user_input: string | Blob = "",
     connectors: string[] = [],
-    extraParams: Record<string, string> = {}
+    extraParams: Record<string, string> = {},
+    image?: Blob
   ): Promise<any | null> {
     const headers: Headers = new Headers();
     headers.set("Accept", "application/json");
@@ -73,9 +88,19 @@ export class ChatLookup implements ProjectControllerLookupInterface {
 
     let data: BodyInit;
 
-    if (user_input instanceof Blob) {
+    if (user_input instanceof Blob || image) {
       data = new FormData();
-      data.append("audio", user_input, this.getAudioUploadFilename(user_input));
+
+      if (user_input instanceof Blob) {
+        data.append("audio", user_input, this.getAudioUploadFilename(user_input));
+      } else if (user_input !== "") {
+        data.append("user_input", user_input);
+        data.append("intent_options", JSON.stringify(connectors));
+      }
+
+      if (image) {
+        data.append("image", image, this.getImageUploadFilename(image));
+      }
 
       for (const [key, value] of Object.entries(extraParams)) {
         data.append(key, value);
