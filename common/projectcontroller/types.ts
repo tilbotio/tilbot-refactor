@@ -23,7 +23,8 @@ export interface ProjectControllerLookupInterface {
     external_link: ExternalLink,
     user_input?: string | Blob,
     connectors?: string[],
-    extraParams?: Record<string, string>
+    extraParams?: Record<string, string>,
+    image?: Blob
   ): Promise<any | null>;
 }
 
@@ -51,5 +52,6 @@ export type ReceivedMessageType = "audio" | "text";
 export type ReceivedMessage = {
   type: ReceivedMessageType;
   content: string | Blob;
+  image?: Blob;
 }
   

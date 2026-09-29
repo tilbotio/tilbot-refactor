@@ -65,6 +65,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
       this.processMessage(
         "bot",
         block.content,
+        undefined,
         block.params,
         block.type as CurrentMessageType
       );
@@ -72,7 +73,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
   }
 
   updateMessage(content: string): void {
-    this.processMessage("user", content, {}, "Update");
+    this.processMessage("user", content, undefined, {}, "Update");
   }
 
   settings(settings: ProjectSettings, path?: RuntimeContext["path"]): void {
@@ -90,6 +91,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
   processMessage(
     from: Message["from"],
     content: Message["content"],
+    image?: Message["image"],
     params?: Message["params"],
     type?: Message["type"],
     audio?: Message["audio"]
@@ -97,7 +99,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     if (type === "Update") {
       this.messages[this.messages.length-1].content = content;
     } else {
-      this.messages.push({ from, content, params, type, audio });
+      this.messages.push({ from, content, image, params, type, audio });
       if (from == "bot") {
         if (!this.settingsContext.tts_automatic) {
           this.projectController?.message_sent_event();
@@ -107,7 +109,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
           this.projectController?.receive_message({ type: "audio", content: audio });
         }
         else {
-          this.projectController?.receive_message({ type: "text", content: content });
+          this.projectController?.receive_message({ type: "text", content: content, image: image });
         }
       }
     }

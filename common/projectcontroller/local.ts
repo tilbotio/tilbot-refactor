@@ -329,7 +329,14 @@ export class LocalProjectController<
     return null;
   }
 
-  async find_best_connector(block: any, userInput: string) {
+  async find_best_connector(block: any, userInput: string, image?: Blob | undefined): Promise<{
+    found: boolean;
+    connector: any;
+    output: string[];
+    isElseConnector: boolean;
+  }> {
+    console.log("Find best connector...");
+    console.log(image);
     let else_connector = null;
 
     let userInputStripped = userInput;
@@ -366,6 +373,10 @@ export class LocalProjectController<
             }
           } else if (label_part.type == "audio") {
             meetsCriteria = false;
+          } else if (label_part.type == "image") {
+            if (image === undefined) {
+              meetsCriteria = false;
+            }
           } else if (label_part.type == "variable") {
             if (block.type !== "MC") {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
@@ -570,7 +581,8 @@ export class LocalProjectController<
                 external_link,
                 message.content as string,
                 await this._getConnectors(current_block),
-                extraParams
+                extraParams,
+                message.image
               );
             } else {
               res = await this._lookup.apiCall(external_link, message.content as string, [], extraParams);
@@ -580,10 +592,11 @@ export class LocalProjectController<
                 external_link,
                 "",
                 await this._getConnectors(current_block),
-                extraParams
+                extraParams,
+                message.image
               );
           } else {
-            res = await this._lookup.apiCall(external_link, "", [], extraParams);
+            res = await this._lookup.apiCall(external_link, "", [], extraParams, message.image);
           }
 
           if (res !== undefined && res !== null) {
@@ -621,7 +634,22 @@ export class LocalProjectController<
           }
         }                
       } else if (message.type == "text" && current_block.type !== "Auto") {
-        best = await this.find_best_connector(current_block, message.content.toString());
+        if (message.image !== undefined) {
+          for (const connector of current_block.connectors) {
+            for (const label_part of connector.label) {
+              if (label_part.type == "audio") {
+                for (let i = 0; i < connector.targets.length; i++) {
+                  this._current_block_id = connector.targets[i];
+                  await this.send_events(connector);
+                  this.message_sent_event();
+                  this.receive_message(message);
+                  return;
+                }
+              }
+            }
+          }
+        }
+        best = await this.find_best_connector(current_block, message.content.toString(), message.image);
       }
     }
 
@@ -638,6 +666,7 @@ export class LocalProjectController<
             let best_trigger = await this.find_best_connector(
               block,
               message.content as string,
+              message.image
             );
 
             if (best_trigger.found) {

@@ -98,6 +98,7 @@ export type ProjectBlockCompute = ProjectBlock & {
 export type ProjectBlockText = ProjectBlock & {
   allow_audio_reply: boolean;
   force_audio_reply: boolean;
+  allow_image_reply: boolean;
 };
 
 export type Project = {

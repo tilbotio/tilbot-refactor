@@ -50,6 +50,17 @@
 
     <br /><br />
 
+    <label class="label cursor-pointer">
+      <span class="label-text">Allow the user to send an image as a reply.</span>
+      <input
+        type="checkbox"
+        class="toggle"
+        bind:checked={blockCopy.allow_image_reply}
+      />
+    </label>     
+
+    <br /><br />
+
     Answer options:<br />
     <Connectors connectors={blockCopy.connectors} {variables} />
   {/snippet}

@@ -65,7 +65,7 @@
 
 {#if message.audio !== undefined}
   <AudioMessage {message} />
-{:else if message.content !== ""}
+{:else if message.content !== "" || message.image !== undefined}
   <div class="chat ml-2 mr-2 {alignment}">
     {#if newBotMessageBlock}
       <div class="chat-image avatar">
@@ -85,6 +85,9 @@
         {/if}
       {/if}
       {message.content}
+      {#if message.image !== undefined}
+        <img src={URL.createObjectURL(message.image)} alt="Attachment to message" class="mt-2" />
+      {/if}
     </div>
   </div>
 {/if}

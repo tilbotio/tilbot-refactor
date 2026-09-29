@@ -3,6 +3,7 @@ export type CurrentMessageType = "Auto" | "MC" | "Text" | "Update";
 export type Message = {
   from: "bot" | "user";
   content: string;
+  image?: Blob;
   params?: any;
   type?: CurrentMessageType;
   audio?: Blob;

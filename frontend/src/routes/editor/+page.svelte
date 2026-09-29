@@ -442,6 +442,41 @@
           });
         }
       }
+
+      // Add connector for image if setting enabled
+      if (blockText.allow_image_reply && !(project.blocks[selectedBlockId!] as ProjectBlockText).allow_image_reply) {
+        let hasImageConnector = false;
+        for (let i = 0; i < blockText.connectors.length; i++) {
+          let connector = blockText.connectors[i];
+          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "image") {
+            hasImageConnector = true;
+            break;
+          }
+        }
+
+        if (!hasImageConnector) {
+          blockText.connectors.push({
+            type: "Labeled",
+            label: [
+              {
+                type: "image",
+              },
+            ],
+            targets: [],
+          });
+        }
+      }
+
+      // Remove connector for image if setting disabled
+      else if (!blockText.allow_image_reply && (project.blocks[selectedBlockId!] as ProjectBlockText).allow_image_reply) {
+        for (let i = 0; i < blockText.connectors.length; i++) {
+          const connector = blockText.connectors[i];
+          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "image") {
+            blockText.connectors.splice(i, 1);
+            break;
+          }
+        }
+      }      
     }
 
     project.blocks[selectedBlockId!] = block;

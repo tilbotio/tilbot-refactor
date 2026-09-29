@@ -22,6 +22,7 @@
   let currentMessageType: CurrentMessageType = $state("Auto");
   let allowAudioReply: boolean = $state(false);
   let forceAudioReply: boolean = $state(false);
+  let allowImageReply: boolean = $state(false);
   let mcOptions: McOption[] = $state([]);
 
   let scrollContainer: HTMLDivElement;
@@ -42,6 +43,7 @@
         currentMessageType = latest.type || "Auto";
         allowAudioReply = latest.params.allowAudioReply || false;
         forceAudioReply = latest.params.forceAudioReply || false;
+        allowImageReply = latest.params.allowImageReply || false;
         const newMcOptions = [];
 
         if (currentMessageType === "MC") {
@@ -60,8 +62,8 @@
     projectController.output.isTypingIndicatorActive
   );
 
-  function sendUserMessage(messageText: string): void {
-    projectController.output.processMessage("user", messageText);
+  function sendUserMessage(messageText: string, imageBlob: Blob | null): void {
+    projectController.output.processMessage("user", messageText, imageBlob ? imageBlob : undefined);
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
   }
@@ -70,7 +72,8 @@
     projectController.output.processMessage(
       "user",
       "",
-      null,
+      undefined,
+      undefined,
       "Text",
       audioBlob
     );
@@ -104,6 +107,7 @@
     {mcOptions}
     {allowAudioReply}
     {forceAudioReply}
+    {allowImageReply}
     onSend={sendUserMessage}
     onSendAudio={sendUserAudioMessage}
   />

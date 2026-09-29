@@ -153,6 +153,10 @@
                   <div class="badge badge-error mx-2">
                     <BarsArrowDown class="w-3 h-3 mr-2" /> audio
                   </div>
+                {:else if label.type == "image"}
+                  <div class="badge bg-emerald-300 mx-2">
+                    <BarsArrowDown class="w-3 h-3 mr-2" /> image
+                  </div>
                 {/if}                
               {/each}
             {/if}

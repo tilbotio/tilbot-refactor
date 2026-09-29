@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CameraInput from "$lib/components/CameraInput.svelte"
   import SpeechInput from "$lib/components/SpeechInput.svelte"
   import type {
     InputText,
@@ -10,25 +11,27 @@
     currentMessageType: CurrentMessageType;
     allowAudioReply?: boolean;
     forceAudioReply?: boolean;
+    allowImageReply?: boolean;
     mcOptions: McOption[];
-    onSend: (InputText: string) => void;
+    onSend: (InputText: string, imageBlob: Blob | null) => void;
     onSendAudio: (audioBlob: Blob) => void;
   };
 
   let inputText: InputText = $state("");
   let speechMode: boolean = $state(false);
+  let currentImage: Blob | null = $state(null);
 
-  const { currentMessageType, allowAudioReply, forceAudioReply, mcOptions, onSend, onSendAudio }: Props = $props();
+  const { currentMessageType, allowAudioReply, forceAudioReply, allowImageReply, mcOptions, onSend, onSendAudio }: Props = $props();
 
   function handleTextSubmit(): void {
-    console.log("Text submitted");
-    console.log(inputText);
-    onSend(inputText);
+    // Check if there is an image to send as well.
+    onSend(inputText, currentImage);
     inputText = "";
+    currentImage = null;
   }
 
   function handleMcSubmit(optionContent: string): void {
-    onSend(optionContent);
+    onSend(optionContent, null);
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
@@ -67,19 +70,22 @@
       onkeydown={handleKeyDown}
     >   
     </textarea>
-    {#if allowAudioReply || true}
+    {#if allowAudioReply}
     <button
       class="relative bottom-[14px] right-8 {inputText.trim()
         .length == 0
         ? ''
         : 'invisible'}"
-      aria-label="Send message"
+      aria-label="Switch to audio input"
       onclick={switchSpeechMode}><Microphone class="h-5 w-5" /></button
     >        
     {/if} 
+    {#if allowImageReply || true}
+    <CameraInput bind:currentImage />
+    {/if} 
     <button
       class="btn btn-circle absolute bottom-4 right-4 {inputText.trim()
-        .length == 0
+        .length == 0 && currentImage === null
         ? 'btn-disabled'
         : ''}"
       aria-label="Send message"
