@@ -99,6 +99,10 @@ class RemoteProjectController<
       let base64audio = await this.blobToBase64(message.content as Blob);
       message.content = base64audio;
     }
+    if (message.image !== undefined) {
+      let base64image = await this.blobToBase64(message.image as Blob);
+      message.image = base64image;
+    }
     this._socket.send(JSON.stringify(["user_message", message]));
   }
 

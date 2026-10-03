@@ -127,6 +127,10 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
             let base64audio = args[0].content;
             args[0].content = convertBase64ToBlob(base64audio);
           }
+          if (args[0].image !== undefined) {
+            let base64image = args[0].image;
+            args[0].image = convertBase64ToBlob(base64image);
+          }
           projectController.receive_message(args[0] as any);
           break;
 

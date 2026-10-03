@@ -196,6 +196,9 @@ export class LocalProjectController<
       if (block.force_audio_reply !== undefined) { 
         params.forceAudioReply = block.force_audio_reply;
       }
+      if (block.allow_image_reply !== undefined) {
+        params.allowImageReply = block.allow_image_reply;
+      }
 
       this._output.botMessage({
         type,
@@ -363,7 +366,7 @@ export class LocalProjectController<
           if (label_part.type == "else") {
             else_connector = connector;
             meetsCriteria = false;
-          } else if (label_part.type == "text") {
+          } else if (label_part.type == "text" && userInput.trim() !== "") {
             if (
               userInput
                 .toLowerCase()
@@ -379,7 +382,8 @@ export class LocalProjectController<
             if (image === undefined) {
               meetsCriteria = false;
             }
-          } else if (label_part.type == "variable") {
+          } else if (label_part.type == "variable" && userInput.trim() !== "") {
+            console.log("checking variable! " + userInput);
             if (block.type !== "MC") {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
               let foundAWord = false;
@@ -749,6 +753,8 @@ export class LocalProjectController<
           null,
         );
       }
+    } else {
+      return this._client_vars[variable.variable];
     }
   }
 

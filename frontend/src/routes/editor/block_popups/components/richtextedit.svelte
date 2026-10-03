@@ -214,11 +214,11 @@
       <div class="badge badge-info mx-2">
         <Variable class="w-3 h-3 mr-2" />
         {#if v.isRandomRow !== undefined && v.isRandomRow}
-          random row
-        {:else if v.column !== undefined}
-          {v.column}
+          random row from
+        {:else if v.column !== undefined && v.column !== ""}
+          {v.column} from
         {/if}
-        from {v.variable}
+        {v.variable}
       </div>
     {:else}
       <div

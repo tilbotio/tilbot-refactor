@@ -31,7 +31,9 @@
     if (isTypingIndicatorActive || messages.length) {
       (async () => {
         await tick();
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        setTimeout(function () {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 500);
       })();
     }
 
@@ -63,7 +65,11 @@
   );
 
   function sendUserMessage(messageText: string, imageBlob: Blob | null): void {
-    projectController.output.processMessage("user", messageText, imageBlob ? imageBlob : undefined);
+    projectController.output.processMessage(
+      "user",
+      messageText,
+      imageBlob ? imageBlob : undefined
+    );
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
   }

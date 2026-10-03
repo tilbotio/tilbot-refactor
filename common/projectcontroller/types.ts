@@ -52,6 +52,6 @@ export type ReceivedMessageType = "audio" | "text";
 export type ReceivedMessage = {
   type: ReceivedMessageType;
   content: string | Blob;
-  image?: Blob;
+  image?: string | Blob;
 }
   

@@ -138,7 +138,7 @@
   class="modal-toggle"
   bind:this={eventsModal}
 />
-<div class="modal absolute">
+<div class="modal fixed overflow-y-scroll">
   <div class="modal-box max-w-3xl">
     <h3 class="font-bold text-lg">Events for connector</h3>
     <div
@@ -215,12 +215,12 @@
                           {#if param.variable !== undefined}
                             <div class="badge badge-info mx-2">
                               <Variable class="w-3 h-3 mr-2" />
-                              {#if param.isRandomRow !== undefined && param.isRandomRow}
-                                random row
-                              {:else}
-                                {param.column}
+                              {#if param.variable.isRandomRow !== undefined && param.variable.isRandomRow}
+                                random row from
+                              {:else if param.variable.column !== undefined && param.variable.column !== ""}
+                                {param.variable.column} from
                               {/if}
-                              from {param.variable}
+                              {param.variable.variable}
                             </div>
                           {/if}
                           <div class="tooltip" data-tip="Insert variable">
@@ -282,11 +282,11 @@
                           <div class="badge badge-info mx-2">
                             <Variable class="w-3 h-3 mr-2" />
                             {#if event.var_value.isRandomRow !== undefined && event.var_value.isRandomRow}
-                              random row
-                            {:else}
-                              {event.var_value.column}
+                              random row from
+                            {:else if event.var_value.column !== undefined && event.var_value.column !== ""}
+                              {event.var_value.column} from
                             {/if}
-                            from {event.var_value.variable}
+                            {event.var_value.variable}
                           </div>
                         {/if}
                         <div class="tooltip" data-tip="Insert variable">

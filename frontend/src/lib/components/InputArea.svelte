@@ -1,6 +1,6 @@
 <script lang="ts">
-  import CameraInput from "$lib/components/CameraInput.svelte"
-  import SpeechInput from "$lib/components/SpeechInput.svelte"
+  import CameraInput from "$lib/components/CameraInput.svelte";
+  import SpeechInput from "$lib/components/SpeechInput.svelte";
   import type {
     InputText,
     CurrentMessageType,
@@ -21,7 +21,15 @@
   let speechMode: boolean = $state(false);
   let currentImage: Blob | null = $state(null);
 
-  const { currentMessageType, allowAudioReply, forceAudioReply, allowImageReply, mcOptions, onSend, onSendAudio }: Props = $props();
+  const {
+    currentMessageType,
+    allowAudioReply,
+    forceAudioReply,
+    allowImageReply,
+    mcOptions,
+    onSend,
+    onSendAudio,
+  }: Props = $props();
 
   function handleTextSubmit(): void {
     // Check if there is an image to send as well.
@@ -60,7 +68,10 @@
     {/each}
   </div>
 {:else if forceAudioReply || speechMode}
-  <SpeechInput onSendAudio={onSendAudio} onSwitchSpeechMode={forceAudioReply ? null : switchSpeechMode} />
+  <SpeechInput
+    {onSendAudio}
+    onSwitchSpeechMode={forceAudioReply ? null : switchSpeechMode}
+  />
 {:else}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md">
     <textarea
@@ -68,21 +79,20 @@
       placeholder=""
       bind:value={inputText}
       onkeydown={handleKeyDown}
-    >   
+    >
     </textarea>
     {#if allowAudioReply}
-    <button
-      class="relative bottom-[14px] right-8 {inputText.trim()
-        .length == 0
-        ? ''
-        : 'invisible'}"
-      aria-label="Switch to audio input"
-      onclick={switchSpeechMode}><Microphone class="h-5 w-5" /></button
-    >        
-    {/if} 
-    {#if allowImageReply || true}
-    <CameraInput bind:currentImage />
-    {/if} 
+      <button
+        class="relative bottom-[14px] right-8 {inputText.trim().length == 0
+          ? ''
+          : 'invisible'}"
+        aria-label="Switch to audio input"
+        onclick={switchSpeechMode}><Microphone class="h-5 w-5" /></button
+      >
+    {/if}
+    {#if allowImageReply}
+      <CameraInput bind:currentImage />
+    {/if}
     <button
       class="btn btn-circle absolute bottom-4 right-4 {inputText.trim()
         .length == 0 && currentImage === null

@@ -161,8 +161,7 @@
       for (const link of project.settings.external_links) {
         if (link.url_editor && link.url_editor !== "") {
           checks.push(testConnection(link.url_editor));
-        }
-        else if (link.url) {
+        } else if (link.url) {
           checks.push(testConnection(link.url));
         }
       }
@@ -170,23 +169,27 @@
       // Wait for all health checks to settle before evaluating overall status.
       Promise.all(checks).then((results) => {
         for (const result of results) {
-          externalLinkStatus[result.url] = { ok: result.ok, isEditor: result.isEditor };
+          externalLinkStatus[result.url] = {
+            ok: result.ok,
+            isEditor: result.isEditor,
+          };
         }
 
         externalLinksUp = true;
 
         // Check if all external links are up, either non-editor or editor (if provided).
         for (const link of project.settings.external_links) {
-          if (link.url_editor && link.url_editor !== "" && !externalLinkStatus[link.url_editor]?.ok) {
-            externalLinksUp = false;
-            return;
-          }
-          else if (link.url && !externalLinkStatus[link.url]?.ok) {
+          if (link.url_editor && link.url_editor !== "") {
+            if (!externalLinkStatus[link.url_editor]?.ok) {
+              externalLinksUp = false;
+              return;
+            }
+          } else if (link.url && !externalLinkStatus[link.url]?.ok) {
             externalLinksUp = false;
             return;
           }
         }
-      });      
+      });
     }
   }
 
@@ -363,10 +366,14 @@
 
     // Remove any external links that are no longer present in the project settings.
     for (const url in externalLinkStatus) {
-      if (!project.settings.external_links?.some(link => link.url_editor === url || link.url === url)) {
+      if (
+        !project.settings.external_links?.some(
+          (link) => link.url_editor === url || link.url === url
+        )
+      ) {
         delete externalLinkStatus[url];
       }
-    }    
+    }
   }
 
   function saveBlock(block: ProjectBlock) {
@@ -374,11 +381,20 @@
       let blockText = block as ProjectBlockText;
 
       // Add connector for audio if setting enabled
-      if (blockText.allow_audio_reply && !(project.blocks[selectedBlockId!] as ProjectBlockText).allow_audio_reply) {
+      if (
+        blockText.allow_audio_reply &&
+        !(project.blocks[selectedBlockId!] as ProjectBlockText)
+          .allow_audio_reply
+      ) {
         let hasAudioConnector = false;
         for (let i = 0; i < blockText.connectors.length; i++) {
           let connector = blockText.connectors[i];
-          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "audio") {
+          if (
+            connector.type == "Labeled" &&
+            connector.label !== undefined &&
+            connector.label.length > 0 &&
+            connector.label[0].type == "audio"
+          ) {
             hasAudioConnector = true;
             break;
           }
@@ -398,10 +414,18 @@
       }
 
       // Remove connector for audio if setting disabled
-      else if (!blockText.allow_audio_reply && (project.blocks[selectedBlockId!] as ProjectBlockText).allow_audio_reply) {
+      else if (
+        !blockText.allow_audio_reply &&
+        (project.blocks[selectedBlockId!] as ProjectBlockText).allow_audio_reply
+      ) {
         for (let i = 0; i < blockText.connectors.length; i++) {
           const connector = blockText.connectors[i];
-          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "audio") {
+          if (
+            connector.type == "Labeled" &&
+            connector.label !== undefined &&
+            connector.label.length > 0 &&
+            connector.label[0].type == "audio"
+          ) {
             blockText.connectors.splice(i, 1);
             break;
           }
@@ -409,10 +433,20 @@
       }
 
       // Remove the [else] connector if the audio message is forced.
-      if (blockText.allow_audio_reply && blockText.force_audio_reply && !(project.blocks[selectedBlockId!] as ProjectBlockText).force_audio_reply) {
+      if (
+        blockText.allow_audio_reply &&
+        blockText.force_audio_reply &&
+        !(project.blocks[selectedBlockId!] as ProjectBlockText)
+          .force_audio_reply
+      ) {
         for (let i = 0; i < blockText.connectors.length; i++) {
           const connector = blockText.connectors[i];
-          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "else") {
+          if (
+            connector.type == "Labeled" &&
+            connector.label !== undefined &&
+            connector.label.length > 0 &&
+            connector.label[0].type == "else"
+          ) {
             blockText.connectors.splice(i, 1);
             break;
           }
@@ -420,11 +454,20 @@
       }
 
       // Re-add the [else] connector if we unforce the audio message.
-      if (!blockText.allow_audio_reply && !blockText.force_audio_reply && (project.blocks[selectedBlockId!] as ProjectBlockText).force_audio_reply) {
+      if (
+        !blockText.allow_audio_reply &&
+        !blockText.force_audio_reply &&
+        (project.blocks[selectedBlockId!] as ProjectBlockText).force_audio_reply
+      ) {
         let hasElseConnector = false;
         for (let i = 0; i < blockText.connectors.length; i++) {
           const connector = blockText.connectors[i];
-          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "else") {
+          if (
+            connector.type == "Labeled" &&
+            connector.label !== undefined &&
+            connector.label.length > 0 &&
+            connector.label[0].type == "else"
+          ) {
             hasElseConnector = true;
             break;
           }
@@ -444,11 +487,20 @@
       }
 
       // Add connector for image if setting enabled
-      if (blockText.allow_image_reply && !(project.blocks[selectedBlockId!] as ProjectBlockText).allow_image_reply) {
+      if (
+        blockText.allow_image_reply &&
+        !(project.blocks[selectedBlockId!] as ProjectBlockText)
+          .allow_image_reply
+      ) {
         let hasImageConnector = false;
         for (let i = 0; i < blockText.connectors.length; i++) {
           let connector = blockText.connectors[i];
-          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "image") {
+          if (
+            connector.type == "Labeled" &&
+            connector.label !== undefined &&
+            connector.label.length > 0 &&
+            connector.label[0].type == "image"
+          ) {
             hasImageConnector = true;
             break;
           }
@@ -468,15 +520,23 @@
       }
 
       // Remove connector for image if setting disabled
-      else if (!blockText.allow_image_reply && (project.blocks[selectedBlockId!] as ProjectBlockText).allow_image_reply) {
+      else if (
+        !blockText.allow_image_reply &&
+        (project.blocks[selectedBlockId!] as ProjectBlockText).allow_image_reply
+      ) {
         for (let i = 0; i < blockText.connectors.length; i++) {
           const connector = blockText.connectors[i];
-          if (connector.type == "Labeled" && connector.label !== undefined && connector.label.length > 0 && connector.label[0].type == "image") {
+          if (
+            connector.type == "Labeled" &&
+            connector.label !== undefined &&
+            connector.label.length > 0 &&
+            connector.label[0].type == "image"
+          ) {
             blockText.connectors.splice(i, 1);
             break;
           }
         }
-      }      
+      }
     }
 
     project.blocks[selectedBlockId!] = block;
@@ -696,7 +756,6 @@
       );
     }
   }
-
 </script>
 
 <div id="editor" class="overflow-hidden">
@@ -712,7 +771,7 @@
     settings={generalSettings}
     path="{path}/avatar"
     save={saveSettings}
-    externalLinkStatus={externalLinkStatus}
+    {externalLinkStatus}
   />
 
   <input type="checkbox" bind:this={editModal} class="modal-toggle" />
@@ -726,7 +785,9 @@
           variables={getVariables()}
           save={saveBlock}
           cancel={cancelBlock}
-          externalLinks={editingBlock.type == "Compute"?project.settings.external_links:undefined}
+          externalLinks={editingBlock.type == "Compute"
+            ? project.settings.external_links
+            : undefined}
         />
       {/if}
     </div>
@@ -765,18 +826,25 @@
     {#snippet menuItem(tip: string, Icon: Component, action: any)}
       <div class="tooltip tooltip-right" data-tip={tip}>
         <li>
-          <div class="indicator">
-          <!-- svelte-ignore a11y_missing_attribute -->
-           {#if tip == "Settings" && Object.keys(externalLinkStatus).length > 0}
-            <div class="indicator-item badge badge-xs top-[10px] right-[14px] { externalLinksUp ? 'badge-success' : 'badge-error' }"></div>
-          {/if}
           <a
             class=""
             onclick={action}
             onkeyup={() => {}}
             role="button"
             tabindex="0"
-            aria-label={tip}><Icon class="w-6 h-6" />
+            aria-label={tip}
+          >
+            <div class="indicator">
+              <!-- svelte-ignore a11y_missing_attribute -->
+              {#if tip == "Settings" && Object.keys(externalLinkStatus).length > 0}
+                <div
+                  class="indicator-item badge badge-xs {externalLinksUp
+                    ? 'badge-success'
+                    : 'badge-error'}"
+                ></div>
+              {/if}
+              <Icon class="w-6 h-6" />
+            </div>
           </a>
         </li>
       </div>
