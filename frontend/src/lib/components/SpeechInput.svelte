@@ -18,6 +18,7 @@
     const { onSendAudio, onSwitchSpeechMode }: Props = $props();
 
     let isSupported = $state(true);
+    let errorMessage = $state("");
     let isRecording: boolean = $state(false);
     let isPlaying: boolean = $state(false);
     let startRecordingTime: number = -1;
@@ -42,18 +43,46 @@
         return null;
     }
 
-    function startRecording(): void {
+    let stream: MediaStream | null = null;
+
+    function releaseStream() {
+        stream?.getTracks().forEach((t) => t.stop());
+        stream = null;
+    }
+
+    // getUserMedia must be called from a user gesture on iOS Safari, so the stream
+    // and recorder are created on click instead of on mount.
+    async function startRecording(): Promise<void> {
         // In case there is a playback ongoing.
-        stop();
+        // Must be the first call in the tap handler: no await before it, or Safari rejects it.
+        const streamPromise = navigator.mediaDevices.getUserMedia({ audio: true });
+
+        try {
+            stream = await streamPromise;
+        } catch (err) {
+            console.error(`The following getUserMedia error occurred: ${err}`);
+            errorMessage = `${(err as Error).name}: ${(err as Error).message}`;
+            return;
+        }
+
+        await stop();
+
+        const mimeType = getSupportedRecorderMimeType();
+        recorder = mimeType !== null ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        recordingMimeType = mimeType ?? recorder.mimeType;
 
         chunks = [];
         lastRecording = null;
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                chunks.push(e.data);
+            }
+        };
         recorder.start();
         isRecording = true;
         startRecordingTime = Date.now();
         updateTime();
     }
-
     function updateTime() {
         if (isRecording) {
             timeDisplay = playingTimeToMinSecString((Date.now() - startRecordingTime) / 1000.0);
@@ -99,45 +128,12 @@
 
 
     onMount(() => {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            console.log("getUserMedia supported.");
-            navigator.mediaDevices
-                .getUserMedia(
-                // constraints - only audio needed for this app
-                {
-                    audio: true,
-                },
-                )
-
-                // Success callback
-                .then((stream) => {
-                    const mimeType = getSupportedRecorderMimeType();
-                    if (mimeType !== null) {
-                        recorder = new MediaRecorder(stream, { mimeType });
-                        recordingMimeType = mimeType;
-                    }
-                    else {
-                        recorder = new MediaRecorder(stream);
-                        recordingMimeType = recorder.mimeType;
-                    }
-
-                    recorder.ondataavailable = (e) => {
-                        if (e.data.size > 0) {
-                            chunks.push(e.data);
-                        }
-                    };
-                })
-
-                // Error callback
-                .catch((err) => {
-                    console.error(`The following getUserMedia error occurred: ${err}`);
-                    isSupported = false;
-                });
-        } else {
-            console.log("getUserMedia not supported on your browser!");
+        if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
             isSupported = false;
-        }   
-        
+            errorMessage = !window.isSecureContext
+                ? "Insecure context (HTTPS required)"
+                : !navigator.mediaDevices?.getUserMedia ? "getUserMedia unavailable" : "MediaRecorder unavailable (iOS 14.3+ required)";
+        }
         player.addEventListener("ended", function() {
             player.currentTime = 0;
             isPlaying = false;
@@ -167,11 +163,13 @@
         onclick={play}><Play variation="solid" class="ml-[3px] h-6 w-6 text-white" />
         </button>        
         {/if}
+        {#if errorMessage}<span class="text-red-700 text-xs mr-2">{errorMessage}</span>{/if}
         <span class="{isRecording?'text-red-700':''}">
             {timeDisplay}
         </span>
         {:else}
             Unfortunately, audio recording is not supported on your device.
+            {#if errorMessage}<br /><span class="text-xs">({errorMessage})</span>{/if}
         {/if}
     </div>
     {#if !isRecording && !isPlaying && onSwitchSpeechMode !== null}

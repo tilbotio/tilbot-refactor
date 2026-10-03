@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { dirname, join, resolve } from "path";
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
 import { fileURLToPath } from "url";
+import selfsigned from "selfsigned";
 import { LocalProjectController } from "../common/projectcontroller/local.ts";
 import { Logger } from "./logger.ts";
 import {
@@ -44,7 +45,29 @@ try {
   }
 }
 
-const app = Fastify({});
+// HTTPS is required for microphone/camera access from other devices (e.g. iOS Safari).
+// Generate a self-signed certificate once and reuse it.
+async function loadCertificate(): Promise<{ key: string; cert: string }> {
+  const certPath = join(p, "server-cert.json");
+  try {
+    return JSON.parse(readFileSync(certPath, "utf8"));
+  } catch (err: any) {
+    if (err.code != "ENOENT") {
+      console.error(err);
+    }
+  }
+
+  const pems = await selfsigned.generate([{ name: "commonName", value: "tilbot" }], {
+    keySize: 2048,
+    algorithm: "sha256",
+    extensions: [{ name: "subjectAltName", altNames: [{ type: 2, value: "localhost" }] }],
+  });
+  const certificate = { key: pems.private, cert: pems.cert };
+  writeFileSync(certPath, JSON.stringify(certificate));
+  return certificate;
+}
+
+const app = Fastify({ https: await loadCertificate() });
 
 await Promise.all([
   console.log("it workS!"),

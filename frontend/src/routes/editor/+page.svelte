@@ -805,10 +805,10 @@
       </h3>
       <div class="divider"></div>
       <p class="py-4">
-        Connect devices on the same network to: {localIP}:2801
+        Connect devices on the same network to: https://{localIP}:2801
       </p>
       <p class="py-4">
-        Or via the internet: {publicIP}:2801<br />
+        Or via the internet: https://{publicIP}:2801<br />
         <span class="text-sm"
           >(make sure your router is set up to forward port 2801)</span
         >
