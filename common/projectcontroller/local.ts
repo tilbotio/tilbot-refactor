@@ -383,7 +383,6 @@ export class LocalProjectController<
               meetsCriteria = false;
             }
           } else if (label_part.type == "variable" && userInput.trim() !== "") {
-            console.log("checking variable! " + userInput);
             if (block.type !== "MC") {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
               let foundAWord = false;
@@ -700,6 +699,10 @@ export class LocalProjectController<
         let themessage = message.content as string;
 
         if (message.type == "audio" && best.output.length > 0) {
+          themessage = best.output[0];
+        }
+
+        if (themessage == "" && best.output.length > 0) {
           themessage = best.output[0];
         }
 

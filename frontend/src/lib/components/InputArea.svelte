@@ -36,6 +36,7 @@
     onSend(inputText, currentImage);
     inputText = "";
     currentImage = null;
+    speechMode = false;
   }
 
   function handleMcSubmit(optionContent: string): void {
