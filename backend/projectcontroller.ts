@@ -93,31 +93,21 @@ export class ServerControllerLookup
 
     let data: BodyInit;
 
-    if (user_input instanceof Blob || image) {
-      data = new FormData();
+    data = new FormData();
 
-      if (user_input instanceof Blob) {
-        data.append("audio", user_input, this.getAudioUploadFilename(user_input));
-      } else if (user_input !== "") {
-        data.append("user_input", user_input);
-        data.append("intent_options", JSON.stringify(connectors));
-      }
-
-      if (image) {
-        data.append("image", image, this.getImageUploadFilename(image));
-      }
-
-      for (const [key, value] of Object.entries(extraParams)) {
-        data.append(key, value);
-      }
+    if (user_input instanceof Blob) {
+      data.append("audio", user_input, this.getAudioUploadFilename(user_input));
+    } else if (user_input !== "") {
+      data.append("user_input", user_input);
+      data.append("intent_options", JSON.stringify(connectors));
     }
-    else {
-      headers.set("Content-Type", "application/json");
-      data = JSON.stringify({
-        user_input,
-        intent_options: connectors,
-        ...extraParams,
-      });
+
+    if (image) {
+      data.append("image", image, this.getImageUploadFilename(image));
+    }
+
+    for (const [key, value] of Object.entries(extraParams)) {
+      data.append(key, value);
     }
 
     const request: RequestInfo = new Request(fullUrl, {
