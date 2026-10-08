@@ -7,7 +7,13 @@ export class NonLogger implements ProjectControllerLoggerInterface {
   log(event: string, detail: string): void {
     // Do nothing!  
   }
+  
   set_participant_id(pid: string): void {
     // Do nothing!
+  }
+
+  log_audio(audio: Blob): Promise<void> {
+    // Do nothing!
+    return Promise.resolve();
   }
 }

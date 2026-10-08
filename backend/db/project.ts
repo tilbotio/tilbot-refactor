@@ -128,7 +128,7 @@ export const ProjectSchema = new Schema<ProjectSchemaInterface>(
        */
       async getLogs() {
         const to_return = [
-          "project_id;session_id;participant_id;session_start;session_end;message_source;message_time;message_content",
+          "project_id;tilbot_version;session_id;participant_id;session_start;session_end;message_source;message_time;message_content",
         ];
 
         const logs = await LogModel.find({ project_id: this.id });
@@ -137,6 +137,7 @@ export const ProjectSchema = new Schema<ProjectSchemaInterface>(
           // till pass här! :)
           const log_fields = [
             this.id,
+            log.version,
             log._id,
             log.participant_id,
             new Date(log.session_started).toLocaleString("sv"),

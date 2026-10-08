@@ -71,18 +71,23 @@
         method: "get",
         credentials: "include",
       });
-      const text = await response.text();
       if (!response.ok) {
-        throw new Error(text);
+        throw new Error(await response.text());
       }
-      const dataStr =
-        "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+      // The server returns a zip (csv + audio files) when audio was recorded.
+      const isZip = response.headers.get("content-type")?.includes("application/zip");
+      const url = URL.createObjectURL(
+        isZip
+          ? await response.blob()
+          : new Blob([await response.text()], { type: "text/csv;charset=utf-8" }),
+      );
       const downloadAnchorNode = document.createElement("a");
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "logs.csv");
+      downloadAnchorNode.setAttribute("href", url);
+      downloadAnchorNode.setAttribute("download", isZip ? "logs.zip" : "logs.csv");
       document.body.appendChild(downloadAnchorNode); // required for firefox
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.log(err);
     }

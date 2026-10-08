@@ -431,7 +431,40 @@ app.get("/api/get_logs", async (req, res) => {
     user_id: session.username,
     active: true,
   });
-  return project.getLogs();
+  const csv = await project.getLogs();
+
+  // Messages with recorded audio reference a file in GridFS.
+  const logs = await LogModel.find({ project_id: project.id });
+  const audioMessages = logs.flatMap((log) =>
+    log.messages.filter((m) => m.audio_file_id),
+  );
+  if (audioMessages.length === 0 || !mongoose.connection.db) {
+    return csv;
+  }
+
+  const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+    bucketName: "audio_logs",
+  });
+  const zip = new AdmZip();
+  zip.addFile("logs.csv", Buffer.from(String(csv), "utf8"));
+  for (const m of audioMessages) {
+    const chunks: Buffer[] = [];
+    try {
+      for await (const chunk of bucket.openDownloadStream(m.audio_file_id as any)) {
+        chunks.push(chunk as Buffer);
+      }
+    } catch (error) {
+      console.error(`Missing audio file ${m.audio_file_id}`, error);
+      continue;
+    }
+    const name = m.message.startsWith("audio/")
+      ? m.message
+      : `audio/${m.audio_file_id}.bin`;
+    zip.addFile(name, Buffer.concat(chunks));
+  }
+
+  res.header("Content-Type", "application/zip");
+  return zip.toBuffer();
 });
 
 // API call: delete a project's log files
@@ -447,6 +480,21 @@ app.post("/api/delete_logs", async (req, res) => {
     user_id: session.username,
     active: true,
   });
+  const logsToDelete = await LogModel.find({ project_id: body.projectid });
+  if (mongoose.connection.db) {
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+      bucketName: "audio_logs",
+    });
+    for (const log of logsToDelete) {
+      for (const m of log.messages) {
+        if (m.audio_file_id) {
+          await bucket.delete(m.audio_file_id as any).catch((error: any) => {
+            console.error(`Could not delete audio ${m.audio_file_id}`, error);
+          });
+        }
+      }
+    }
+  }
   await LogModel.deleteMany({ project_id: body.projectid });
   console.log(`Deleted logs: ${body.projectid}`);
 });
@@ -512,15 +560,17 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
     }
   });
 
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", (e: any) => {
+    console.log(`[ws] closed code=${e?.code} reason=${e?.reason}`);
     projectController.log("session_end");
     if (output.socket === socket) {
       output.socket = null;
     }
   });
 
-  socket.addEventListener("message", (e: MessageEvent) => {
+  socket.addEventListener("message", async (e: MessageEvent) => {
     try {
+      console.log(`[ws] message received, ${String(e.data).length} chars`);
       const [command, ...args] = JSON.parse(e.data);
       switch (command) {
         case "message sent":
@@ -536,7 +586,7 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
             let base64image = args[0].image;
             args[0].image = convertBase64ToBlob(base64image);
           }          
-          projectController.receive_message(args[0] as any);
+          await projectController.receive_message(args[0] as any);
           break;
 
         case "log":

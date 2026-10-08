@@ -7,6 +7,7 @@ export interface LogSchemaInterface extends Document {
   session_closed: Date;
   project_id: string;
   participant_id: string;
+  version: string;
 }
 
 export interface LogModelInterface extends Model<LogSchemaInterface> {}
@@ -17,6 +18,7 @@ export const LogSchema = new Schema({
   session_closed: { type: Date, default: Date.now },
   project_id: { type: String, required: true },
   participant_id: { type: String, default: "" },
+  version: { type: String, default: "unknown" },
 });
 
 export const LogModel = model<LogSchemaInterface, LogModelInterface>(

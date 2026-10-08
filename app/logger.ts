@@ -35,19 +35,31 @@ import fs from "fs";
 export class Logger {
 
     private stream: any = null;
+    private logFileName: string = null;
+    private p: string = null;
 
     constructor(p) {
         if (p.includes('resources')) {
           p += '/../..';
         }
 
+        this.p = p;
+
         if (!fs.existsSync(p + '/logs')) {
             fs.mkdirSync(p + '/logs');
         }
 
-        this.stream = fs.createWriteStream(p + "/logs/" + new Date().toFilenameString() + ".csv", {flags: 'a'});
+        this.logFileName = new Date().toFilenameString();
+
+        this.stream = fs.createWriteStream(p + "/logs/" + this.logFileName + ".csv", {flags: 'a'});
         this.stream.write("timestamp;event;detail\r\n");
         this.log('session_start');
+
+        const packageVersion = (globalThis as {
+            process?: { env?: Record<string, string | undefined> }
+        }).process?.env?.npm_package_version;
+
+        this.log('version', packageVersion || 'unknown');
     }
 
 
@@ -59,5 +71,18 @@ export class Logger {
     set_participant_id(pid) {
       let timestamp = new Date().toLogString();
       this.stream.write(timestamp + ';participant_id;' + pid + "\r\n");
+    }
+
+    async log_audio(audio: Blob) {
+      let timestamp = new Date().toLogString();
+      let filename = new Date().toFilenameString() + ".wav";
+      let filePath = this.p + '/logs/' + this.logFileName;
+
+      if (!fs.existsSync(filePath)) {
+        fs.mkdirSync(filePath);
+      }
+
+      fs.writeFileSync(filePath + '/' + filename, Buffer.from(await audio.arrayBuffer()));
+      this.log('message_user', this.logFileName + '/' + filename);
     }
 }

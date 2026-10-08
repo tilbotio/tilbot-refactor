@@ -30,6 +30,7 @@ export interface ProjectControllerLookupInterface {
 
 export interface ProjectControllerLoggerInterface {
   log(event: string, detail?: string): void;
+  log_audio(audio: Blob): Promise<void>;
   set_participant_id(pid: string): void;
 }
 

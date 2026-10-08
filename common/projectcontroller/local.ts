@@ -530,9 +530,21 @@ export class LocalProjectController<
   }
 
   async receive_message(message: ReceivedMessage): Promise<void> {
+    return this._receive_message(message, true);
+  }
 
-    if (message.type == "text") {
-      this._logger.log("message_user", message.content as string);
+  private async _receive_message(
+    message: ReceivedMessage,
+    isUserInput: boolean,
+  ): Promise<void> {
+    if (isUserInput) {
+      if (message.type == "text") {
+        this._logger.log("message_user", message.content as string);
+      } else if (message.type == "audio") {
+        this._logger.log_audio(message.content as Blob).catch((error) => {
+          console.error("Failed to log audio message", error);
+        });
+      }
     }
 
     let best: {
@@ -608,6 +620,7 @@ export class LocalProjectController<
             if (message.type == "audio") {
               // Send the transcription to the client.
               this._output.updateMessage(res.intent);
+              this._logger.log("message_user", "transcription: " + res.intent);
             }
             // @TODO: see if this is a good long-term solution
             best = await this.find_best_connector(current_block, res.intent);
@@ -631,8 +644,13 @@ export class LocalProjectController<
               for (let i = 0; i < connector.targets.length; i++) {
                 this._current_block_id = connector.targets[i];
                 await this.send_events(connector);
-                this.message_sent_event();
-                this.receive_message(message);
+                if (blocks[this._current_block_id.toString()]?.type === "Compute") {
+                  // The Compute block needs the audio itself (e.g. to transcribe it).
+                  this.message_sent_event();
+                  await this._receive_message(message, false);
+                } else {
+                  this._send_current_message();
+                }
                 return;
               }
             }
@@ -647,7 +665,7 @@ export class LocalProjectController<
                   this._current_block_id = connector.targets[i];
                   await this.send_events(connector);
                   this.message_sent_event();
-                  this.receive_message(message);
+                  await this._receive_message(message, false);
                   return;
                 }
               }
