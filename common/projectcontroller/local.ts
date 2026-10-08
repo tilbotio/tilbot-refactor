@@ -347,7 +347,7 @@ export class LocalProjectController<
     let userInputStripped = userInput;
 
     // Remove punctuation marks
-    if (block.type !== "MC") {
+    if (block.type !== "MC" && block.type !== "Compute") {
       userInputStripped = userInput
         .replace("?", "")
         .replace("!", "")

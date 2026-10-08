@@ -62,7 +62,7 @@
         {#each blockCopy.parameters ?? [] as param, index}
           <tr>
             <td><input type="text" class="input input-bordered" bind:value={param.key} /></td>
-            <td><input type="text" class="input input-bordered" bind:value={param.value} /></td>
+            <td><textarea class="input input-bordered" bind:value={param.value}></textarea></td>
             <td>
               <button
                 class="btn btn-square btn-outline btn-sm"
