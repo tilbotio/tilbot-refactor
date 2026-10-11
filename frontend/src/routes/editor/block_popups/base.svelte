@@ -77,6 +77,17 @@
     <div>Delay (seconds)</div>
     <div><input class="input input-bordered w-16 ml-8" type="number" min="0" bind:value={blockCopy.delay}></div>    
   </div>
+
+  <div class="flex mt-12 items-center">
+    <div>Prevent triggers from firing?</div>
+    <div>
+      <input
+        type="checkbox"
+        class="toggle"
+        bind:checked={blockCopy.prevent_triggers}
+      />      
+    </div>    
+  </div>  
 </div>
 <div class="divider"></div>
 <p>

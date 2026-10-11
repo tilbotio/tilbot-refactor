@@ -82,6 +82,7 @@ export type ProjectBlock = {
   y?: number;
   connectors: ProjectConnector[];
   delay: number;
+  prevent_triggers: boolean;
 };
 
 export type ExternalLinkParameter = {

@@ -35,7 +35,6 @@ export class LocalProjectController<
     this._project = project;
     this._current_block_id = project.starting_block_id;
     this._client_vars = {};
-
     output.settings(
       project.settings ?? {
         typing_style: "fixed",
@@ -340,8 +339,7 @@ export class LocalProjectController<
     output: string[];
     isElseConnector: boolean;
   }> {
-    console.log("Find best connector...");
-    console.log(image);
+    console.log("Find best connector... " + userInput);
     let else_connector = null;
 
     let userInputStripped = userInput;
@@ -383,18 +381,19 @@ export class LocalProjectController<
               meetsCriteria = false;
             }
           } else if (label_part.type == "variable" && userInput.trim() !== "") {
-            if (block.type !== "MC") {
+            if (block.type !== "MC" && (block.type !== "Compute" || !block.use_external_link)) {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
               let foundAWord = false;
               let words = userInputStripped.split(" ");
               for (const word of words) {
                 let lookup: any[] | null = null;
+                let wordStripped = word.replace("?", "").replace("!", "").replace(".", "").replace(",", "");
 
                 if (label_part.variableType == "dataset") {
                   lookup = await this._lookup.cell(
                     label_part.variable,
                     label_part.column,
-                    word.toLowerCase(),
+                    wordStripped.toLowerCase(),
                   );
                 } else if (label_part.variableType == "session") {
                   let check = "";
@@ -411,8 +410,8 @@ export class LocalProjectController<
                     if (Array.isArray(check)) {
                       for (let c of check) {
                         if (
-                          word.toLowerCase() == c.toLowerCase() ||
-                          new RegExp("\\b" + word.toLowerCase() + "\\b").test(
+                          wordStripped.toLowerCase() == c.toLowerCase() ||
+                          new RegExp("\\b" + wordStripped.toLowerCase() + "\\b").test(
                             c.toLowerCase(),
                           )
                         ) {
@@ -420,8 +419,8 @@ export class LocalProjectController<
                         }
                       }
                     } else if (
-                      word.toLowerCase() == check.toLowerCase() ||
-                      new RegExp("\\b" + word.toLowerCase() + "\\b").test(
+                      wordStripped.toLowerCase() == check.toLowerCase() ||
+                      new RegExp("\\b" + wordStripped.toLowerCase() + "\\b").test(
                         check.toLowerCase(),
                       )
                     ) {
@@ -431,7 +430,7 @@ export class LocalProjectController<
                 }
                 if (lookup !== null) {
                   foundAWord = true;
-                  found_output.push(word.toLowerCase());
+                  found_output.push(wordStripped.toLowerCase());
                 }
               }
 
@@ -445,7 +444,7 @@ export class LocalProjectController<
                 lookup = await this._lookup.cell(
                   label_part.variable,
                   label_part.column,
-                  userInput.toLowerCase(),
+                  userInput.toLowerCase()
                 );
               } else if (label_part.variableType == "session") {
                 let check = "";
@@ -676,7 +675,8 @@ export class LocalProjectController<
       }
     }
 
-    if (!best.found || best.isElseConnector) {
+    console.log("Best connector found: " + best.found + ", isElseConnector: " + best.isElseConnector + ", output: " + best.output + ", targets: " + (best.connector ? best.connector.targets : "null"));
+    if (!best.found || (best.isElseConnector && !current_block.prevent_triggers)) {
       // Check if we need to fire a trigger -- after checking responses to query by the bot!
       for (const block of Object.values(blocks) as any[]) {
         if (block.type === "Trigger") {
