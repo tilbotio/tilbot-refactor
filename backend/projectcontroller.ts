@@ -83,7 +83,9 @@ export class ServerControllerLookup
 
     let fullUrl = external_link.url;
 
-    if (external_link.url_editor !== null) {
+    // The editor URL is only reachable from the standalone Electron app.
+    // Server deployments must use the public URL.
+    if (this.isElectron && external_link.url_editor?.trim()) {
       fullUrl = external_link.url_editor;
     }
 

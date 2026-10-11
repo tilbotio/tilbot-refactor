@@ -78,7 +78,7 @@ export class ChatLookup implements ProjectControllerLookupInterface {
 
     let fullUrl = external_link.url;
 
-    if (external_link.url_editor !== null) {
+    if (external_link.url_editor?.trim()) {
       fullUrl = external_link.url_editor;
     }
 
