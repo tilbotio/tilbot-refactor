@@ -717,9 +717,9 @@ export class LocalProjectController<
 
         let themessage = message.content as string;
 
-        if (message.type == "audio" && best.output.length > 0) {
+        /*if (message.type == "audio" && best.output.length > 0) {
           themessage = best.output[0];
-        }
+        }*/
 
         if (themessage == "" && best.output.length > 0) {
           themessage = best.output[0];
