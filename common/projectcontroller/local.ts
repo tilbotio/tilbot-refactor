@@ -619,6 +619,7 @@ export class LocalProjectController<
             if (message.type == "audio") {
               // Send the transcription to the client.
               this._output.updateMessage(res.intent);
+              message.content = res.intent;
               this._logger.log("message_user", "transcription: " + res.intent);
             }
             // @TODO: see if this is a good long-term solution
@@ -716,9 +717,9 @@ export class LocalProjectController<
 
         let themessage = message.content as string;
 
-        if (message.type == "audio" && best.output.length > 0) {
+        /*if (message.type == "audio" && best.output.length > 0) {
           themessage = best.output[0];
-        }
+        }*/
 
         if (themessage == "" && best.output.length > 0) {
           themessage = best.output[0];
