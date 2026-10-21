@@ -38,6 +38,14 @@
     if (!window.speechSynthesis.speaking) {
       let utterance = new SpeechSynthesisUtterance(message.content);
       utterance.lang = settings.language;
+
+      for (const voice of window.speechSynthesis.getVoices()) {
+        if (settings.language === "nl-NL" && voice.lang === "nl-NL" && voice.name.includes("Fenna")) {
+          utterance.voice = voice;
+          break;
+        }
+      }
+
       window.speechSynthesis.speak(utterance);
       playingTTS = true;
       utterance.onend = (event) => {
