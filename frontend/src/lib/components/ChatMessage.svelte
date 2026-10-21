@@ -40,7 +40,7 @@
       utterance.lang = settings.language;
 
       for (const voice of window.speechSynthesis.getVoices()) {
-        if (settings.language === "nl-NL" && voice.lang === "nl-NL" && voice.name.includes("Fenna")) {
+        if (settings.language === "nl-NL" && voice.lang === "nl-NL" && voice.name.includes("Colette")) {
           utterance.voice = voice;
           break;
         }
