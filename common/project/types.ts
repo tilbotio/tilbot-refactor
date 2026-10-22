@@ -27,6 +27,8 @@ export type ExternalLink = {
   url_editor: string | null;
   send_user_input: boolean;
   send_connectors: boolean;
+  send_chat_history: boolean;
+  chat_history_length?: number;
 };
 
 export const defaultProjectSettings: ProjectSettings = {

@@ -39,6 +39,8 @@
       url_editor: null,
       send_user_input: true,
       send_connectors: false,
+      send_chat_history: false,
+      chat_history_length: 20,
     });
   }
 
@@ -203,8 +205,8 @@
                           class="select"
                           bind:value={projectSettingsCopy.language}
                         >
-                          <option value="nl">Dutch</option>
-                          <option value="en">English</option>
+                          <option value="nl-NL">Dutch</option>
+                          <option value="en-US">English</option>
                         </select>
                       </td>
                     </tr>
@@ -566,6 +568,38 @@
                           </label>
                         </td>
                       </tr>
+                      <tr>
+                        <td colspan="2">
+                          <label class="label cursor-pointer">
+                            <span class="label-text"
+                              >Send the (recent) chat history to
+                              the external system<br /><span class="text-xs">The chat history will be pruned after a while. Note that this may include sensitive information, so use with caution.</span></span>
+                            <input
+                              type="checkbox"
+                              class="toggle"
+                              bind:checked={external_link.send_chat_history}
+                            />
+                          </label>
+                        </td>
+                      </tr>  
+                      {#if external_link.send_chat_history}
+                        <tr>
+                          <td colspan="2">
+                            <label class="label cursor-pointer">
+                              <span class="label-text">
+                                Number of recent messages to send
+                              </span>  
+                              <input
+                                type="number"
+                                bind:value={external_link.chat_history_length}
+                                min="1"
+                                max="100"
+                                class="input input-sm input-bordered w-24"
+                              />
+                            </label>
+                          </td>
+                        </tr>
+                      {/if}
                       <tr>
                         <td> </td>
                         <td>

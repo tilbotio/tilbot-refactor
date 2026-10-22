@@ -6,6 +6,9 @@ import type {
   ReceivedMessage,
 } from "./types";
 
+import _ from "lodash";
+
+
 // RegExp.escape() is a bit new
 const regexEscape: (str: string) => string =
   (RegExp as any).escape ||
@@ -22,6 +25,7 @@ export class LocalProjectController<
   private _project: any;
   private _current_block_id: number;
   private _client_vars: any;
+  private _history: { role: "user" | "assistant"; content: string }[] = [];
 
   constructor(
     lookup: ProjectControllerLookupInterface,
@@ -53,6 +57,52 @@ export class LocalProjectController<
 
   get output(): ProjectControllerOutputType {
     return this._output;
+  }
+
+  private _addToHistory(role: "user" | "assistant", content: string) {
+    if (content.trim() === "") {
+      return;
+    }
+    this._history.push({ role, content });
+  }
+
+  // An exchange is a run of bot messages followed by the user's reply, so a new
+  // one starts at a bot message that directly follows a user message. When over
+  // the cap, drop the oldest messages up to the next exchange start, so the
+  // history never begins halfway through an exchange.
+  private _trimHistory(maxHistoryLength: number): { role: "user" | "assistant"; content: string }[] {
+    let copy = _.cloneDeep(this._history);
+    const excess = copy.length - maxHistoryLength;
+    if (excess <= 0) {
+      return copy;
+    }
+
+    let cut = excess;
+    while (
+      cut < copy.length &&
+      !(
+        copy[cut].role === "assistant" &&
+        copy[cut - 1].role === "user"
+      )
+    ) {
+      cut++;
+    }
+
+    // No exchange boundary left: fall back to a plain cut rather than losing everything.
+    if (cut >= copy.length) {
+      cut = excess;
+    }
+    return copy.splice(0, cut);
+  }
+
+  // History before the message currently being processed, as JSON.
+  private _historyForRequest(currentInput: string, maxHistoryLength: number): string {
+    const history = this._trimHistory(maxHistoryLength);
+    const last = history[history.length - 1];
+    if (last?.role === "user" && last.content === currentInput) {
+      history.pop();
+    }
+    return JSON.stringify(history);
   }
 
   async send_events(
@@ -183,9 +233,11 @@ export class LocalProjectController<
       }
 
       this._output.botMessage({ type, content, params });
+      this._addToHistory("assistant", content);
     } else if (type == "Compute") {
       this.message_sent_event();
-      this.receive_message({type: "text", content: input, image: image});
+      // The user's input was already recorded in the history when it first arrived.
+      this._receive_message({type: "text", content: input, image: image}, true, false);
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 
@@ -208,6 +260,7 @@ export class LocalProjectController<
       });
 
       this._logger.log("message_bot", content);
+      this._addToHistory("assistant", content);
     }
   }
 
@@ -535,10 +588,14 @@ export class LocalProjectController<
   private async _receive_message(
     message: ReceivedMessage,
     isUserInput: boolean,
+    recordHistory: boolean = isUserInput,
   ): Promise<void> {
     if (isUserInput) {
       if (message.type == "text") {
         this._logger.log("message_user", message.content as string);
+        if (recordHistory) {
+          this._addToHistory("user", message.content as string);
+        }
       } else if (message.type == "audio") {
         this._logger.log_audio(message.content as Blob).catch((error) => {
           console.error("Failed to log audio message", error);
@@ -582,6 +639,12 @@ export class LocalProjectController<
             }
           }
 
+          if (external_link.send_chat_history) {
+            extraParams["messages"] = this._historyForRequest(
+              typeof message.content === "string" ? message.content : "", external_link.max_history_length ?? 20
+            );
+          }
+
           if (message.type == "audio") {
             res = await this._lookup.apiCall(
               external_link,
@@ -621,6 +684,7 @@ export class LocalProjectController<
               this._output.updateMessage(res.intent);
               message.content = res.intent;
               this._logger.log("message_user", "transcription: " + res.intent);
+              this._addToHistory("user", res.intent);
             }
             // @TODO: see if this is a good long-term solution
             best = await this.find_best_connector(current_block, res.intent);
