@@ -1,9 +1,10 @@
 <script lang="ts">
   import ChatMessage from "./ChatMessage.svelte";
   import Avatar from "./Avatar.svelte";
-  import type { Message } from "$lib/types/types";
+  import type { Message } from "#lib/types/types.ts";
   import type { ProjectSettings } from "../../../../common/project/types";
   import { getContext } from "svelte";
+  const settings: ProjectSettings = getContext("settingsContext");
 
   type Props = {
     ttsCompleteEvent: Function;
@@ -21,7 +22,7 @@
   }
 
   const showAvatarForTypingIndicator: boolean = $derived(
-    isNewBotMessageBlock(messages?.length ?? 0)
+    (settings.show_avatar_sm ?? false) && isNewBotMessageBlock(messages?.length ?? 0)
   );
 </script>
 
@@ -41,10 +42,10 @@
         </div>
       </div>
     {:else}
-      <div class="w-10"></div>
+      <div class="w-2"></div>
     {/if}
     <div class="chat-bubble bg-tilbot-secondary-purple">
-      <span class="loading loading-dots loading-sm"></span>
+      <span class="loading loading-dots loading-sm text-white"></span>
     </div>
   </div>
 {/if}

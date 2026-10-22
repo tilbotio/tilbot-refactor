@@ -6,7 +6,7 @@
     type GeneralSettings,
     type ProjectSettings,
   } from "../../../../common/project/types";
-  import { testConnection } from "$lib/utils/functions";
+  import { testConnection } from "#lib/utils/functions";
   import { ArrowUpOnSquare, Plus, Trash } from "svelte-heros-v2";
 
   let windowApi: any;
@@ -261,7 +261,7 @@
                           >
                             {#if projectSettingsCopy.avatar_file == ""}
                               <div
-                                class="bg-neutral-focus text-neutral-content rounded-full w-12"
+                                class="w-full h-full rounded-full overflow-hidden text-neutral-content flex items-center justify-center bg-neutral-focus"
                               >
                                 <span
                                   >{firstletter(projectSettingsCopy.name)}</span

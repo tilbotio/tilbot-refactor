@@ -2,9 +2,9 @@ import type {
   ProjectControllerOutputInterface,
   ProjectControllerInterface,
 } from "../../../../common/projectcontroller/types";
-import type { RuntimeContext } from "$lib/types/RuntimeContext";
+import type { RuntimeContext } from "#lib/types/RuntimeContext.ts";
 import type { ProjectSettings } from "../../../../common/project/types";
-import type { CurrentMessageType, Message } from "$lib/types/types";
+import type { CurrentMessageType, Message } from "#lib/types/types.ts";
 import { getContext } from "svelte";
 
 export class ChatOutput implements ProjectControllerOutputInterface {

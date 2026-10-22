@@ -1,15 +1,15 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
-  import ChatView from "$lib/components/ChatView.svelte";
+  import ChatView from "#lib/components/ChatView.svelte";
   import { setContext, onMount } from "svelte";
-  import { ChatOutput } from "$lib/classes/ChatOutput.svelte";
-  import { ChatLookup } from "$lib/classes/ChatLookup";
+  import { ChatOutput } from "#lib/classes/ChatOutput.svelte";
+  import { ChatLookup } from "#lib/classes/ChatLookup";
   import { NonLogger } from "../../../common/projectcontroller/nonlogger";
   import { RemoteProjectController } from "../../../common/projectcontroller/remote";
   import { LocalProjectController } from "../../../common/projectcontroller/local";
   import type { ProjectControllerInterface } from "../../../common/projectcontroller/types";
-  import type { RuntimeContext } from "$lib/types/RuntimeContext";
-  import type { Message } from "$lib/types/types";
+  import type { RuntimeContext } from "#lib/types/RuntimeContext";
+  import type { Message } from "#lib/types/types";
   import type { ProjectSettings } from "../../../common/project/types";
 
   let { data: loadResult }: PageProps = $props();

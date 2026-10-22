@@ -3,7 +3,8 @@
   import Avatar from "./Avatar.svelte";
   import { getContext } from "svelte";
   import { SpeakerWave, Stop } from "svelte-heros-v2";
-  import type { Message, NewBotMessageBlock } from "$lib/types/types";
+  import SvelteMarkdown from "@humanspeak/svelte-markdown";
+  import type { Message, NewBotMessageBlock } from "#lib/types/types.ts";
   import type { ProjectSettings } from "../../../../common/project/types";
   const settings: ProjectSettings = getContext("settingsContext");
 
@@ -66,7 +67,7 @@
     playingTTS = false;
   }
 
-  if (settings.tts_enabled && settings.tts_automatic) {
+  if (settings && settings.tts_enabled && settings.tts_automatic) {
     trySpeak();
   }
 </script>
@@ -75,24 +76,30 @@
   <AudioMessage {message} />
 {:else if message.content !== "" || message.image !== undefined}
   <div class="chat ml-2 mr-2 {alignment}">
-    {#if newBotMessageBlock}
+    {#if newBotMessageBlock && settings.show_avatar_sm}
       <div class="chat-image avatar">
         <div class="w-10">
           <Avatar avatarSource={settings.avatar_file_sm} />
         </div>
       </div>
     {:else}
-      <div class="w-10"></div>
+      <div class="w-2"></div>
     {/if}
-    <div class="chat-bubble whitespace-pre-line {background}">
-      {#if settings.tts_enabled}
+    <div class="chat-bubble whitespace-pre-line text-white {background}">
+      {#if settings && settings.tts_enabled}
         {#if playingTTS}
           <Stop class="h-4 w-4 inline mr-2" onclick={stopTTS} />
         {:else}
           <SpeakerWave class="h-4 w-4 inline mr-2" onclick={doTTS} />
         {/if}
       {/if}
-      {message.content}
+      <SvelteMarkdown source={message.content}>
+          {#snippet link({ href, title, children })}
+              <a {href} {title} target="_blank" rel="noopener noreferrer">
+                  {@render children?.()}
+              </a>
+          {/snippet}
+      </SvelteMarkdown>
       {#if message.image !== undefined}
         <img src={URL.createObjectURL(message.image)} alt="Attachment to message" class="mt-2" />
       {/if}

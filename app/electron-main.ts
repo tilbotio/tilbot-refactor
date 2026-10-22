@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { fork, type ChildProcess } from "child_process";
 import fs from "fs";
 import { rm, mkdir, copyFile, readFile, writeFile } from "fs/promises";
-import publicIp from "public-ip";
+import { publicIpv4 } from "public-ip";
 import AdmZip from "adm-zip";
 import { readSheet } from "read-excel-file/node";
 import { VariableDb } from "../common/variabledb.ts";
@@ -44,7 +44,13 @@ const serverIP = (async () => {
     }
   }
 
-  const public_ip = await publicIp.v4({ timeout: 200 });
+  // Lookup can fail or time out on restricted networks; fall back to no public IP.
+  let public_ip: string | undefined;
+  try {
+    public_ip = await publicIpv4({ timeout: 200 });
+  } catch {
+    public_ip = undefined;
+  }
 
   return { public_ip, local_ip };
 })();

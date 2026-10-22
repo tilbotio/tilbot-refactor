@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
-import type { RuntimeContext } from "$lib/types/RuntimeContext";
+import type { RuntimeContext } from "#lib/types/RuntimeContext";
 import { defaultProjectSettings } from "../../../common/project/types";
 import _ from "lodash";
 

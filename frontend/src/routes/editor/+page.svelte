@@ -11,7 +11,7 @@
     GeneralSettings,
   } from "../../../../common/project/types";
   import { defaultProject } from "../../../../common/project/types";
-  import { setOrDelete, testConnection } from "$lib/utils/functions";
+  import { setOrDelete, testConnection } from "#lib/utils/functions";
   import Variables from "./variables.svelte";
   import Settings from "./settings.svelte";
   import Draggable from "./draggable.svelte";
@@ -1026,16 +1026,13 @@
       </div>
 
       <div id="simulator" class="mockup-phone w-full my-1.5 h-full">
-        <div class="camera"></div>
-        <div class="display h-full w-full">
-          <div class="artboard artboard-demo h-full">
-            <iframe
-              src="about:blank"
-              class="w-full h-full"
-              bind:this={simulator}
-              title="Simulator"
-            ></iframe>
-          </div>
+        <div class="mockup-phone-display">
+          <iframe
+            src="about:blank"
+            class="w-full h-full bg-white"
+            bind:this={simulator}
+            title="Simulator"
+          ></iframe>
         </div>
       </div>
     </div>

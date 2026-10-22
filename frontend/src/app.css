@@ -1,3 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@source "./**/*.{html,js,svelte,ts}";
+@plugin "daisyui" {
+  themes: light --default;
+}
+
+@theme {
+  /* Temporary workaround until we figure out why bg-neutral-focus fails silently */
+  --color-neutral-focus: #2a2e37;
+  --color-tilbot-primary-500: #29004a;
+  --color-tilbot-primary-400: #6c4199;
+  --color-tilbot-primary-300: #a840e3;
+  --color-tilbot-primary-200: #c98fe3;
+  --color-tilbot-primary-100: #f5edff;
+  --color-tilbot-secondary-hardpink: #ff1f96;
+  --color-tilbot-secondary-softpink: #f266e5;
+  --color-tilbot-secondary-hardblue: #0abdff;
+  --color-tilbot-secondary-softblue: #a1ccf7;
+  --color-tilbot-secondary-purple: #29173c;
+}

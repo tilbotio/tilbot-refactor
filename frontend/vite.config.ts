@@ -1,11 +1,24 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import fs from "fs";
+import adapterNode from "@sveltejs/adapter-node";
+import adapterStatic from "@sveltejs/adapter-static";
 
 const API_URL = process.env.VITE_API_URL || "http://localhost:8000";
 
 let config = {
-  plugins: [sveltekit()],
+  plugins: [
+    tailwindcss(),
+    sveltekit({
+      compilerOptions: { runes: true },
+      adapter:
+        process.env.TILBOT_ENV === "app"
+          ? adapterStatic({ pages: "../app/build", fallback: "200.html" })
+          : adapterNode(),
+      prerender: { handleHttpError: "warn" },
+    }),
+  ],
   build: { minify: false },
   server: {
     host: true,

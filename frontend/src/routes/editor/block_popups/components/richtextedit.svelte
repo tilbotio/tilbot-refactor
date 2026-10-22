@@ -4,11 +4,18 @@
     EllipsisHorizontalCircle,
     Variable,
   } from "svelte-heros-v2";
+  import type { Message } from "#lib/types/types.ts";
+  import ChatMessage from "#lib/components/ChatMessage.svelte";
   import Variablepopup from "./variablepopup.svelte";
 
   let { value = $bindable(), variables = $bindable([]) } = $props();
 
   let variablePopup: Variablepopup;
+
+  let preview: Message = $state({
+    content: "",
+    from: "bot",
+  });
 
   function checkDelBadges(this: any, event: KeyboardEvent) {
     if (
@@ -168,6 +175,23 @@
       }
     }, 100);
   }
+
+  function buildPreview() {
+    let p: string[] = [];
+    for (let i = 0; i < value.length; i++) {
+      if (value[i].type === undefined && value[i].text !== undefined) {
+        p.push(value[i].text);
+      } else if (value[i].type === "prevTurnText") {
+        p.push("[Previous turn text]");
+      } else if (value[i].type === "prevConnectorLabel") {
+        p.push("[Previous connector label]");
+      } else if (value[i].type === "variable") {
+        p.push("[Variable " + value[i].variable + "]");
+      }
+    }
+
+    preview.content = p.join(" ");
+  }
 </script>
 
 <Variablepopup bind:this={variablePopup} {variables} onSave={insertVariable}
@@ -199,7 +223,7 @@
 </div>
 <div
   id="richtexteditor"
-  class="textarea text-base textarea-bordered resize-none inset-y-2 w-full max-h-40 h-24 overflow-scroll"
+  class="textarea text-base resize-none inset-y-2 w-full max-h-40 h-24 overflow-scroll cursor-text"
 >
   {#each value as v}
     {#if v.type !== undefined && v.type == "prevTurnText"}
@@ -222,7 +246,7 @@
       </div>
     {:else}
       <div
-        class="inline-flex outline-none"
+        class="inline-flex outline-hidden min-w-3 min-h-6 align-middle"
         contenteditable="plaintext-only"
         bind:innerHTML={v.text}
         onkeydown={checkDelBadges}
@@ -230,3 +254,19 @@
     {/if}
   {/each}
 </div>
+
+<button class="btn btn-sm btn-outline mt-2 mb-4" onclick={buildPreview}>
+  Preview message
+</button>
+
+{#if preview.content !== ""}
+<div>
+  <ChatMessage
+    message={preview}
+    newBotMessageBlock={false}
+    ttsCompleteEvent={() => {}}
+  />
+</div>
+{/if}
+
+<div class="divider mt-4 mb-4"></div>

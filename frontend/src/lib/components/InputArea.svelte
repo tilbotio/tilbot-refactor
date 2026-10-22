@@ -1,11 +1,11 @@
 <script lang="ts">
-  import CameraInput from "$lib/components/CameraInput.svelte";
-  import SpeechInput from "$lib/components/SpeechInput.svelte";
+  import CameraInput from "#lib/components/CameraInput.svelte";
+  import SpeechInput from "#lib/components/SpeechInput.svelte";
   import type {
     InputText,
     CurrentMessageType,
     McOption,
-  } from "$lib/types/types";
+  } from "#lib/types/types.ts";
   import { Microphone, PaperAirplane } from "svelte-heros-v2";
   type Props = {
     currentMessageType: CurrentMessageType;
@@ -74,9 +74,9 @@
     onSwitchSpeechMode={forceAudioReply ? null : switchSpeechMode}
   />
 {:else}
-  <div class="bg-gray-100 w-full h-20 drop-shadow-md">
+  <div class="bg-gray-100 w-full h-20 drop-shadow-md flex justify-center items-center">
     <textarea
-      class="relative top-2 h-16 textarea textarea-bordered resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]"
+      class="h-16 min-h-0 textarea resize-none inset-y-2 left-4 w-[calc(100%-5.5rem)]"
       placeholder=""
       bind:value={inputText}
       onkeydown={handleKeyDown}
@@ -84,7 +84,7 @@
     </textarea>
     {#if allowAudioReply}
       <button
-        class="relative bottom-[14px] right-8 {inputText.trim().length == 0
+        class="absolute bottom-[28px] right-[92px] {inputText.trim().length == 0
           ? ''
           : 'invisible'}"
         aria-label="Switch to audio input"
@@ -95,7 +95,7 @@
       <CameraInput bind:currentImage />
     {/if}
     <button
-      class="btn btn-circle absolute bottom-4 right-4 {inputText.trim()
+      class="btn btn-circle ml-4 {inputText.trim()
         .length == 0 && currentImage === null
         ? 'btn-disabled'
         : ''}"

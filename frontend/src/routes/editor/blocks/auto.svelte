@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Clock } from "svelte-heros-v2";
+  import SvelteMarkdown from "@humanspeak/svelte-markdown";
   import BaseBlock, { type BlockProps } from "./base.svelte";
   import {
     ChatBubbleLeft,
@@ -21,7 +22,7 @@
         <EllipsisHorizontalCircle class="w-3 h-3" /> Previous connector label
       </div>
     {:else}
-      <div class="inline-flex">{v.text}</div>
+      <div class="inline-flex"><SvelteMarkdown source={v.text}></SvelteMarkdown></div>
     {/if}
   {/each}
 </BaseBlock>

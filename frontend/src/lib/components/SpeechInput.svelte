@@ -7,7 +7,7 @@
     Play,
     Stop,
   } from "svelte-heros-v2";
-  import { playingTimeToMinSecString } from "$lib/utils/functions";
+  import { playingTimeToMinSecString } from "#lib/utils/functions.ts";
 
   const recorderMimeCandidates = [
     "audio/webm;codecs=opus",

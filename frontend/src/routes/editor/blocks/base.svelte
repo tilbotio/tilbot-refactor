@@ -9,7 +9,7 @@
   } from "svelte-heros-v2";
   import ConnectorPad from "./components/connectorpad.svelte";
   import type { ProjectBlock } from "../../../../../common/project/types.ts";
-  import { setOrDelete } from "$lib/utils/functions";
+  import { setOrDelete } from "#lib/utils/functions.ts";
 
   export type BlockProps = {
     blockId: string;

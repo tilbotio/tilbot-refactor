@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { RuntimeContext } from "$lib/types/RuntimeContext";
-  import { firstLetter } from "$lib/utils/functions";
+  import type { RuntimeContext } from "#lib/types/RuntimeContext";
+  import { firstLetter } from "#lib/utils/functions";
   import type { ProjectSettings } from "../../../../common/project/types";
   import { getContext } from "svelte";
 

@@ -1,10 +1,10 @@
 <script lang="ts">
   import ChatHeader from "./ChatHeader.svelte";
   import type { ProjectControllerInterface } from "../../../../common/projectcontroller/types";
-  import type { ChatOutput } from "$lib/classes/ChatOutput.svelte";
-  import type { RuntimeContext } from "$lib/types/RuntimeContext";
+  import type { ChatOutput } from "#lib/classes/ChatOutput.svelte.ts";
+  import type { RuntimeContext } from "#lib/types/RuntimeContext.ts";
   import type { ProjectSettings } from "../../../../common/project/types";
-  import type { McOption, Message, CurrentMessageType } from "$lib/types/types";
+  import type { McOption, Message, CurrentMessageType } from "#lib/types/types.ts";
   import { getContext, tick } from "svelte";
   import MessageList from "./ChatMessageList.svelte";
   import InputArea from "./InputArea.svelte";

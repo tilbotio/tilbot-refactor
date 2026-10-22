@@ -2,8 +2,8 @@
   import { onMount } from "svelte";
   import { Play, Stop } from "svelte-heros-v2";
 
-  import type { Message } from "$lib/types/types";
-  import { playingTimeToMinSecString } from "$lib/utils/functions";
+  import type { Message } from "#lib/types/types.ts";
+  import { playingTimeToMinSecString } from "#lib/utils/functions.ts";
 
   type Props = {
     message: Message;
