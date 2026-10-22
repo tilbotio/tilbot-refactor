@@ -252,6 +252,8 @@
       if (lastRecording !== null && !isTranscribing) {
         onSendAudio(lastRecording, transcription ?? undefined);
         transcription = null;
+        lastRecording = null;
+        timeDisplay = "00:00";
         if (onSwitchSpeechMode !== null) {
           onSwitchSpeechMode();
         }
