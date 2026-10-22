@@ -86,20 +86,24 @@
       <div class="w-2"></div>
     {/if}
     <div class="chat-bubble whitespace-pre-line text-white {background}">
-      {#if settings && settings.tts_enabled}
-        {#if playingTTS}
-          <Stop class="h-4 w-4 inline mr-2" onclick={stopTTS} />
-        {:else}
-          <SpeakerWave class="h-4 w-4 inline mr-2" onclick={doTTS} />
+      <div class="flex items-start">
+        {#if settings && settings.tts_enabled}
+          {#if playingTTS}
+            <Stop class="h-4 w-4 mr-2 mt-1 shrink-0" onclick={stopTTS} />
+          {:else}
+            <SpeakerWave class="h-4 w-4 mr-2 mt-1 shrink-0" onclick={doTTS} />
+          {/if}
         {/if}
-      {/if}
-      <SvelteMarkdown source={message.content}>
-          {#snippet link({ href, title, children })}
-              <a {href} {title} target="_blank" rel="noopener noreferrer">
-                  {@render children?.()}
-              </a>
-          {/snippet}
-      </SvelteMarkdown>
+        <div>
+          <SvelteMarkdown source={message.content}>
+              {#snippet link({ href, title, children })}
+                  <a {href} {title} target="_blank" rel="noopener noreferrer">
+                      {@render children?.()}
+                  </a>
+              {/snippet}
+          </SvelteMarkdown>
+        </div>
+      </div>
       {#if message.image !== undefined}
         <img src={URL.createObjectURL(message.image)} alt="Attachment to message" class="mt-2" />
       {/if}

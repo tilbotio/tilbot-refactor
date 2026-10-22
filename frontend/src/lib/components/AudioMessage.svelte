@@ -80,7 +80,7 @@
       >
     </div>
     {#if message.content != ""}
-      <div class="italic text-sm mt-4">
+      <div class="italic text-sm mt-4 text-white">
         {message.content}
       </div>
     {/if}
