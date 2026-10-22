@@ -237,7 +237,7 @@ export class LocalProjectController<
     } else if (type == "Compute") {
       this.message_sent_event();
       // The user's input was already recorded in the history when it first arrived.
-      this._receive_message({type: "text", content: input, image: image}, true, false);
+      this._receive_message({type: "text", content: input, image: image}, true, false, false);
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 
@@ -585,14 +585,50 @@ export class LocalProjectController<
     return this._receive_message(message, true);
   }
 
+  async transcribe(audio: Blob): Promise<string | null> {
+    const current = this._project.blocks[this._current_block_id?.toString()];
+    if (!current) {
+      return null;
+    }
+
+    for (const connector of current.connectors ?? []) {
+      if (!connector.label?.some((part: any) => part.type == "audio")) {
+        continue;
+      }
+      for (const target of connector.targets) {
+        const block = this._project.blocks[target.toString()];
+        if (block?.type !== "Compute" || !block.use_external_link) {
+          continue;
+        }
+        const link = this._getExternalLinkFromName(block.external_link);
+        if (link === null) {
+          continue;
+        }
+        const extraParams: Record<string, string> = {};
+        for (const param of block.parameters ?? []) {
+          if (param.key.trim() !== "") {
+            extraParams[param.key] = param.value;
+          }
+        }
+        const res = await this._lookup.apiCall(link, audio, [], extraParams);
+        return typeof res?.intent === "string" ? res.intent : null;
+      }
+    }
+
+    return null;
+  }
+
   private async _receive_message(
     message: ReceivedMessage,
     isUserInput: boolean,
     recordHistory: boolean = isUserInput,
+    logInput: boolean = isUserInput,
   ): Promise<void> {
     if (isUserInput) {
       if (message.type == "text") {
-        this._logger.log("message_user", message.content as string);
+        if (logInput) {
+          this._logger.log("message_user", message.content as string);
+        }
         if (recordHistory) {
           this._addToHistory("user", message.content as string);
         }
@@ -645,7 +681,10 @@ export class LocalProjectController<
             );
           }
 
-          if (message.type == "audio") {
+          if (message.type == "audio" && message.transcription !== undefined) {
+            // Already transcribed (and possibly corrected) before sending.
+            res = { intent: message.transcription };
+          } else if (message.type == "audio") {
             res = await this._lookup.apiCall(
               external_link,
               message.content as Blob,

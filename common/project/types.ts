@@ -19,6 +19,7 @@ export type ProjectSettings = {
   external_links: ExternalLink[];
   tts_enabled: boolean;
   tts_automatic: boolean;
+  can_transcribe?: boolean;
 };
 
 export type ExternalLink = {
@@ -45,7 +46,8 @@ export const defaultProjectSettings: ProjectSettings = {
   name: "Tilbot",
   external_links: [],
   tts_enabled: false,
-  tts_automatic: false
+  tts_automatic: false,
+  can_transcribe: false
 };
 
 export type ProjectVariable = {

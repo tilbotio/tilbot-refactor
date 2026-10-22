@@ -6,6 +6,9 @@ export interface ProjectControllerInterface<
   readonly output: ProjectControllerOutputType;
   message_sent_event(): void;
   receive_message(message: ReceivedMessage): void;
+  // Transcribes audio with the Compute block that follows the current block,
+  // without submitting it. Resolves to null if transcription is unavailable.
+  transcribe(audio: Blob): Promise<string | null>;
   log(event: string, details?: string): void;
   set_participant_id(pid: string): void;
 }
@@ -54,5 +57,7 @@ export type ReceivedMessage = {
   type: ReceivedMessageType;
   content: string | Blob;
   image?: string | Blob;
+  // Text already transcribed (and possibly corrected) before sending the audio.
+  transcription?: string;
 }
   

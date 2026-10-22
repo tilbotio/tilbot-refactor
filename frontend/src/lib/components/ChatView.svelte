@@ -74,14 +74,15 @@
     currentMessageType = "Text";
   }
 
-  function sendUserAudioMessage(audioBlob: Blob): void {
+  function sendUserAudioMessage(audioBlob: Blob, transcription?: string): void {
     projectController.output.processMessage(
       "user",
-      "",
+      transcription ?? "",
       undefined,
       undefined,
       "Text",
-      audioBlob
+      audioBlob,
+      transcription
     );
     // Reset currentMessageType to text by default
     currentMessageType = "Text";
@@ -116,5 +117,7 @@
     {allowImageReply}
     onSend={sendUserMessage}
     onSendAudio={sendUserAudioMessage}
+    onTranscribe={(audio) => projectController.transcribe(audio)}
+    canTranscribe={settingsContext.can_transcribe ?? false}
   />
 </div>

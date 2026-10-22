@@ -6,7 +6,7 @@
     type GeneralSettings,
     type ProjectSettings,
   } from "../../../../common/project/types";
-  import { testConnection } from "#lib/utils/functions";
+  import { testConnection } from "#lib/utils/functions.ts";
   import { ArrowUpOnSquare, Plus, Trash } from "svelte-heros-v2";
 
   let windowApi: any;
@@ -625,7 +625,7 @@
               type="radio"
               name="settings-tabs"
               class="tab"
-              aria-label="Text to speech settings"
+              aria-label="Speech settings"
             />
             <div class="tab-content bg-base-100 border-base-300 p-6">
               <div class="w-full text-xl text-center font-bold">
@@ -655,6 +655,22 @@
                     />
                   </label>
                 {/if}
+                <br /><br />
+              <div class="w-full text-xl text-center font-bold">
+                Voice message settings
+              </div>                
+                <label class="label cursor-pointer">
+                  <span class="label-text">
+                    Let users review the transcription of a voice
+                    message before sending it (requires a Compute block with a
+                    transcription module after the audio connector)
+                  </span>
+                  <input
+                    type="checkbox"
+                    class="toggle"
+                    bind:checked={projectSettingsCopy.can_transcribe}
+                  />
+                </label>
               </div>
             </div>
           </div>

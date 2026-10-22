@@ -94,7 +94,8 @@ export class ChatOutput implements ProjectControllerOutputInterface {
     image?: Message["image"],
     params?: Message["params"],
     type?: Message["type"],
-    audio?: Message["audio"]
+    audio?: Message["audio"],
+    transcription?: string
   ) {
     if (type === "Update") {
       this.messages[this.messages.length-1].content = content;
@@ -106,7 +107,7 @@ export class ChatOutput implements ProjectControllerOutputInterface {
         }
       } else {
         if (audio !== undefined) {
-          this.projectController?.receive_message({ type: "audio", content: audio });
+          this.projectController?.receive_message({ type: "audio", content: audio, transcription });
         }
         else {
           this.projectController?.receive_message({ type: "text", content: content, image: image });

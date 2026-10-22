@@ -11,6 +11,8 @@ class RemoteProjectController<
   private _output: ProjectControllerOutputType;
   private _pending: string[] = [];
   private _socket: any = null;
+  private _transcribeCounter = 0;
+  private _transcriptions = new Map<number, (text: string | null) => void>();
 
   constructor(output: ProjectControllerOutputType) {
     this._output = output;
@@ -85,12 +87,38 @@ class RemoteProjectController<
         case "typing indicator":
           this._output.typingIndicator();
           break;
+
+        case "transcription": {
+          const resolve = this._transcriptions.get(args[0]);
+          this._transcriptions.delete(args[0]);
+          resolve?.(args[1] ?? null);
+          break;
+        }
       }
     });
   }
 
   message_sent_event() {
     this._socket.send(JSON.stringify(["message sent"]));
+  }
+
+  async transcribe(audio: Blob): Promise<string | null> {
+    if (this._socket == null) {
+      return null;
+    }
+    const id = ++this._transcribeCounter;
+    const content = await this.blobToBase64(audio);
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        this._transcriptions.delete(id);
+        resolve(null);
+      }, 60000);
+      this._transcriptions.set(id, (text) => {
+        clearTimeout(timeout);
+        resolve(text);
+      });
+      this._socket.send(JSON.stringify(["transcribe", id, content]));
+    });
   }
 
   async receive_message(message: ReceivedMessage) {

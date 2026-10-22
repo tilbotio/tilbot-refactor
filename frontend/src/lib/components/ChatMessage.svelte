@@ -67,7 +67,7 @@
     playingTTS = false;
   }
 
-  if (settings && settings.tts_enabled && settings.tts_automatic) {
+  if (settings && settings.tts_enabled && settings.tts_automatic && message.from === "bot") {
     trySpeak();
   }
 </script>

@@ -589,6 +589,14 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
           await projectController.receive_message(args[0] as any);
           break;
 
+        case "transcribe": {
+          const text = await projectController.transcribe(
+            convertBase64ToBlob(args[1]),
+          );
+          socket.send(JSON.stringify(["transcription", args[0], text]));
+          break;
+        }
+
         case "log":
           projectController.log(...(args as [string]));
           break;

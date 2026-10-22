@@ -14,7 +14,9 @@
     allowImageReply?: boolean;
     mcOptions: McOption[];
     onSend: (InputText: string, imageBlob: Blob | null) => void;
-    onSendAudio: (audioBlob: Blob) => void;
+    onSendAudio: (audioBlob: Blob, transcription?: string) => void;
+    onTranscribe: (audioBlob: Blob) => Promise<string | null>;
+    canTranscribe: boolean;
   };
 
   let inputText: InputText = $state("");
@@ -29,6 +31,8 @@
     mcOptions,
     onSend,
     onSendAudio,
+    onTranscribe,
+    canTranscribe
   }: Props = $props();
 
   function handleTextSubmit(): void {
@@ -71,7 +75,9 @@
 {:else if forceAudioReply || speechMode}
   <SpeechInput
     {onSendAudio}
+    {onTranscribe}
     onSwitchSpeechMode={forceAudioReply ? null : switchSpeechMode}
+    {canTranscribe}
   />
 {:else}
   <div class="bg-gray-100 w-full h-20 drop-shadow-md flex justify-center items-center">

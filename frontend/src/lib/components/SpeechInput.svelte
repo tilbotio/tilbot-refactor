@@ -17,11 +17,17 @@
   ];
 
   type Props = {
-    onSendAudio: (audioBlob: Blob) => void;
+    onSendAudio: (audioBlob: Blob, transcription?: string) => void;
+    onTranscribe: (audioBlob: Blob) => Promise<string | null>;
     onSwitchSpeechMode: (() => void) | null;
+    canTranscribe: boolean;
   };
 
-  const { onSendAudio, onSwitchSpeechMode }: Props = $props();
+  const { onSendAudio, onTranscribe, onSwitchSpeechMode, canTranscribe }: Props =
+    $props();
+
+  let transcription: string | null = $state(null);
+  let isTranscribing: boolean = $state(false);
 
   let isSupported = $state(true);
   let errorMessage = $state("");
@@ -77,6 +83,7 @@
 
     chunks = [];
     lastRecording = null;
+    transcription = null;
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) {
         chunks.push(e.data);
@@ -123,6 +130,18 @@
       });
       const audioURL = window.URL.createObjectURL(lastRecording);
       player.src = audioURL;
+
+      if (canTranscribe) {
+        const recording = lastRecording;
+        isTranscribing = true;
+        transcription = null;
+        const text = await onTranscribe(recording).catch(() => null);
+        // Ignore the result if a new recording was started in the meantime.
+        if (lastRecording === recording) {
+          transcription = text;
+        }
+        isTranscribing = false;
+      }
     } else if (isPlaying) {
       player.pause();
       player.currentTime = 0;
@@ -185,12 +204,26 @@
         </button>
       {/if}
       {#if lastRecording !== null && !isPlaying}
-        <button
-          class="btn btn-circle mr-4 bg-green-400 border-green-400 hover:bg-green-500 hover:border-green-500"
-          aria-label="Play audio"
-          onclick={play}
-          ><Play variation="solid" class="ml-[3px] h-6 w-6 text-white" />
-        </button>
+
+        {#if canTranscribe && (isTranscribing || transcription !== null)}
+          <div class="tooltip tooltip-open tooltip-top tooltip-start" data-tip="{isTranscribing
+            ? '...'
+            : transcription}">
+            <button
+              class="btn btn-circle mr-4 bg-green-400 border-green-400 hover:bg-green-500 hover:border-green-500"
+              aria-label="Play audio"
+              onclick={play}
+              ><Play variation="solid" class="ml-[3px] h-6 w-6 text-white" />
+            </button>        
+          </div>
+        {:else}                
+          <button
+            class="btn btn-circle mr-4 bg-green-400 border-green-400 hover:bg-green-500 hover:border-green-500"
+            aria-label="Play audio"
+            onclick={play}
+            ><Play variation="solid" class="ml-[3px] h-6 w-6 text-white" />
+          </button>
+        {/if}
       {/if}
       {#if errorMessage}<span class="text-red-700 text-xs mr-2"
           >{errorMessage}</span
@@ -209,13 +242,16 @@
       aria-label="Send message"
       onclick={onSwitchSpeechMode}><Bars3BottomLeft class="h-5 w-5" /></button
     >
+  {:else}
+    <div class="w-20"></div>
   {/if}
   <button
-    class="btn btn-circle mr-4 {lastRecording === null ? 'btn-disabled' : ''}"
+    class="btn btn-circle mr-4 {lastRecording === null || isTranscribing ? 'btn-disabled' : ''}"
     aria-label="Send message"
     onclick={() => {
-      if (lastRecording !== null) {
-        onSendAudio(lastRecording);
+      if (lastRecording !== null && !isTranscribing) {
+        onSendAudio(lastRecording, transcription ?? undefined);
+        transcription = null;
         if (onSwitchSpeechMode !== null) {
           onSwitchSpeechMode();
         }
@@ -223,6 +259,7 @@
     }}><PaperAirplane class="h-6 w-6" /></button
   >
 </div>
+
 
 <!-- The audio player for replaying recordings -->
 <div class="hidden">

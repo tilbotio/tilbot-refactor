@@ -137,13 +137,21 @@ app.get("/ws/chat", { websocket: true }, async (socket, req) => {
     }
   });
 
-  socket.addEventListener("message", (e: MessageEvent) => {
+  socket.addEventListener("message", async (e: MessageEvent) => {
     try {
       const [command, ...args] = JSON.parse(e.data);
       switch (command) {
         case "message sent":
           projectController.message_sent_event();
           break;
+
+        case "transcribe": {
+          const text = await projectController.transcribe(
+            convertBase64ToBlob(args[1]),
+          );
+          socket.send(JSON.stringify(["transcription", args[0], text]));
+          break;
+        }
 
         case "user_message":
           if (args[0].type === "audio") {
