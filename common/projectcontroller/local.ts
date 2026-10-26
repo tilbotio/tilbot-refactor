@@ -217,7 +217,11 @@ export class LocalProjectController<
 
             if (options !== null) {
               for (const o of options) {
-                labelText.push(o[0] ?? o);
+                if (Array.isArray(o)) {
+                  labelText.push(o[0]);
+                } else {
+                  labelText.push(o);
+                }
               }
             }
           }

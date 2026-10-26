@@ -246,7 +246,7 @@
       </div>
     {:else}
       <div
-        class="inline-flex outline-hidden min-w-3 min-h-6 align-middle"
+        class="inline-flex outline-hidden min-w-8 min-h-6 align-middle"
         contenteditable="plaintext-only"
         bind:innerHTML={v.text}
         onkeydown={checkDelBadges}
