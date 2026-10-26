@@ -7,9 +7,11 @@
   const {
     connectors,
     variables,
+    canSelectMatchType
   }: {
     connectors: ProjectConnector[];
     variables: [];
+    canSelectMatchType: boolean;
   } = $props();
 
   let variablePopup: Variablepopup;
@@ -45,6 +47,7 @@
         {
           type: "text",
           content: "",
+          match_type: "exact",
         },
       ],
       targets: [],
@@ -71,13 +74,23 @@
           {#if connector.label && (connector.label.length > 1 || (connector.label[0].type !== "else" && connector.label[0].type !== "audio"))}
             <td>
               {#each connector.label?.entries() as [labelid, label_part] (labelid)}
+                {#if canSelectMatchType}
+                <select
+                  bind:value={label_part.match_type}
+                  class="select select-bordered w-full max-w-xs"
+                >
+                  <option selected value="exact">Exactly matches</option>
+                  <option value="contains">Contains</option>
+                </select>
+                {/if}
+
                 <!-- @TODO on change of select remove previously set variables etc. from the label -->
                 <select
                   bind:value={label_part.type}
                   class="select select-bordered w-full max-w-xs"
                 >
-                  <option selected value="text">Contains text</option>
-                  <option value="variable">Match variable</option>
+                  <option selected value="text">Text</option>
+                  <option value="variable">Variable</option>
                 </select>
                 {#if label_part.type == "text"}
                   <input

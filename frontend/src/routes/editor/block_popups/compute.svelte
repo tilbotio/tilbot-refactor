@@ -83,6 +83,6 @@
     <br /><br />
 
     Answer options:<br />
-    <Connectors connectors={blockCopy.connectors} {variables} />
+    <Connectors connectors={blockCopy.connectors} {variables} canSelectMatchType={true} />
   {/snippet}
 </BaseBlockPopup>

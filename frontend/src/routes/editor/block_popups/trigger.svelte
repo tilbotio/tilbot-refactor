@@ -15,6 +15,6 @@
 <BaseBlockPopup Icon={BellAlert} {block} {variables} {save} {cancel}>
   {#snippet children(blockCopy: ProjectBlock)}
     Answer options:<br />
-    <Connectors connectors={blockCopy.connectors} {variables} />
+    <Connectors connectors={blockCopy.connectors} {variables} canSelectMatchType={true} />
   {/snippet}
 </BaseBlockPopup>

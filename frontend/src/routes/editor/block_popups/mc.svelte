@@ -21,6 +21,6 @@
     <br /><br />
 
     Answer options:<br />
-    <Connectors connectors={blockCopy.connectors} {variables} />
+    <Connectors connectors={blockCopy.connectors} {variables} canSelectMatchType={false} />
   {/snippet}
 </BaseBlockPopup>

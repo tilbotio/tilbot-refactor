@@ -194,11 +194,9 @@ export class LocalProjectController<
           ) {
             let options: any[] | null = null;
 
-            if (this._client_vars[label_part.variable] !== null) {
-              let theVar = this._client_vars[label_part.variable];
-              if (Array.isArray(theVar)) {
-                options = theVar;
-              }
+            const theVar = this._client_vars[label_part.variable];
+            if (Array.isArray(theVar)) {
+              options = theVar;
             } else {
               // Check if we need to retrieve a column or random row
               if (
@@ -219,7 +217,7 @@ export class LocalProjectController<
 
             if (options !== null) {
               for (const o of options) {
-                labelText.push(o);
+                labelText.push(o[0] ?? o);
               }
             }
           }
@@ -418,14 +416,24 @@ export class LocalProjectController<
             else_connector = connector;
             meetsCriteria = false;
           } else if (label_part.type == "text" && userInput.trim() !== "") {
-            if (
-              userInput
-                .toLowerCase()
-                .indexOf(label_part.content.toLowerCase()) == -1
-            ) {
-              meetsCriteria = false;
-            } else {
-              found_output.push(label_part.content.toLowerCase());
+            if (label_part.match_type === undefined || label_part.match_type === "contains") {
+              if (
+                userInput
+                  .toLowerCase()
+                  .indexOf(label_part.content.toLowerCase()) == -1
+              ) {
+                meetsCriteria = false;
+              } else {
+                found_output.push(label_part.content.toLowerCase());
+              }
+            } else if (label_part.match_type !== undefined && label_part.match_type === "exact") {
+              if (
+                userInput.toLowerCase() !== label_part.content.toLowerCase()
+              ) {
+                meetsCriteria = false;
+              } else {
+                found_output.push(label_part.content.toLowerCase());
+              }
             }
           } else if (label_part.type == "audio") {
             meetsCriteria = false;
@@ -434,7 +442,7 @@ export class LocalProjectController<
               meetsCriteria = false;
             }
           } else if (label_part.type == "variable" && userInput.trim() !== "") {
-            if (block.type !== "MC" && (block.type !== "Compute" || !block.use_external_link)) {
+            if (block.type !== "MC" && (label_part.match_type !== undefined && label_part.match_type === "contains") || (label_part.match_type === undefined && block.type !== "Compute" || !block.use_external_link)) {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
               let foundAWord = false;
               let words = userInputStripped.split(" ");
@@ -491,7 +499,7 @@ export class LocalProjectController<
                 meetsCriteria = false;
               }
             } else {
-              // MC should have literal matches only
+              // Literal matches
               let lookup: any[] | null = null;
               if (label_part.variableType == "dataset") {
                 lookup = await this._lookup.cell(
