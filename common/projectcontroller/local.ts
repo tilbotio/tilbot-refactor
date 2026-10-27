@@ -8,7 +8,6 @@ import type {
 
 import _ from "lodash";
 
-
 // RegExp.escape() is a bit new
 const regexEscape: (str: string) => string =
   (RegExp as any).escape ||
@@ -70,7 +69,9 @@ export class LocalProjectController<
   // one starts at a bot message that directly follows a user message. When over
   // the cap, drop the oldest messages up to the next exchange start, so the
   // history never begins halfway through an exchange.
-  private _trimHistory(maxHistoryLength: number): { role: "user" | "assistant"; content: string }[] {
+  private _trimHistory(
+    maxHistoryLength: number,
+  ): { role: "user" | "assistant"; content: string }[] {
     let copy = _.cloneDeep(this._history);
     const excess = copy.length - maxHistoryLength;
     if (excess <= 0) {
@@ -80,10 +81,7 @@ export class LocalProjectController<
     let cut = excess;
     while (
       cut < copy.length &&
-      !(
-        copy[cut].role === "assistant" &&
-        copy[cut - 1].role === "user"
-      )
+      !(copy[cut].role === "assistant" && copy[cut - 1].role === "user")
     ) {
       cut++;
     }
@@ -96,7 +94,10 @@ export class LocalProjectController<
   }
 
   // History before the message currently being processed, as JSON.
-  private _historyForRequest(currentInput: string, maxHistoryLength: number): string {
+  private _historyForRequest(
+    currentInput: string,
+    maxHistoryLength: number,
+  ): string {
     const history = this._trimHistory(maxHistoryLength);
     const last = history[history.length - 1];
     if (last?.role === "user" && last.content === currentInput) {
@@ -168,7 +169,7 @@ export class LocalProjectController<
     matchedConnector: string = "",
     input: string = "",
     timeExpired: number = 0,
-    image?: Blob
+    image?: Blob,
   ) {
     const params: any = {};
     const content = await this.check_variables(
@@ -239,14 +240,19 @@ export class LocalProjectController<
     } else if (type == "Compute") {
       this.message_sent_event();
       // The user's input was already recorded in the history when it first arrived.
-      this._receive_message({type: "text", content: input, image: image}, true, false, false);
+      this._receive_message(
+        { type: "text", content: input, image: image },
+        true,
+        false,
+        false,
+      );
     } else {
       const has_targets = block.connectors[0].targets.length > 0;
 
       if (block.allow_audio_reply !== undefined) {
         params.allowAudioReply = block.allow_audio_reply;
       }
-      if (block.force_audio_reply !== undefined) { 
+      if (block.force_audio_reply !== undefined) {
         params.forceAudioReply = block.force_audio_reply;
       }
       if (block.allow_image_reply !== undefined) {
@@ -283,7 +289,7 @@ export class LocalProjectController<
     matchedConnector: string = "",
     input: string = "",
     timeExpired: number = 0,
-    image?: Blob
+    image?: Blob,
   ): void {
     const current_block_id = this._current_block_id ?? -1;
     if (current_block_id == -1) {
@@ -388,7 +394,11 @@ export class LocalProjectController<
     return null;
   }
 
-  async find_best_connector(block: any, userInput: string, image?: Blob | undefined): Promise<{
+  async find_best_connector(
+    block: any,
+    userInput: string,
+    image?: Blob | undefined,
+  ): Promise<{
     found: boolean;
     connector: any;
     output: string[];
@@ -420,7 +430,10 @@ export class LocalProjectController<
             else_connector = connector;
             meetsCriteria = false;
           } else if (label_part.type == "text" && userInput.trim() !== "") {
-            if (label_part.match_type === undefined || label_part.match_type === "contains") {
+            if (
+              label_part.match_type === undefined ||
+              label_part.match_type === "contains"
+            ) {
               if (
                 userInput
                   .toLowerCase()
@@ -430,7 +443,10 @@ export class LocalProjectController<
               } else {
                 found_output.push(label_part.content.toLowerCase());
               }
-            } else if (label_part.match_type !== undefined && label_part.match_type === "exact") {
+            } else if (
+              label_part.match_type !== undefined &&
+              label_part.match_type === "exact"
+            ) {
               if (
                 userInput.toLowerCase() !== label_part.content.toLowerCase()
               ) {
@@ -446,56 +462,71 @@ export class LocalProjectController<
               meetsCriteria = false;
             }
           } else if (label_part.type == "variable" && userInput.trim() !== "") {
-            if (block.type !== "MC" && (label_part.match_type !== undefined && label_part.match_type === "contains") || (label_part.match_type === undefined && block.type !== "Compute" || !block.use_external_link)) {
+            if (
+              (block.type !== "MC" &&
+                label_part.match_type !== undefined &&
+                label_part.match_type === "contains") ||
+              (label_part.match_type === undefined &&
+                block.type !== "Compute") ||
+              !block.use_external_link
+            ) {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
               let foundAWord = false;
               let words = userInputStripped.split(" ");
               for (const word of words) {
                 let lookup: any[] | null = null;
-                let wordStripped = word.replace("?", "").replace("!", "").replace(".", "").replace(",", "");
+                let wordStripped = word
+                  .replace("?", "")
+                  .replace("!", "")
+                  .replace(".", "")
+                  .replace(",", "");
 
-                if (label_part.variableType == "dataset") {
-                  lookup = await this._lookup.cell(
-                    label_part.variable,
-                    label_part.column,
-                    wordStripped.toLowerCase(),
-                  );
-                } else if (label_part.variableType == "session") {
-                  let check = "";
-                  if (
-                    label_part.column !== undefined &&
-                    label_part.column != ""
-                  ) {
-                    check =
-                      this._client_vars[label_part.variable][label_part.column];
-                  } else {
-                    check = this._client_vars[label_part.variable];
-                  }
-                  if (check !== null) {
-                    if (Array.isArray(check)) {
-                      for (let c of check) {
-                        if (
-                          wordStripped.toLowerCase() == c.toLowerCase() ||
-                          new RegExp("\\b" + wordStripped.toLowerCase() + "\\b").test(
-                            c.toLowerCase(),
-                          )
-                        ) {
-                          lookup = [word];
-                        }
-                      }
-                    } else if (
-                      wordStripped.toLowerCase() == check.toLowerCase() ||
-                      new RegExp("\\b" + wordStripped.toLowerCase() + "\\b").test(
-                        check.toLowerCase(),
-                      )
+                if (wordStripped !== "") {
+                  if (label_part.variableType == "dataset") {
+                    lookup = await this._lookup.cell(
+                      label_part.variable,
+                      label_part.column,
+                      wordStripped.toLowerCase(),
+                    );
+                  } else if (label_part.variableType == "session") {
+                    let check = "";
+                    if (
+                      label_part.column !== undefined &&
+                      label_part.column != ""
                     ) {
-                      lookup = [word];
+                      check =
+                        this._client_vars[label_part.variable][
+                          label_part.column
+                        ];
+                    } else {
+                      check = this._client_vars[label_part.variable];
+                    }
+                    if (check !== null) {
+                      if (Array.isArray(check)) {
+                        for (let c of check) {
+                          if (
+                            wordStripped.toLowerCase() == c.toLowerCase() ||
+                            new RegExp(
+                              "\\b" + wordStripped.toLowerCase() + "\\b",
+                            ).test(c.toLowerCase())
+                          ) {
+                            lookup = [word];
+                          }
+                        }
+                      } else if (
+                        wordStripped.toLowerCase() == check.toLowerCase() ||
+                        new RegExp(
+                          "\\b" + wordStripped.toLowerCase() + "\\b",
+                        ).test(check.toLowerCase())
+                      ) {
+                        lookup = [word];
+                      }
                     }
                   }
                 }
                 if (lookup !== null) {
                   foundAWord = true;
-                  found_output.push(wordStripped.toLowerCase());
+                  found_output.push(wordStripped);
                 }
               }
 
@@ -509,7 +540,7 @@ export class LocalProjectController<
                 lookup = await this._lookup.cell(
                   label_part.variable,
                   label_part.column,
-                  userInput.toLowerCase()
+                  userInput.toLowerCase(),
                 );
               } else if (label_part.variableType == "session") {
                 let check = "";
@@ -689,7 +720,8 @@ export class LocalProjectController<
 
           if (external_link.send_chat_history) {
             extraParams["messages"] = this._historyForRequest(
-              typeof message.content === "string" ? message.content : "", external_link.max_history_length ?? 20
+              typeof message.content === "string" ? message.content : "",
+              external_link.max_history_length ?? 20,
             );
           }
 
@@ -701,32 +733,42 @@ export class LocalProjectController<
               external_link,
               message.content as Blob,
               [],
-              extraParams
+              extraParams,
             );
-          }
-
-          else if (external_link.send_user_input) {
+          } else if (external_link.send_user_input) {
             if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
                 message.content as string,
                 await this._getConnectors(current_block),
                 extraParams,
-                message.image
+                message.image,
               );
             } else {
-              res = await this._lookup.apiCall(external_link, message.content as string, [], extraParams, message.image);
-            }
-          } else if (external_link.send_connectors) {
               res = await this._lookup.apiCall(
                 external_link,
-                "",
-                await this._getConnectors(current_block),
+                message.content as string,
+                [],
                 extraParams,
-                message.image
+                message.image,
               );
+            }
+          } else if (external_link.send_connectors) {
+            res = await this._lookup.apiCall(
+              external_link,
+              "",
+              await this._getConnectors(current_block),
+              extraParams,
+              message.image,
+            );
           } else {
-            res = await this._lookup.apiCall(external_link, "", [], extraParams, message.image);
+            res = await this._lookup.apiCall(
+              external_link,
+              "",
+              [],
+              extraParams,
+              message.image,
+            );
           }
 
           if (res !== undefined && res !== null) {
@@ -744,7 +786,10 @@ export class LocalProjectController<
             }
           } else {
             // Try to find the "else" connector to fall back on.
-            let potentialElse = this._findElseConnector(current_block, message.content as string);
+            let potentialElse = this._findElseConnector(
+              current_block,
+              message.content as string,
+            );
             if (potentialElse !== null) {
               best = potentialElse;
             }
@@ -759,7 +804,9 @@ export class LocalProjectController<
               for (let i = 0; i < connector.targets.length; i++) {
                 this._current_block_id = connector.targets[i];
                 await this.send_events(connector);
-                if (blocks[this._current_block_id.toString()]?.type === "Compute") {
+                if (
+                  blocks[this._current_block_id.toString()]?.type === "Compute"
+                ) {
                   // The Compute block needs the audio itself (e.g. to transcribe it).
                   this.message_sent_event();
                   await this._receive_message(message, false);
@@ -770,7 +817,7 @@ export class LocalProjectController<
               }
             }
           }
-        }                
+        }
       } else if (message.type == "text" && current_block.type !== "Auto") {
         if (message.image !== undefined) {
           for (const connector of current_block.connectors) {
@@ -787,12 +834,28 @@ export class LocalProjectController<
             }
           }
         }
-        best = await this.find_best_connector(current_block, message.content.toString(), message.image);
+        best = await this.find_best_connector(
+          current_block,
+          message.content.toString(),
+          message.image,
+        );
       }
     }
 
-    console.log("Best connector found: " + best.found + ", isElseConnector: " + best.isElseConnector + ", output: " + best.output + ", targets: " + (best.connector ? best.connector.targets : "null"));
-    if (!best.found || (best.isElseConnector && !current_block.prevent_triggers)) {
+    console.log(
+      "Best connector found: " +
+        best.found +
+        ", isElseConnector: " +
+        best.isElseConnector +
+        ", output: " +
+        best.output +
+        ", targets: " +
+        (best.connector ? best.connector.targets : "null"),
+    );
+    if (
+      !best.found ||
+      (best.isElseConnector && !current_block.prevent_triggers)
+    ) {
       // Check if we need to fire a trigger -- after checking responses to query by the bot!
       for (const block of Object.values(blocks) as any[]) {
         if (block.type === "Trigger") {
@@ -805,7 +868,7 @@ export class LocalProjectController<
             let best_trigger = await this.find_best_connector(
               block,
               message.content as string,
-              message.image
+              message.image,
             );
 
             if (best_trigger.found) {
@@ -841,7 +904,12 @@ export class LocalProjectController<
         }
 
         await this.send_events(best.connector, output, themessage);
-        this._send_current_message(output, themessage, timeExpired, message.image);
+        this._send_current_message(
+          output,
+          themessage,
+          timeExpired,
+          message.image,
+        );
       }
     }
   }

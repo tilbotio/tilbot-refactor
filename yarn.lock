@@ -3137,7 +3137,7 @@ __metadata:
     "@fastify/static": "npm:^10.1.7"
     "@fastify/websocket": "npm:^11.3.4"
     adm-zip: "npm:^0.6.1"
-    electron: "npm:^45.0.0"
+    electron: "npm:45.0.0"
     electron-builder: "npm:26.15.3"
     fastify: "npm:^5.12.7"
     n-readlines: "npm:^3.4.1"
@@ -4496,7 +4496,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron@npm:^45.0.0":
+"electron@npm:45.0.0":
   version: 45.0.0
   resolution: "electron@npm:45.0.0"
   dependencies:
