@@ -463,12 +463,12 @@ export class LocalProjectController<
             }
           } else if (label_part.type == "variable" && userInput.trim() !== "") {
             if (
-              (block.type !== "MC" &&
+              block.type !== "MC" && ((
                 label_part.match_type !== undefined &&
                 label_part.match_type === "contains") ||
               (label_part.match_type === undefined &&
                 block.type !== "Compute") ||
-              !block.use_external_link
+              !block.use_external_link)
             ) {
               // For variables we do a word-by-word match since there can be complex entries in the dataset.
               let foundAWord = false;

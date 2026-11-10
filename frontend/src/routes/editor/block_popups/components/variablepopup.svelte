@@ -26,6 +26,7 @@
   let variableElementSelected: any = $state();
 
   let showFilter: boolean = $state(false);
+  let showFilterText: boolean = $state(true);
 
   onMount(() => {
     windowApi = (window as any).api;
@@ -123,12 +124,12 @@
 
           equals
 
-          <select class="select" bind:this={filterTypeSelect}>
+          <select class="select" bind:this={filterTypeSelect} onchange={() => (showFilterText = filterTypeSelect.value == "text")}>
             <option selected value="text">Text</option>
             <option value="variable">Variable</option>
           </select>
-          {#if filterTypeSelect !== undefined && filterTypeSelect.value == "text"}
-            <input type="text" bind:this={filterText} />
+          {#if showFilterText}
+            <input type="text" class="input input-bordered" bind:this={filterText} />
           {:else}
             <select class="select" bind:this={filterVar}>
               {#each variables as v}

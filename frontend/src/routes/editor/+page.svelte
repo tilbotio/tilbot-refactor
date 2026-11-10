@@ -221,7 +221,9 @@
                     sessionVar.valueVariable = event.var_value.variable;
                   }
 
-                  variables.push(sessionVar);
+                  if (!variables.some((v) => v.name === sessionVar.name)) {
+                    variables.push(sessionVar);
+                  }
                 }
               }
             }
