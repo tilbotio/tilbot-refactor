@@ -18,3 +18,15 @@
   --color-tilbot-secondary-softblue: #a1ccf7;
   --color-tilbot-secondary-purple: #29173c;
 }
+
+ul {
+  list-style-type: disc;
+}
+
+ol {
+  list-style-type: decimal;
+}
+
+ul, ol {
+  padding-left: 1rem;
+}
