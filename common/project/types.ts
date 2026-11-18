@@ -91,7 +91,7 @@ export type ProjectBlock = {
 
 export type ExternalLinkParameter = {
   key: string;
-  value: string;
+  value: any[];
 };
 
 export type ProjectBlockCompute = ProjectBlock & {

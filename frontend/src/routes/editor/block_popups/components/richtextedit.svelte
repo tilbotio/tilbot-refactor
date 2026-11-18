@@ -8,7 +8,7 @@
   import ChatMessage from "#lib/components/ChatMessage.svelte";
   import Variablepopup from "./variablepopup.svelte";
 
-  let { value = $bindable(), variables = $bindable([]) } = $props();
+  let { value = $bindable(), variables = $bindable([]), allowInsertPrevTurnText = $bindable(true), allowInsertPrevConnectorLabel = $bindable(true) } = $props();
 
   let variablePopup: Variablepopup;
 
@@ -101,44 +101,70 @@
     }
   }
 
-  function insertPrevTurnText() {
-    value.push({
-      type: "prevTurnText",
-    });
-    value.push({
-      text: "",
-    });
+  // Last known caret position (index in value + character offset), since buttons/popups steal focus
+  let caret: { index: number; offset: number } | null = null;
 
+  function saveCaret(index: number, event: Event) {
+    const el = event.currentTarget as HTMLElement;
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !el.contains(selection.anchorNode)) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0).cloneRange();
+    range.selectNodeContents(el);
+    range.setEnd(selection.anchorNode!, selection.anchorOffset);
+    caret = { index, offset: range.toString().length };
+  }
+
+  // Inserts an item at the saved caret position, or at the end if there is none
+  function insertItem(item: any) {
+    let index = value.length - 1;
+    let offset = value[index]?.text?.length ?? 0;
+
+    if (caret !== null && value[caret.index]?.text !== undefined) {
+      index = caret.index;
+      offset = Math.min(caret.offset, value[index].text.length);
+    }
+
+    const text: string = value[index]?.text ?? "";
+    let before = text.slice(0, offset);
+    const after = text.slice(offset);
+
+    // Chrome keeps a placeholder "\n" at the end of text after Enter, which would push the badge a line down
+    if (after === "" && before.endsWith("\n")) {
+      before = before.slice(0, -1);
+    }
+
+    if (value[index]?.text === undefined) {
+      value.push(item, { text: "" });
+      index = value.length - 2;
+    } else {
+      value.splice(index, 1, { text: before }, item, { text: after });
+      index += 1;
+    }
+
+    caret = { index: index + 1, offset: 0 };
+
+    const target = index + 1;
     setTimeout(function () {
-      let editor = document.getElementById("richtexteditor");
-
-      if (editor !== null) {
-        let children = editor.children;
-
-        let tmp = children[children.length - 1] as HTMLElement;
-        tmp.focus();
+      const editor = document.getElementById("richtexteditor");
+      const el = editor?.children[target] as HTMLElement | undefined;
+      if (el) {
+        el.focus();
+        const selection = window.getSelection();
+        selection?.selectAllChildren(el);
+        selection?.collapseToStart();
       }
     }, 100);
   }
 
+  function insertPrevTurnText() {
+    insertItem({ type: "prevTurnText" });
+  }
+
   function insertPrevConnectorLabel() {
-    value.push({
-      type: "prevConnectorLabel",
-    });
-    value.push({
-      text: "",
-    });
-
-    setTimeout(function () {
-      let editor = document.getElementById("richtexteditor");
-
-      if (editor !== null) {
-        let children = editor.children;
-
-        let tmp = children[children.length - 1] as HTMLElement;
-        tmp.focus();
-      }
-    }, 100);
+    insertItem({ type: "prevConnectorLabel" });
   }
 
   function openVariableWindow() {
@@ -152,7 +178,7 @@
     isRandomRow: boolean,
     filter: any
   ) {
-    value.push({
+    insertItem({
       type: "variable",
       variableType: type,
       variable: variable,
@@ -160,20 +186,21 @@
       isRandomRow: isRandomRow,
       filter: filter,
     });
-    value.push({
-      text: "",
-    });
+  }
 
-    setTimeout(function () {
-      let editor = document.getElementById("richtexteditor");
+  // Clicking empty space in the editor places the caret at the end of the last text element
+  function focusEnd(event: MouseEvent) {
+    const editor = event.currentTarget as HTMLElement;
+    if (event.target !== editor) return;
 
-      if (editor !== null) {
-        let children = editor.children;
+    const editables = editor.querySelectorAll<HTMLElement>("[contenteditable]");
+    const last = editables[editables.length - 1];
+    if (!last) return;
 
-        let tmp = children[children.length - 1] as HTMLElement;
-        tmp.focus();
-      }
-    }, 100);
+    last.focus();
+    const selection = window.getSelection();
+    selection?.selectAllChildren(last);
+    selection?.collapseToEnd();
   }
 
   function buildPreview() {
@@ -197,6 +224,7 @@
 <Variablepopup bind:this={variablePopup} {variables} onSave={insertVariable}
 ></Variablepopup>
 
+{#if allowInsertPrevTurnText}
 <div class="tooltip" data-tip="Insert text from previous turn">
   <button
     class="btn btn-square btn-outline btn-sm mt-2 mb-2"
@@ -205,6 +233,8 @@
     <ChatBubbleLeft class="w-4 h-4" />
   </button>
 </div>
+{/if}
+{#if allowInsertPrevConnectorLabel}
 <div class="tooltip" data-tip="Insert connector label from previous block">
   <button
     class="btn btn-square btn-outline btn-sm mt-2 mb-2"
@@ -213,6 +243,7 @@
     <EllipsisHorizontalCircle class="w-4 h-4" />
   </button>
 </div>
+{/if}
 <div class="tooltip" data-tip="Insert variable">
   <button
     class="btn btn-square btn-outline btn-sm mt-2 mb-2"
@@ -224,18 +255,19 @@
 <div
   id="richtexteditor"
   class="textarea text-base resize-none inset-y-2 w-full max-h-40 h-24 overflow-scroll cursor-text"
+    onclick={focusEnd}
 >
-  {#each value as v}
+  {#each value as v, i}
     {#if v.type !== undefined && v.type == "prevTurnText"}
-      <div class="badge badge-secondary mx-2">
+      <div class="badge badge-secondary mx-2 inline-flex">
         <ChatBubbleLeft class="w-3 h-3" /> Previous turn text
       </div>
     {:else if v.type !== undefined && v.type == "prevConnectorLabel"}
-      <div class="badge badge-neutral mx-2">
+      <div class="badge badge-neutral mx-2 inline-flex">
         <EllipsisHorizontalCircle class="w-3 h-3" /> Previous connector label
       </div>
     {:else if v.type !== undefined && v.type == "variable"}
-      <div class="badge badge-info mx-2">
+      <div class="badge badge-info mx-2 inline-flex">
         <Variable class="w-3 h-3 mr-2" />
         {#if v.isRandomRow !== undefined && v.isRandomRow}
           random row from
@@ -246,10 +278,13 @@
       </div>
     {:else}
       <div
-        class="inline-flex outline-hidden min-w-8 min-h-6 align-middle"
+        class="inline whitespace-pre-wrap outline-hidden align-middle"
         contenteditable="plaintext-only"
-        bind:innerHTML={v.text}
+        bind:textContent={v.text}
         onkeydown={checkDelBadges}
+        onkeyup={(e) => saveCaret(i, e)}
+        onclick={(e) => saveCaret(i, e)}
+        onfocusout={(e) => saveCaret(i, e)}
       ></div>
     {/if}
   {/each}

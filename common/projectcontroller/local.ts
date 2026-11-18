@@ -324,53 +324,7 @@ export class LocalProjectController<
       } else if (c.type == "prevConnectorLabel") {
         txt += matchedConnector;
       } else if (c.type == "variable") {
-        if (c.variable !== undefined) {
-          if (c.variableType !== undefined && c.variableType == "dataset") {
-            let res: any[] | null = null;
-
-            // Check if we need to retrieve a column or random row
-            if (c.isRandomRow !== undefined && c.isRandomRow) {
-              res = await this._lookup.random(c.variable);
-            } else if (c.column !== undefined && c.column !== "") {
-              if (
-                c.filter !== undefined &&
-                c.filter.match !== undefined &&
-                c.filter.match.type !== undefined
-              ) {
-                if (c.filter.match.type == "text") {
-                  res = await this._lookup.column(
-                    c.variable,
-                    c.column,
-                    c.filter.colName,
-                    c.filter.match.text,
-                  );
-                } else if (c.filter.match.type == "variable") {
-                  res = await this._lookup.column(
-                    c.variable,
-                    c.column,
-                    c.filter.colName,
-                    this._client_vars[c.filter.match.varName],
-                  );
-                }
-              } else {
-                res = await this._lookup.column(c.variable, c.column);
-              }
-            }
-
-            if (res !== null) {
-              txt += res.join(", ");
-            }
-          } else if (
-            c.variableType !== undefined &&
-            c.variableType == "session"
-          ) {
-            if (c.column !== undefined && c.column !== "") {
-              txt += this._client_vars[c.variable][c.column];
-            } else {
-              txt += this._client_vars[c.variable];
-            }
-          }
-        }
+        txt += await this._getVariableString(c);
       }
     }
 
@@ -650,7 +604,7 @@ export class LocalProjectController<
         const extraParams: Record<string, string> = {};
         for (const param of block.parameters ?? []) {
           if (param.key.trim() !== "") {
-            extraParams[param.key] = param.value;
+            extraParams[param.key] = await this.check_variables(param.value, "", "");
           }
         }
         const res = await this._lookup.apiCall(link, audio, [], extraParams);
@@ -660,6 +614,60 @@ export class LocalProjectController<
 
     return null;
   }
+
+  private async _getVariableString(c: any): Promise<string> {
+    let txt = "";
+
+    if (c.variable !== undefined) {
+      if (c.variableType !== undefined && c.variableType == "dataset") {
+        let res: any[] | null = null;
+
+        // Check if we need to retrieve a column or random row
+        if (c.isRandomRow !== undefined && c.isRandomRow) {
+          res = await this._lookup.random(c.variable);
+        } else if (c.column !== undefined && c.column !== "") {
+          if (
+            c.filter !== undefined &&
+            c.filter.match !== undefined &&
+            c.filter.match.type !== undefined
+          ) {
+            if (c.filter.match.type == "text") {
+              res = await this._lookup.column(
+                c.variable,
+                c.column,
+                c.filter.colName,
+                c.filter.match.text,
+              );
+            } else if (c.filter.match.type == "variable") {
+              res = await this._lookup.column(
+                c.variable,
+                c.column,
+                c.filter.colName,
+                this._client_vars[c.filter.match.varName],
+              );
+            }
+          } else {
+            res = await this._lookup.column(c.variable, c.column);
+          }
+        }
+
+        if (res !== null) {
+          txt += res.join(", ");
+        }
+      } else if (
+        c.variableType !== undefined &&
+        c.variableType == "session"
+      ) {
+        if (c.column !== undefined && c.column !== "") {
+          txt += this._client_vars[c.variable][c.column];
+        } else {
+          txt += this._client_vars[c.variable];
+        }
+      }
+    }   
+
+    return txt;
+  } 
 
   private async _receive_message(
     message: ReceivedMessage,
@@ -714,7 +722,7 @@ export class LocalProjectController<
           const extraParams: Record<string, string> = {};
           for (const param of current_block.parameters ?? []) {
             if (param.key.trim() !== "") {
-              extraParams[param.key] = param.value;
+              extraParams[param.key] = await this.check_variables(param.value, "", "");
             }
           }
 

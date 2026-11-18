@@ -2,6 +2,7 @@
   import type { ExternalLink, ExternalLinkParameter, ProjectBlockCompute } from "../../../../../common/project/types.ts";
   import BaseBlockPopup from "./base.svelte";
   import Connectors from "./components/connectors.svelte";
+  import RichTextEdit from "./components/richtextedit.svelte";
   import { Plus, Sparkles, Trash } from "svelte-heros-v2";
 
   const {
@@ -21,7 +22,7 @@
     if (blockCopy.parameters === undefined) {
       blockCopy.parameters = [];
     }
-    blockCopy.parameters.push({ key: "", value: "" });
+    blockCopy.parameters.push({ key: "", value: [{text: ""}] });
   }
 </script>
 
@@ -50,7 +51,7 @@
     </select>   
     <br /> 
 
-    <table>
+    <table class="w-full">
       <thead>
         <tr>
           <th>Parameter</th>
@@ -62,7 +63,8 @@
         {#each blockCopy.parameters ?? [] as param, index}
           <tr>
             <td><input type="text" class="input input-bordered" bind:value={param.key} /></td>
-            <td><textarea class="input input-bordered" bind:value={param.value}></textarea></td>
+            <td><RichTextEdit bind:value={param.value} {variables} allowInsertPrevTurnText={false} allowInsertPrevConnectorLabel={false} /></td>
+            <!--<td><textarea class="input input-bordered" bind:value={param.value}></textarea></td>-->
             <td>
               <button
                 class="btn btn-square btn-outline btn-sm"
