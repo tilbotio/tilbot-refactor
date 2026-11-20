@@ -1,62 +1,108 @@
-version: "3.8"
+name: tilbot
 services:
-  yarn-install:
-    build: .
-    command: ["yarn", "install", "--immutable"]
-    volumes:
-      - .:/home/node
-
   frontend:
-    build: .
-    working_dir: /home/node/frontend
+    image: nginx:alpine
     depends_on:
-      yarn-install:
-        condition: service_completed_successfully
+      frontend-app:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     ports:
-      - 5173:5173
+      - "443:5173"
     restart: unless-stopped
     volumes:
-      - .:/home/node
-    environment:
-      - VITE_API_URL=http://backend:8000
-      - MONGO_DB=mongodb://mongo/tilbot
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - type: bind
+        source: ${TLS_CERT_FILE:-./certs/fullchain.pem}
+        target: /etc/nginx/certs/fullchain.pem
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TLS_KEY_FILE:-./certs/privkey.pem}
+        target: /etc/nginx/certs/privkey.pem
+        read_only: true
+        bind:
+          create_host_path: false
     healthcheck:
-      test: curl -f localhost:5173/healthcheck || exit 1
+      test: ["CMD", "wget", "--no-check-certificate", "-q", "-O", "/dev/null", "https://127.0.0.1:5173/healthcheck"]
       interval: 10s
       timeout: 2s
       retries: 20
-    command: ["yarn", "run", "dev"]
+    networks:
+      tbwebnetwork:
+
+  frontend-app:
+    build:
+      context: .
+      target: frontend
+    environment:
+      PROTOCOL_HEADER: x-forwarded-proto
+      HOST_HEADER: x-forwarded-host
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthcheck').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 2s
+      retries: 20
+    networks:
+      tbwebnetwork:      
+
+  backend-init:
+    build:
+      context: .
+      target: backend-init
+    network_mode: none
+    volumes:
+      - ./backend/projects:/legacy/projects:ro
+      - ./backend/proj_pub:/legacy/proj_pub:ro
+      - project-data:/data/projects
+      - public-project-data:/data/proj_pub
+      - admin-secret:/run/private
+    secrets:
+      - initial_admin_password
 
   backend:
-    build: .
-    working_dir: /home/node/backend
+    build:
+      context: .
+      target: backend
     depends_on:
-      yarn-install:
-        condition: service_completed_successfully
       mongo:
         condition: service_healthy
-    ports:
-      - 8000-8010:8000-8010
+      backend-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     volumes:
-      - .:/home/node
+      - project-data:/app/backend/projects
+      - public-project-data:/app/backend/proj_pub
+      - admin-secret:/run/private:ro
     environment:
       LISTEN_PORT: 8000
       MONGO_DB: mongodb://mongo/tilbot
+      TRUST_HTTPS_PROXY: "true"
+      ADMIN_PASSWORD_FILE: /run/private/initial_admin_password
+    secrets:
+      - db_tilbot_user
+      - db_tilbot_password
     healthcheck:
-      test: curl -f localhost:8000/api/healthcheck || exit 1
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/api/healthcheck').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 2s
       retries: 20
-    command: ["yarn", "run", "start"]
+    networks:
+      tbwebnetwork:      
+      tbdbnetwork:
+      tbpluginnetwork:
 
   mongo:
     image: mongo:8.3
-    ports:
-      - 27017:27017
     restart: unless-stopped
     environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: tilbot
+      MONGO_TILBOT_USER: ${DB_TILBOT_USER}
+      MONGO_TILBOT_PASSWORD: ${DB_TILBOT_PASSWORD}
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -64,26 +110,55 @@ services:
       retries: 20
     volumes:
       - mongodb:/data/db
+      - ./db/init.js:/docker-entrypoint-initdb.d/init.js:ro
     entrypoint: sh -ec "exec docker-entrypoint.sh mongod >/dev/null 2>&1"
+    networks:
+      tbdbnetwork:    
 
   tests:
     profiles:
       - testing
     build:
       context: .
-      dockerfile: Dockerfile-tests
+      target: tests
     depends_on:
       frontend:
         condition: service_healthy
-      backend:
-        condition: service_healthy
-      npm-ci:
-        condition: service_completed_successfully
     environment:
-      - FRONTEND_ADDRESS=frontend
+      FRONTEND_ADDRESS: frontend
+      FRONTEND_SCHEME: https
+      IGNORE_HTTPS_ERRORS: "true"
+      ADMIN_PASSWORD_FILE: /run/private/initial_admin_password
     volumes:
-      - .:/home/node
-    command: ["sh", "-exc", "npx playwright install; npm run test-integration"]
+      - admin-secret:/run/private:ro
+    networks:
+      tbwebnetwork:      
 
 volumes:
   mongodb:
+  project-data:
+  public-project-data:
+  admin-secret:
+
+networks:
+  tbwebnetwork:
+    driver: bridge
+    ipam:
+      driver: default
+  tbdbnetwork:
+    driver: bridge
+    ipam:
+      driver: default
+  tbpluginnetwork:
+    driver: bridge
+    ipam:
+      driver: default
+
+
+secrets:
+  initial_admin_password:
+    file: ${ADMIN_PASSWORD_FILE:-./secrets/admin_password}
+  db_tilbot_user:
+    environment: DB_TILBOT_USER
+  db_tilbot_password:
+    environment: DB_TILBOT_PASSWORD

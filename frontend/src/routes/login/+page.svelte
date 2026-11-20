@@ -1,34 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { InformationCircle, XCircle } from "svelte-heros-v2";
+  import { XCircle } from "svelte-heros-v2";
 
   let error: string | null = $state(null);
-  let info: string | null = $state(null);
-
-  onMount(async () => {
-    // Check if an admin account exists, if not create one.
-    try {
-      const response = await fetch("/api/admin_account_exists");
-      const text = await response.text();
-      if (!response.ok) {
-        throw new Error(text);
-      }
-      if (text === "CREATED") {
-        info =
-          'No admin account was found, so I created it. Log in with username "admin", password "admin"';
-      }
-    } catch (err) {
-      console.log(err);
-      error =
-        "Unknown error occurred. Please contact your administrator and try again later.";
-    }
-  });
-
   async function login(e: Event) {
     e.preventDefault();
 
     error = null;
-    info = null;
 
     const data = Object.fromEntries(new FormData(e.target as HTMLFormElement));
 
@@ -99,12 +76,6 @@
         <div class="alert alert-error shadow-lg justify-start">
           <XCircle class="flex-shrink-0 h-6 w-6" />
           <span>{error}</span>
-        </div>
-      {/if}
-      {#if info}
-        <div class="alert alert-info shadow-lg justify-start">
-          <InformationCircle class="shrink-0 w-6 h-6" />
-          <span>{info}</span>
         </div>
       {/if}
     </div>

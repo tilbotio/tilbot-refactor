@@ -5,8 +5,10 @@ node_modules
 /.gitconfig
 !/.npmrc
 !/.yarnrc.yml
+!/.dockerignore
 app/build
 /certs
+/secrets/
 /currentproject
 /logs
 /package

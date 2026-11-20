@@ -1,7 +1,7 @@
 import { Schema, model, type Document, type Model } from "mongoose";
 import { SettingsModel, type SettingsSchemaInterface } from "./settings.ts";
 import { MongoError } from "mongodb";
-import mongoose_bcrypt from "mongoose-bcrypt";
+import bcrypt from "bcryptjs";
 import {
   TilBotUserNotFoundError,
   TilBotBadPasswordError,
@@ -36,7 +36,7 @@ export interface UserModelInterface extends Model<UserSchemaInterface> {
 export const UserSchema = new Schema<UserSchemaInterface>(
   {
     username: { type: String, required: true, unique: true },
-    password: { type: String, required: true, bcrypt: true },
+    password: { type: String, required: true },
     role: { type: Number, required: true, default: 1 },
     active: { type: Boolean, default: true },
   },
@@ -110,6 +110,9 @@ export const UserSchema = new Schema<UserSchemaInterface>(
       },
     },
     methods: {
+      async verifyPassword(password) {
+        return bcrypt.compare(password, this.password);
+      },
       /**
        * Try to log in to the dashboard. Raise an exception on failure.
        *
@@ -128,7 +131,7 @@ export const UserSchema = new Schema<UserSchemaInterface>(
        * @param {string} new_password - New password
        */
       async updatePassword(old_password, new_password) {
-        this.checkPassword(old_password);
+        await this.checkPassword(old_password);
         this.password = new_password;
         await this.save();
       },
@@ -158,7 +161,11 @@ export const UserSchema = new Schema<UserSchemaInterface>(
   }
 );
 
-UserSchema.plugin(mongoose_bcrypt);
+UserSchema.pre("save", async function () {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+});
 
 export const UserModel = model<UserSchemaInterface, UserModelInterface>(
   "user",

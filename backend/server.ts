@@ -10,7 +10,6 @@ import fastifyMultiPart, { MultipartValue } from "@fastify/multipart";
 import fastifyWebSocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import { MongoClient } from "mongodb";
-import MongoStore from "connect-mongo";
 import mongoose from "mongoose";
 import AdmZip from "adm-zip";
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
@@ -34,6 +33,7 @@ import {
   ServerControllerOutput,
 } from "./projectcontroller.ts";
 import { Logger } from "./logger.ts";
+import { SessionStore } from "./sessionstore.ts";
 
 import { VariableDb } from "../common/variabledb.ts";
 import { NonLogger } from "../common/projectcontroller/nonlogger.ts";
@@ -55,6 +55,13 @@ function getOrCreateToken(tokenPath: string): string {
   }
 }
 
+function getSecret(name: string): string | undefined {
+  try {
+    return fs.readFileSync(`/run/secrets/${name}`, 'utf8').trim();
+  } catch (err) {
+    return process.env[name]; // Fallback for dev
+  }
+}
 
 function convertBase64ToBlob(base64: string): Blob {
   const byteCharacters = atob(base64.split(",")[1]);
@@ -70,19 +77,16 @@ function convertBase64ToBlob(base64: string): Blob {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // For the MongoDB connection
-const dbPath = process.env.MONGO_USERNAME
-  ? `mongodb://${process.env.MONGO_USERNAME}:${
-      process.env.MONGO_PASSWORD
-    }@mongo:${process.env.MONGO_PORT ?? 27017}/${
-      process.env.MONGO_DBNAME ?? "tilbot"
-    }?authSource=admin`
-  : process.env.MONGO_DB ?? "mongodb://127.0.0.1:27017/tilbot";
+const dbPath = `mongodb://${getSecret("db_tilbot_user")}:${getSecret("db_tilbot_password")}@mongo:${process.env.MONGO_PORT ?? 27017}/${process.env.MONGO_DBNAME ?? "tilbot"}?authSource=admin`;
 
+const trustHttpsProxy = process.env.TRUST_HTTPS_PROXY === "true";
+const secureCookies = Boolean(process.env.HTTPS) || trustHttpsProxy;
 let app: FastifyInstance | null = null;
 
 if (process.env.HTTPS) {
   app = Fastify({
     logger: true,
+    trustProxy: trustHttpsProxy,
     https: {
       key: fs.readFileSync(process.env.HTTPS_KEY as string),
       cert: fs.readFileSync(process.env.HTTPS_CERT as string),
@@ -91,6 +95,7 @@ if (process.env.HTTPS) {
 } else {
   app = Fastify({
     logger: true,
+    trustProxy: trustHttpsProxy,
   });
 }
 
@@ -115,7 +120,7 @@ await Promise.all([
     secret: process.env.COOKIE_SECRET || getOrCreateToken("/tmp/cookie-secret"),
     parseOptions: {
       maxAge: 60 * 60 * 24 * 7, // 1 week
-      secure: Boolean(process.env.HTTPS),
+      secure: secureCookies,
       httpOnly: true,
       sameSite: "none",
     },
@@ -123,11 +128,11 @@ await Promise.all([
 
   app.register(fastifySession, {
     cookie: {
-      secure: Boolean(process.env.HTTPS),
+      secure: secureCookies,
     },
     secret:
       process.env.SESSION_SECRET || getOrCreateToken("/tmp/session-secret"),
-    store: MongoStore.create({
+    store: new SessionStore({
       // mongodb npm version confusion leads to an unfortunate type conflict:
       client: mongoose.connection.getClient() as unknown as MongoClient,
       stringify: false,
@@ -143,6 +148,18 @@ await Promise.all([
 
   app.register(fastifyMultiPart),
 ]);
+
+if (!(await UserModel.adminAccountExists())) {
+  const passwordFile = process.env.ADMIN_PASSWORD_FILE;
+  if (!passwordFile) {
+    throw new Error("ADMIN_PASSWORD_FILE is required to initialize the administrator");
+  }
+  const password = readFileSync(passwordFile, "utf8").replace(/\r?\n$/, "");
+  if (password.trim().length < 16 || /[\r\n]/.test(password)) {
+    throw new Error("Initial administrator password must be a single line of at least 16 non-padding characters");
+  }
+  await UserModel.register("admin", password, 99);
+}
 
 // Handle TilbotErrors by sending their api_status_code as the response.
 // This handler must (apparently?) be registered before any prefixes.
@@ -174,12 +191,7 @@ app.get("/api/healthcheck", async (req, res) => {
 });
 
 app.get("/api/admin_account_exists", async (req, res) => {
-  if (await UserModel.adminAccountExists()) {
-    return "EXISTS";
-  } else {
-    await UserModel.register("admin", "admin", 99);
-    return "CREATED";
-  }
+  return (await UserModel.adminAccountExists()) ? "EXISTS" : "NOT_FOUND";
 });
 
 app.post("/api/logout", async (req, res) => {

@@ -30,3 +30,7 @@ ol {
 ul, ol {
   padding-left: 1rem;
 }
+
+a {
+  text-decoration: underline;
+}
